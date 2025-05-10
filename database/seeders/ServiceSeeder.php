@@ -2,16 +2,22 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use App\Models\Service;
 
 class ServiceSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
-    public function run(): void
+    public function run()
     {
-        //
+        $services = [
+            'Anatomie', 'Biochimie', 'Physiologie', 'Pharmacologie', 'Microbiologie',
+            'Pathologie', 'Chirurgie', 'Médecine Interne', 'Pédiatrie', 'Gynécologie',
+            'Radiologie', 'Dermatologie', 'Neurologie', 'Cardiologie', 'Ophtalmologie',
+            'ORL', 'Psychiatrie', 'Médecine Légale', 'Immunologie', 'Parasitologie'
+        ];
+
+        foreach (array_slice($services, 0, 10) as $service) {
+            Service::create(['nom' => $service]);
+        }
     }
 }

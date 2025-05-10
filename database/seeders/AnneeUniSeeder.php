@@ -2,16 +2,19 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use App\Models\AnneeUni;  // Make sure this import exists
+use Carbon\Carbon;
 
 class AnneeUniSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
-    public function run(): void
+    public function run()
     {
-        //
+        for ($i = 0; $i < 5; $i++) {
+            $year = Carbon::now()->subYears($i)->year;
+            AnneeUni::create([
+                'annee' => ($year - 1) . '-' . $year
+            ]);
+        }
     }
 }
