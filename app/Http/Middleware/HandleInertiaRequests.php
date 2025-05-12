@@ -50,7 +50,26 @@ class HandleInertiaRequests extends Middleware
                 ...(new Ziggy)->toArray(),
                 'location' => $request->url(),
             ],
+            'flash' => [
+                'success' => fn () => $request->session()->get('success'),
+                'error' => fn () => $request->session()->get('error'),
+            ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+            'abilities' => $this->get_abilities($request->user()),
+
+        ];
+    }
+    private function get_abilities($user): 
+    {
+        if (!$user) {
+            return [];
+        }
+
+        return [
+            'is_admin' => $user->hasRole('admin'),
+            'is_rh' => $user->hasRole('rh'),
+            'is_professeur' => $user->hasRole('professeur'),
+            'is_chef_service' => $user->hasRole('chef_service'),
         ];
     }
 }

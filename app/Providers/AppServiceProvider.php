@@ -19,6 +19,27 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        Vite::prefetch(concurrency: 3);
+
+        Gate::define('is_admin', function ($user) {
+            return $user->hasRole('admin');
+        });
+        
+
+        Gate::define('is_rh', function ($user) {
+            return $user->hasRole('rh');
+        });
+        
+
+        Gate::define('is_professeur', function ($user) {
+            return $user->hasRole('professeur');
+
+        });
+        Gate::define('is_chef_service', function ($user) {
+            return $user->hasRole('chef_service');
+
+        });
+
+
     }
 }

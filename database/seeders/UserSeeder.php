@@ -20,7 +20,7 @@ class UserSeeder extends Seeder
         ]);
 
         // Create 19 more users with various roles
-        $roles = ['professeur', 'rh', 'chef_service'];
+        $roles = ['professeur', 'rh', 'chef_service', 'admin'];
         
         for ($i = 1; $i < 20; $i++) {
             $role = $roles[array_rand($roles)];

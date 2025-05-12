@@ -8,7 +8,7 @@ use App\Models\User;
 use App\Models\Service;
 use Carbon\Carbon;
 
-class ProfesseurSeeder extends Seeder  // Changed from UserSeeder to ProfesseurSeeder
+class ProfesseurSeeder extends Seeder
 {
     public function run()
     {
@@ -18,6 +18,21 @@ class ProfesseurSeeder extends Seeder  // Changed from UserSeeder to ProfesseurS
             'Cardiologie', 'Neurologie', 'Pédiatrie', 'Chirurgie', 'Dermatologie',
             'Radiologie', 'Anesthésiologie', 'Gynécologie', 'Ophtalmologie', 'ORL',
             'Psychiatrie', 'Médecine Interne', 'Endocrinologie', 'Néphrologie', 'Pneumologie'
+        ];
+        
+        // Realistic French/Arabic names arrays
+        $noms = [
+            'Benali', 'Laroui', 'Cherkaoui', 'El Amrani', 'Bouzidi', 'Hakimi', 'Daoudi', 'Zeroual', 
+            'Tazi', 'Mansouri', 'Belhaj', 'Rachidi', 'Saidi', 'Bennani', 'Khalfi', 'Naciri',
+            'Martin', 'Dubois', 'Bernard', 'Petit', 'Durand', 'Leroy', 'Moreau', 'Simon',
+            'Laurent', 'Michel', 'Garcia', 'David', 'Bertrand', 'Roux', 'Vincent', 'Fournier'
+        ];
+        
+        $prenoms = [
+            'Mohamed', 'Ahmed', 'Fatima', 'Amina', 'Karim', 'Youssef', 'Hassan', 'Nadia',
+            'Samir', 'Leila', 'Khalid', 'Zahra', 'Omar', 'Salim', 'Jamila', 'Rachid',
+            'Jean', 'Pierre', 'Marie', 'Philippe', 'Nathalie', 'Alain', 'Sophie', 'Patrick',
+            'Isabelle', 'François', 'Catherine', 'Jacques', 'Valérie', 'Eric', 'Sandrine'
         ];
         
         $services = Service::pluck('id')->toArray();
@@ -31,8 +46,8 @@ class ProfesseurSeeder extends Seeder  // Changed from UserSeeder to ProfesseurS
             
             Professeur::create([
                 'user_id' => $userId,
-                'nom' => 'Professeur' . ($i + 1),
-                'prenom' => 'Prénom' . ($i + 1),
+                'nom' => $noms[array_rand($noms)],
+                'prenom' => $prenoms[array_rand($prenoms)],
                 'rang' => $rangs[array_rand($rangs)],
                 'statut' => $statuts[array_rand($statuts)],
                 'is_chef_service' => $isChef,
