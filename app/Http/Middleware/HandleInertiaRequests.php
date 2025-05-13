@@ -59,7 +59,7 @@ class HandleInertiaRequests extends Middleware
 
         ];
     }
-    private function get_abilities($user): 
+    private function get_abilities($user): array
     {
         if (!$user) {
             return [];
