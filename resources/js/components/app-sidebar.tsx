@@ -4,7 +4,7 @@ import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem, type PageProps } from '@/types'; // Import your updated PageProps
 import { Link, usePage } from '@inertiajs/react';
-import { Folder, LayoutGrid } from 'lucide-react';
+import { Folder, LayoutGrid, Settings2, BookOpen } from 'lucide-react';
 import AppLogo from './app-logo';
 import React, { useContext } from 'react'; // Added useContext
 import { TranslationContext } from '@/context/TranslationProvider';
@@ -25,7 +25,7 @@ export function AppSidebar() {
         {
             title: translations?.dashboard_nav_item || 'Dashboard',
             href: route('dashboard'), // Use Ziggy for route names
-            icon: LayoutGrid,
+            icon: Settings2,
         },
     ];
 
@@ -33,11 +33,17 @@ export function AppSidebar() {
     if (auth.user && auth.abilities?.is_admin) {
         mainNavItems.push({
             title: translations?.services_nav_item || 'Services',
-            href: route('admin.services.index'), // Use Ziggy for the services index route
-            icon: LayoutGrid, // Or any other icon you prefer for services/management
+            href: route('admin.services.index'),
+            icon: LayoutGrid,
+            active: route().current('admin.services.*'),
         });
-        // Add other admin links here as we build them
-        // e.g., Professors, Modules, etc.
+        mainNavItems.push({
+            title: translations?.modules_nav_item || 'Modules',
+            href: route('admin.modules.index'),
+            icon: BookOpen, // Example icon for Modules
+            active: route().current('admin.modules.*'),
+        });
+
     }
     return (
         <Sidebar collapsible="icon" variant="floating">
