@@ -14,6 +14,9 @@ import { SidebarTrigger } from '@/components/ui/sidebar';
 import { type BreadcrumbItem as BreadcrumbItemType } from '@/types';
 import { Icon } from '@iconify/react';
 import { Link, usePage } from '@inertiajs/react';
+// import NotificationBadge from '@/Components/NotificationBadge';
+import { TranslationContext } from '@/context/TranslationProvider';
+import { useContext } from 'react';
 
 export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: BreadcrumbItemType[] }) {
     const { auth } = usePage<{ auth: { user: { name: string; email: string; image?: string | null } } }>().props;
@@ -26,6 +29,23 @@ export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: Breadcrum
             .join('')
             .toUpperCase();
     };
+
+    const { translations, switchLanguage } = useContext(TranslationContext);
+    const lang = localStorage.getItem('lang') || 'en';
+    const locals = [
+        {
+            locale: 'en',
+            label: 'English',
+        },
+        {
+            locale: 'fr',
+            label: 'Français',
+        },
+        {
+            locale: 'ar',
+            label: 'العربية',
+        },
+    ];
 
     return (
         <header className="border-sidebar-border/50 bg-background flex h-16 shrink-0 items-center justify-between gap-4 border-b px-6 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 md:px-4">
@@ -44,10 +64,25 @@ export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: Breadcrum
                 </div>
 
                 {/* Notification Button */}
-                <Button variant="ghost" size="icon" className="rounded-full">
-                    <Icon icon="fa-solid:language" className="h-5 w-5" />
-                    <span className="sr-only">Notifications</span>
-                </Button>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="inline-flex items-center">
+                            <Icon icon="fa-solid:language" className="h-4 w-4" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-48">
+                        {locals.map((pay) => (
+                            <DropdownMenuItem
+                                key={pay.locale}
+                                onClick={() => switchLanguage(pay.locale)}
+                                className={`flex items-center justify-between ${pay.locale === 'ar' ? 'font-arabic' : ''}`}
+                            >
+                                <span>{pay.label}</span>
+                                {pay.locale === lang && <Icon icon="fa-solid:check" className="h-4 w-4 text-white" />}
+                            </DropdownMenuItem>
+                        ))}
+                    </DropdownMenuContent>
+                </DropdownMenu>
 
                 {/* Notification Button */}
                 <Button variant="ghost" size="icon" className="rounded-full">
