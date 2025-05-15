@@ -4,7 +4,7 @@ import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem, type PageProps } from '@/types'; // Import your updated PageProps
 import { Link, usePage } from '@inertiajs/react';
-import { Folder, LayoutGrid, Settings2, BookOpen } from 'lucide-react';
+import { Folder, LayoutGrid, Settings2, BookOpen, DoorOpen } from 'lucide-react';
 import AppLogo from './app-logo';
 import React, { useContext } from 'react'; // Added useContext
 import { TranslationContext } from '@/context/TranslationProvider';
@@ -42,6 +42,13 @@ export function AppSidebar() {
             href: route('admin.modules.index'),
             icon: BookOpen, // Example icon for Modules
             active: route().current('admin.modules.*'),
+        });
+        mainNavItems.push({
+            // <<< ADD THIS NEW ITEM FOR SALLES
+            title: translations?.salles_nav_item || 'Salles',
+            href: route('admin.salles.index'),
+            icon: DoorOpen, // Example icon for Salles
+            active: route().current('admin.salles.*'),
         });
 
     }
