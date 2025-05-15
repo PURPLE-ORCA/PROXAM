@@ -4,7 +4,7 @@ import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem, type PageProps } from '@/types'; // Import your updated PageProps
 import { Link, usePage } from '@inertiajs/react';
-import { Folder, LayoutGrid, Settings2, BookOpen, DoorOpen, CalendarDays, ClipboardList } from 'lucide-react';
+import { Folder, LayoutGrid, Settings2, BookOpen, DoorOpen, CalendarDays, ClipboardList, CalendarRange } from 'lucide-react';
 import AppLogo from './app-logo';
 import React, { useContext } from 'react'; // Added useContext
 import { TranslationContext } from '@/context/TranslationProvider';
@@ -40,29 +40,32 @@ export function AppSidebar() {
         mainNavItems.push({
             title: translations?.modules_nav_item || 'Modules',
             href: route('admin.modules.index'),
-            icon: BookOpen, // Example icon for Modules
+            icon: BookOpen, 
             active: route().current('admin.modules.*'),
         });
         mainNavItems.push({
-            // <<< ADD THIS NEW ITEM FOR SALLES
             title: translations?.salles_nav_item || 'Salles',
             href: route('admin.salles.index'),
-            icon: DoorOpen, // Example icon for Salles
+            icon: DoorOpen, 
             active: route().current('admin.salles.*'),
         });
         mainNavItems.push({
-            // <<< ADD THIS NEW ITEM FOR ANNEE UNI
             title: translations?.annee_uni_nav_item || 'Academic Years',
-            href: route('admin.annees-universitaires.index'), // Matches route name
-            icon: CalendarDays, // Example icon
+            href: route('admin.annees-universitaires.index'), 
+            icon: CalendarDays, 
             active: route().current('admin.annees-universitaires.*'),
         });
         mainNavItems.push({
-            // <<< ADD THIS NEW ITEM FOR SESONS
             title: translations?.sesons_nav_item || 'Sessions',
-            href: route('admin.sesons.index'), // Matches route name
-            icon: ClipboardList, // Example icon
+            href: route('admin.sesons.index'), 
+            icon: ClipboardList, 
             active: route().current('admin.sesons.*'),
+        });
+        mainNavItems.push({
+            title: translations?.quadrimestres_nav_item || 'Semesters', 
+            href: route('admin.quadrimestres.index'), 
+            icon: CalendarRange, 
+            active: route().current('admin.quadrimestres.*'),
         });
 
     }
