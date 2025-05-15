@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ServiceController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -11,7 +12,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', function () {
         return Inertia::render('dashboard');
     })->name('dashboard');
-});
+
+    Route::prefix('admin')->name('admin.')->middleware('can:is_admin')->group(function () {
+        Route::resource('services', ServiceController::class)->except(['show']);
+    });
+    
+}); // Only one closing brace here
 
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';

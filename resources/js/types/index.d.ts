@@ -1,8 +1,28 @@
-import { LucideIcon } from 'lucide-react';
-import type { Config } from 'ziggy-js';
+import { type LucideIcon } from 'lucide-react';
+import type { Config as ZiggyConfig } from 'ziggy-js'; 
+
+export interface Abilities {
+    is_admin: boolean;
+    is_rh: boolean;
+    is_professeur: boolean;
+    is_chef_service: boolean;
+}
+
+export interface User {
+    id: number;
+    name: string;
+    email: string;
+    avatar?: string; 
+    email_verified_at: string | null;
+    created_at: string;
+    updated_at: string;
+    role?: string;
+    [key: string]: unknown;
+}
 
 export interface Auth {
-    user: User;
+    user: User | null; 
+    abilities: Abilities;
 }
 
 export interface BreadcrumbItem {
@@ -18,26 +38,26 @@ export interface NavGroup {
 export interface NavItem {
     title: string;
     href: string;
-    icon?: LucideIcon | null;
-    isActive?: boolean;
+    icon?: LucideIcon;
+    active?: boolean;
 }
 
-export interface SharedData {
+export interface PageProps {
     name: string;
     quote: { message: string; author: string };
     auth: Auth;
-    ziggy: Config & { location: string };
+    ziggy: ZiggyConfig & { location: string };
+    flash: {
+        success?: string;
+        error?: string;
+    };
     sidebarOpen: boolean;
-    [key: string]: unknown;
+    errors?: Record<string, string>; 
+    [key: string]: unknown; 
 }
 
-export interface User {
-    id: number;
-    name: string;
-    email: string;
-    avatar?: string;
-    email_verified_at: string | null;
-    created_at: string;
-    updated_at: string;
-    [key: string]: unknown; // This allows for additional properties...
+declare module '@inertiajs/react' {
+    export interface Page<SharedProps = PageProps> {
+        props: SharedProps;
+    }
 }
