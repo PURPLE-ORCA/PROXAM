@@ -6,6 +6,7 @@ use App\Http\Controllers\QuadrimestresController;
 use App\Http\Controllers\SalleController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\SesonController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -25,9 +26,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::resource('annees-universitaires', AnneeUniController::class)->parameters(['annees-universitaires' => 'anneeUni']) ->except(['show']);
         Route::resource('sesons', SesonController::class) ->parameters(['sesons' => 'seson']) ->except(['show']);
         Route::resource('quadrimestres', QuadrimestresController::class)->parameters(['quadrimestres' => 'quadrimestre']) ->except(['show']);
+        Route::resource('users', UserController::class)->parameters(['users' => 'user'])->except(['show']);
     });
-
-
     
 }); 
 
