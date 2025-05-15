@@ -4,7 +4,7 @@ import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem, type PageProps } from '@/types'; // Import your updated PageProps
 import { Link, usePage } from '@inertiajs/react';
-import { Folder, LayoutGrid, Settings2, BookOpen, DoorOpen, CalendarDays, ClipboardList, CalendarRange, UsersIcon } from 'lucide-react';
+import { Folder, LayoutGrid, Settings2, BookOpen, DoorOpen, CalendarDays, ClipboardList, CalendarRange, UsersIcon, UserSquare } from 'lucide-react';
 import AppLogo from './app-logo';
 import React, { useContext } from 'react'; // Added useContext
 import { TranslationContext } from '@/context/TranslationProvider';
@@ -68,11 +68,16 @@ export function AppSidebar() {
             active: route().current('admin.quadrimestres.*'),
         });
         mainNavItems.push({
-            // <<< ADD THIS NEW ITEM FOR USERS
             title: translations?.users_nav_item || 'Users',
-            href: route('admin.users.index'), // Matches route name
-            icon: UsersIcon, // Example icon
+            href: route('admin.users.index'), 
+            icon: UsersIcon, 
             active: route().current('admin.users.*'),
+        });
+        mainNavItems.push({
+            title: translations?.professeurs_nav_item || 'Professors',
+            href: route('admin.professeurs.index'),
+            icon: UserSquare, 
+            active: route().current('admin.professeurs.*'),
         });
 
     }
