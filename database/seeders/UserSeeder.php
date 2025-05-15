@@ -13,7 +13,21 @@ class UserSeeder extends Seeder
         // Create admin user
         User::create([
             'name' => 'Admin User',
-            'email' => 'admin@example.com',
+            'email' => 'admin@p2e.com',
+            'password' => Hash::make('password'),
+            'role' => 'admin',
+            'email_verified_at' => now(),
+        ]);
+        User::create([
+            'name' => 'Admin User',
+            'email' => 'mohammed@p2e.com',
+            'password' => Hash::make('password'),
+            'role' => 'admin',
+            'email_verified_at' => now(),
+        ]);
+        User::create([
+            'name' => 'Admin User',
+            'email' => 'amira@p2e.com',
             'password' => Hash::make('password'),
             'role' => 'admin',
             'email_verified_at' => now(),
@@ -27,7 +41,7 @@ class UserSeeder extends Seeder
             
             User::create([
                 'name' => 'User ' . $i,
-                'email' => 'user' . $i . '@example.com',
+                'email' => 'user' . $i . '@p2e.com',
                 'password' => Hash::make('password'),
                 'role' => $role,
                 'email_verified_at' => now(),
