@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AnneeUniController;
 use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\SalleController;
 use App\Http\Controllers\ServiceController;
@@ -18,7 +19,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::prefix('admin')->name('admin.')->middleware('can:is_admin')->group(function () {
         Route::resource('services', ServiceController::class)->except(['show']);
         Route::resource('modules', ModuleController::class)->except(['show']);
-        Route::resource('salles', SalleController::class)->except(['show']); // <<< ADD THIS LINE
+        Route::resource('salles', SalleController::class)->except(['show']); 
+        Route::resource('annees-universitaires', AnneeUniController::class)->parameters(['annees-universitaires' => 'anneeUni']) ->except(['show']);
     });
 
 
