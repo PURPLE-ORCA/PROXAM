@@ -57,11 +57,6 @@ export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: Breadcrum
 
             {/* Right Side: Search, Notifications, User Menu */}
             <div className="flex flex-1 items-center justify-end gap-4">
-                {/* Search Input */}
-                <div className="relative hidden w-full max-w-sm md:block">
-                    <Icon icon="mdi:magnify" className="text-muted-foreground absolute top-1/2 left-2.5 h-4 w-4 -translate-y-1/2" />
-                    <Input placeholder="Search..." className="h-9 w-full pl-8" />
-                </div>
 
                 {/* Notification Button */}
                 <DropdownMenu>

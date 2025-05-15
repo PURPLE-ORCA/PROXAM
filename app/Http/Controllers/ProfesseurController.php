@@ -7,14 +7,13 @@ use App\Models\User;
 use App\Models\Service;
 use App\Models\Module;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB; // For database transactions
+use Illuminate\Support\Facades\DB; 
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Password as PasswordBroker; // For sending reset link
-use Illuminate\Auth\Events\Registered; // Or a custom event for admin creation
+use Illuminate\Support\Facades\Password as PasswordBroker;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
 use Illuminate\Support\Str;
+
 class ProfesseurController extends Controller
 {
     protected function baseInertiaPath(): string
@@ -44,9 +43,8 @@ class ProfesseurController extends Controller
             'professeurs' => $professeurs,
             'filters' => $request->only(['search', 'service_id', 'rang', 'statut']),
             'servicesForFilter' => $services,
-            // Pass enums for filters if you want to display them nicely
-            'rangsForFilter' => Professeur::getRangs(), // Assuming a static method in Professeur model
-            'statutsForFilter' => Professeur::getStatuts(), // Assuming a static method in Professeur model
+            'rangsForFilter' => Professeur::getRangs(), 
+            'statutsForFilter' => Professeur::getStatuts(), 
         ]);
     }
 
