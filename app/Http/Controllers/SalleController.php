@@ -1,66 +1,81 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers; // Or App\Http\Controllers\Admin
 
 use App\Models\Salle;
-use App\Http\Requests\StoreSalleRequest;
-use App\Http\Requests\UpdateSalleRequest;
+use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class SalleController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    protected function baseInertiaPath(): string
     {
-        //
+        return 'Admin/Salles/';
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
+    public function index(Request $request)
+    {
+        $salles = Salle::query()
+            ->when($request->input('search'), fn ($query, $search) => $query->where('nom', 'like', "%{$search}%"))
+            ->orderBy('nom')
+            ->paginate(15)
+            ->withQueryString();
+
+        return Inertia::render($this->baseInertiaPath() . 'Index', [
+            'salles' => $salles,
+            'filters' => $request->only(['search']),
+        ]);
+    }
+
     public function create()
     {
-        //
+        return Inertia::render($this->baseInertiaPath() . 'Create');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(StoreSalleRequest $request)
+    public function store(Request $request)
     {
-        //
+        $validated = $request->validate([
+            'nom' => 'required|string|max:255|unique:salles,nom',
+            'default_capacite' => 'required|integer|min:1',
+        ]);
+
+        Salle::create($validated);
+
+        return redirect()->route('admin.salles.index')
+            ->with('success', 'toasts.salle_created_successfully');
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(Salle $salle)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(Salle $salle)
     {
-        //
+        return Inertia::render($this->baseInertiaPath() . 'Edit', [
+            'salle' => $salle,
+        ]);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(UpdateSalleRequest $request, Salle $salle)
+    public function update(Request $request, Salle $salle)
     {
-        //
+        $validated = $request->validate([
+            'nom' => 'required|string|max:255|unique:salles,nom,' . $salle->id,
+            'default_capacite' => 'required|integer|min:1',
+        ]);
+
+        $salle->update($validated);
+
+        return redirect()->route('admin.salles.index')
+            ->with('success', 'toasts.salle_updated_successfully');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(Salle $salle)
     {
-        //
+        // Check if the salle is linked to any exams
+        if ($salle->examens()->exists()) {
+            return redirect()->route('admin.salles.index')
+                ->with('error', 'toasts.salle_in_use_cannot_delete');
+        }
+
+        $salle->delete();
+
+        return redirect()->route('admin.salles.index')
+            ->with('success', 'toasts.salle_deleted_successfully');
     }
 }

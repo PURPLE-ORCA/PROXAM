@@ -3,64 +3,78 @@
 namespace App\Http\Controllers;
 
 use App\Models\Service;
-use App\Http\Requests\StoreServiceRequest;
-use App\Http\Requests\UpdateServiceRequest;
+use Illuminate\Http\Request;
+use Inertia\Inertia;
+// use Illuminate\Support\Facades\Gate; // Only if you use Gate::authorize explicitly
 
 class ServiceController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    protected function baseInertiaPath(): string
     {
-        //
+        return 'Admin/Services/';
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
+    public function index(Request $request)
+    {
+         // Gate::authorize('is_admin'); // Already handled by route middleware, but can be explicit
+        $services = Service::query()
+            ->when($request->input('search'), fn ($query, $search) => $query->where('nom', 'like', "%{$search}%"))
+            ->orderBy('nom')
+            ->paginate(15)
+            ->withQueryString();
+
+        return Inertia::render($this->baseInertiaPath() . 'Index', [
+            'services' => $services,
+            'filters' => $request->only(['search']),
+        ]);
+    }
+
     public function create()
     {
-        //
+        return Inertia::render('Admin/Services/Create');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(StoreServiceRequest $request)
+    public function store(Request $request)
     {
-        //
+        $validated = $request->validate([
+            'nom' => 'required|string|max:255|unique:services,nom',
+        ]);
+
+        Service::create($validated);
+
+        return redirect()->route('admin.services.index')
+            ->with('success', 'toasts.service_created_successfully');
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(Service $service)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(Service $service)
     {
-        //
+        return Inertia::render($this->baseInertiaPath() . 'Edit', [
+            'service' => $service,
+        ]);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(UpdateServiceRequest $request, Service $service)
+    public function update(Request $request, Service $service)
     {
-        //
+        $validated = $request->validate([
+            'nom' => 'required|string|max:255|unique:services,nom,' . $service->id,
+        ]);
+
+        $service->update($validated);
+
+        return redirect()->route('admin.services.index')
+            ->with('success', 'toasts.service_updated_successfully');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(Service $service)
     {
-        //
+        if ($service->professeurs()->exists()) {
+            return redirect()->route('admin.services.index')
+                ->with('error', 'toasts.service_in_use_cannot_delete');
+        }
+
+        $service->delete();
+
+        return redirect()->route('admin.services.index')
+            ->with('success', 'toasts.service_deleted_successfully');
     }
 }

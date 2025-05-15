@@ -4,10 +4,12 @@ namespace App\Models;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Notifications\ProfessorAccountActivation; 
+
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable; // <--- ADD HasFactory HERE (and any other traits like HasApiTokens)
+    use HasFactory, Notifiable; 
 
     protected $fillable = [
         'name', 'email', 'password', 'role'
@@ -19,6 +21,7 @@ class User extends Authenticatable
 
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'password' => 'hashed', 
     ];
     public function hasRole($role)
     {
@@ -29,4 +32,9 @@ class User extends Authenticatable
     {
         return $this->hasOne(Professeur::class, 'user_id');
     }
+
+    // public function sendPasswordResetNotification($token)
+    // {
+    //     $this->notify(new ProfessorAccountActivation($token, $this->getEmailForPasswordReset()));
+    // }
 }

@@ -28,7 +28,7 @@ class Professeur extends Model
 
     public function modules()
     {
-        return $this->belongsToMany(Module::class, 'professeur_module');
+        return $this->belongsToMany(Module::class, 'professeur_modules');
     }
 
     public function attributions()
@@ -49,5 +49,14 @@ class Professeur extends Model
     public function exchangeAcceptances()
     {
         return $this->hasMany(Echange::class, 'professeur_accepter_id');
+    }
+    public static function getRangs($rawKeys = false) {
+        $rangs = ['PA' => 'Professeur Assistant (PA)', 'PAG' => 'Professeur Agrégé (PAG)', 'PES' => 'Professeur Enseignement Supérieur (PES)'];
+        return $rawKeys ? array_keys($rangs) : $rangs;
+    }
+
+    public static function getStatuts($rawKeys = false) {
+        $statuts = ['Active' => 'Active', 'On_Leave' => 'On Leave', 'Sick_Leave' => 'Sick Leave', 'Vacation' => 'Vacation', 'Inactive' => 'Inactive'];
+        return $rawKeys ? array_keys($statuts) : $statuts;
     }
 }

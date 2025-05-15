@@ -2,49 +2,32 @@
 
 namespace App\Http\Middleware;
 
-use Illuminate\Foundation\Inspiring;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 use Tighten\Ziggy\Ziggy;
+// Illuminate\Foundation\Inspiring is not used here unless you re-add the quote
+// use Illuminate\Foundation\Inspiring;
+
 
 class HandleInertiaRequests extends Middleware
 {
-    /**
-     * The root template that's loaded on the first page visit.
-     *
-     * @see https://inertiajs.com/server-side-setup#root-template
-     *
-     * @var string
-     */
     protected $rootView = 'app';
 
-    /**
-     * Determines the current asset version.
-     *
-     * @see https://inertiajs.com/asset-versioning
-     */
     public function version(Request $request): ?string
     {
         return parent::version($request);
     }
 
-    /**
-     * Define the props that are shared by default.
-     *
-     * @see https://inertiajs.com/shared-data
-     *
-     * @return array<string, mixed>
-     */
     public function share(Request $request): array
     {
-        [$message, $author] = str(Inspiring::quotes()->random())->explode('-');
+        // [$message, $author] = str(Inspiring::quotes()->random())->explode('-'); // Removed if not used
 
-        return [
-            ...parent::share($request),
+        return array_merge(parent::share($request), [
             'name' => config('app.name'),
-            'quote' => ['message' => trim($message), 'author' => trim($author)],
+            // 'quote' => ['message' => trim($message), 'author' => trim($author)], // Removed if not used
             'auth' => [
                 'user' => $request->user(),
+                'abilities' => $this->get_abilities($request->user()), // <<< MOVED HERE
             ],
             'ziggy' => fn (): array => [
                 ...(new Ziggy)->toArray(),
@@ -55,14 +38,20 @@ class HandleInertiaRequests extends Middleware
                 'error' => fn () => $request->session()->get('error'),
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
-            'abilities' => $this->get_abilities($request->user()),
-
-        ];
+            // 'abilities' => $this->get_abilities($request->user()), // <<< REMOVED FROM HERE
+        ]);
     }
+
     private function get_abilities($user): array
     {
         if (!$user) {
-            return [];
+            // Return a structure that matches what frontend expects even for guests
+            return [
+                'is_admin' => false,
+                'is_rh' => false,
+                'is_professeur' => false,
+                'is_chef_service' => false,
+            ];
         }
 
         return [

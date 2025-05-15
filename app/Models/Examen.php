@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Examen extends Model
 {
+    use HasFactory;
     protected $fillable = [
         'nom', 'quadrimestre_id', 'type', 'debut', 'fin', 
         'module_id', 'filiere', 'required_professors'
@@ -29,11 +31,21 @@ class Examen extends Model
     public function salles()
     {
         return $this->belongsToMany(Salle::class, 'examens_salles')
-                    ->withPivot('capacite');
+                    ->withPivot('capacite') // Crucial for accessing the override
+                    ->withTimestamps(); // If your pivot table has timestamps
     }
 
     public function attributions()
     {
         return $this->hasMany(Attribution::class);
+    }
+
+    public static function getTypes() {
+        // Key is what's stored in DB, Value is for display
+        return ['QCM' => 'QCM', 'theoreique' => 'Théorique'];
+    }
+
+    public static function getFilieres() {
+        return ['Medicale' => 'Médicale', 'Pharmacie' => 'Pharmacie'];
     }
 }
