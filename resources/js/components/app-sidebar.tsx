@@ -4,7 +4,7 @@ import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem, type PageProps } from '@/types'; // Import your updated PageProps
 import { Link, usePage } from '@inertiajs/react';
-import { Folder, LayoutGrid, Settings2, BookOpen, DoorOpen, CalendarDays } from 'lucide-react';
+import { Folder, LayoutGrid, Settings2, BookOpen, DoorOpen, CalendarDays, ClipboardList } from 'lucide-react';
 import AppLogo from './app-logo';
 import React, { useContext } from 'react'; // Added useContext
 import { TranslationContext } from '@/context/TranslationProvider';
@@ -56,6 +56,13 @@ export function AppSidebar() {
             href: route('admin.annees-universitaires.index'), // Matches route name
             icon: CalendarDays, // Example icon
             active: route().current('admin.annees-universitaires.*'),
+        });
+        mainNavItems.push({
+            // <<< ADD THIS NEW ITEM FOR SESONS
+            title: translations?.sesons_nav_item || 'Sessions',
+            href: route('admin.sesons.index'), // Matches route name
+            icon: ClipboardList, // Example icon
+            active: route().current('admin.sesons.*'),
         });
 
     }

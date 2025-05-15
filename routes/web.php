@@ -4,6 +4,7 @@ use App\Http\Controllers\AnneeUniController;
 use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\SalleController;
 use App\Http\Controllers\ServiceController;
+use App\Http\Controllers\SesonController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -21,6 +22,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::resource('modules', ModuleController::class)->except(['show']);
         Route::resource('salles', SalleController::class)->except(['show']); 
         Route::resource('annees-universitaires', AnneeUniController::class)->parameters(['annees-universitaires' => 'anneeUni']) ->except(['show']);
+        Route::resource('sesons', SesonController::class) // Using 'sesons' for the route slug
+        ->parameters(['sesons' => 'seson']) // Map 'seson' parameter for route model binding
+        ->except(['show']);
     });
 
 
