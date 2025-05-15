@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable; // <--- ADD HasFactory HERE (and any other traits like HasApiTokens)
+    use HasFactory, Notifiable; 
 
     protected $fillable = [
         'name', 'email', 'password', 'role'
