@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AnneeUniController;
+use App\Http\Controllers\ExamenController;
 use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\ProfesseurController;
 use App\Http\Controllers\QuadrimestresController;
@@ -29,6 +30,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::resource('quadrimestres', QuadrimestresController::class)->parameters(['quadrimestres' => 'quadrimestre']) ->except(['show']);
         Route::resource('users', UserController::class)->parameters(['users' => 'user'])->except(['show']);
         Route::resource('professeurs', ProfesseurController::class)->parameters(['professeurs' => 'professeur'])->except(['show']);
+        Route::resource('examens', ExamenController::class)->parameters(['examens' => 'examen'])->except(['show']);
     });
     
 }); 
