@@ -38,7 +38,7 @@ class Professeur extends Model
 
     public function unavailabilities()
     {
-        return $this->hasMany(ProfessorUnivability::class);
+        return $this->hasMany(Unavailability::class);
     }
 
     public function exchangeRequests()

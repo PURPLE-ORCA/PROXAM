@@ -6,6 +6,7 @@ export interface Abilities {
     is_rh: boolean;
     is_professeur: boolean;
     is_chef_service: boolean;
+    is_admin_or_rh: boolean; 
 }
 
 export interface User {

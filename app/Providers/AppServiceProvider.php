@@ -26,11 +26,9 @@ class AppServiceProvider extends ServiceProvider
             return $user->hasRole('admin');
         });
         
-
         Gate::define('is_rh', function ($user) {
             return $user->hasRole('rh');
         });
-        
 
         Gate::define('is_professeur', function ($user) {
             return $user->hasRole('professeur');
@@ -39,6 +37,10 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('is_chef_service', function ($user) {
             return $user->hasRole('chef_service');
 
+        });
+        Gate::define('is_admin_or_rh', function ($user) {
+            return $user->hasRole('admin') || $user->hasRole('rh');
+        
         });
 
 

@@ -8,6 +8,7 @@ use App\Http\Controllers\QuadrimestresController;
 use App\Http\Controllers\SalleController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\SesonController;
+use App\Http\Controllers\UnavailabilityController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -49,7 +50,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::resource('users', UserController::class)->parameters(['users' => 'user'])->except(['show']);
         Route::resource('professeurs', ProfesseurController::class)->parameters(['professeurs' => 'professeur'])->except(['show']);
         Route::resource('examens', ExamenController::class)->parameters(['examens' => 'examen'])->except(['show']);
-    });
+        Route::resource('unavailabilities', UnavailabilityController::class)->parameters(['unavailabilities' => 'unavailability'])->except(['show']);    });
     
 }); 
 

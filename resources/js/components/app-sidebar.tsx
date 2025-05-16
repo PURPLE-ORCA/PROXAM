@@ -16,6 +16,7 @@ import {
     UsersIcon,
     UserSquare,
     FileText,
+    UserMinus
 } from 'lucide-react';
 import AppLogo from './app-logo';
 import React, { useContext } from 'react'; // Added useContext
@@ -99,6 +100,15 @@ export function AppSidebar() {
         });
 
     }
+    if (auth.user && auth.abilities?.is_admin_or_rh) {
+        mainNavItems.push({
+            title: translations?.unavailabilities_nav_item || 'Prof. Unavailabilities',
+            href: route('admin.unavailabilities.index'), // Matches route name
+            icon: UserMinus, // Example icon
+            active: route().current('admin.unavailabilities.*'),
+        });
+    }
+    
     return (
         <Sidebar collapsible="icon" variant="floating">
             <SidebarHeader>

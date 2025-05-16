@@ -51,6 +51,7 @@ class HandleInertiaRequests extends Middleware
                 'is_rh' => false,
                 'is_professeur' => false,
                 'is_chef_service' => false,
+                'is_admin_or_rh' => false,
             ];
         }
 
@@ -59,6 +60,7 @@ class HandleInertiaRequests extends Middleware
             'is_rh' => $user->hasRole('rh'),
             'is_professeur' => $user->hasRole('professeur'),
             'is_chef_service' => $user->hasRole('chef_service'),
+            'is_admin_or_rh' => $user->hasRole('admin') || $user->hasRole('rh'),
         ];
     }
 }

@@ -19,14 +19,14 @@ class UserSeeder extends Seeder
             'email_verified_at' => now(),
         ]);
         User::create([
-            'name' => 'Admin User',
+            'name' => 'Mohammed El Moussaoui',
             'email' => 'mohammed@p2e.com',
             'password' => Hash::make('password'),
             'role' => 'admin',
             'email_verified_at' => now(),
         ]);
         User::create([
-            'name' => 'Admin User',
+            'name' => 'Amira Mimri',
             'email' => 'amira@p2e.com',
             'password' => Hash::make('password'),
             'role' => 'admin',
