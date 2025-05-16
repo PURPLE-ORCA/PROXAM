@@ -18,6 +18,7 @@ export default function Index({ examens: examensPagination, filters }) {
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [itemToDelete, setItemToDelete] = useState(null);
+    const [processingAssignment, setProcessingAssignment] = useState(null); // Track which exam assignment is processing
 
     const formatDate = (datetimeString) => {
         if (!datetimeString) return 'N/A';
@@ -113,6 +114,14 @@ export default function Index({ examens: examensPagination, filters }) {
                 muiTableBodyCellProps: { align: 'center' },
                 muiTableHeadCellProps: { align: 'center' },
             },
+            {
+                // New column to show how many are assigned
+                accessorKey: 'attributions_count',
+                header: translations?.examen_assigned_profs_column_header || 'Assigned',
+                size: 80,
+                muiTableBodyCellProps: { align: 'center' },
+                muiTableHeadCellProps: { align: 'center' },
+            },
         ],
         [translations, language],
     );
@@ -135,6 +144,32 @@ export default function Index({ examens: examensPagination, filters }) {
                 onError: () => closeDeleteModal(),
             });
         }
+    };
+
+    const handleTriggerAssignment = (examenId) => {
+        setProcessingAssignment(examenId); // Set processing state for this specific exam
+        router.post(
+            route('admin.examens.trigger-assignment', { examen: examenId }),
+            {},
+            {
+                preserveScroll: true,
+                onSuccess: (page) => {
+                    console.log('Assignment triggered successfully:', page.props.flash);
+                    // Toast is handled by flash message from backend
+                    setProcessingAssignment(null);
+                },
+                onError: (errors) => {
+                    // Toast for error is handled by flash message
+                    console.error('Error triggering assignment:', errors);
+                    setProcessingAssignment(null);
+                },
+                onFinish: () => {
+                    console.log('Assignment request finished (onFinish)');
+                    // Ensure processing state is cleared even if not success/error
+                    setProcessingAssignment(null);
+                },
+            },
+        );
     };
 
     const table = useMaterialReactTable({
@@ -209,24 +244,48 @@ export default function Index({ examens: examensPagination, filters }) {
             },
         },
 
-        renderRowActions: ({ row }) => (
-            <div className="flex items-center gap-1">
-                <Button variant="ghost" size="icon" asChild className="text-[var(--foreground)] hover:bg-[var(--accent)]">
-                    <Link href={route('admin.examens.edit', { examen: row.original.id })} title={translations?.edit_button_title || 'Modifier'}>
-                        <Icon icon="mdi:pencil" className="h-5 w-5" />
-                    </Link>
-                </Button>
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => openDeleteModal(row.original)}
-                    className="text-[var(--foreground)] hover:bg-[var(--accent)] hover:text-[var(--destructive)]"
-                    title={translations?.delete_button_title || 'Supprimer'}
-                >
-                    <Icon icon="mdi:delete" className="h-5 w-5" />
-                </Button>
-            </div>
-        ),
+        renderRowActions: ({ row }) => {
+            const examen = row.original;
+            const canAssign = examen.attributions_count < examen.required_professors;
+
+            return (
+                <div className="flex items-center gap-1">
+                    <Button variant="ghost" size="icon" asChild className="text-[var(--foreground)] hover:bg-[var(--accent)]">
+                        <Link href={route('admin.examens.edit', { examen: examen.id })} title={translations?.edit_button_title || 'Modifier'}>
+                            <Icon icon="mdi:pencil" className="h-5 w-5" />
+                        </Link>
+                    </Button>
+
+                    {/* Assign Professors Button */}
+                    {canAssign && (
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleTriggerAssignment(examen.id)}
+                            disabled={processingAssignment === examen.id} // Disable button while processing this specific exam
+                            className="text-blue-500 hover:bg-[var(--accent)]" // Example color
+                            title={translations?.trigger_assignment_button_title || 'Assign Professors'}
+                        >
+                            {processingAssignment === examen.id ? (
+                                <Icon icon="mdi:loading" className="h-5 w-5 animate-spin" />
+                            ) : (
+                                <Icon icon="mdi:account-multiple-plus-outline" className="h-5 w-5" />
+                            )}
+                        </Button>
+                    )}
+
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => openDeleteModal(examen)}
+                        className="text-[var(--foreground)] hover:bg-[var(--accent)] hover:text-[var(--destructive)]"
+                        title={translations?.delete_button_title || 'Supprimer'}
+                    >
+                        <Icon icon="mdi:delete" className="h-5 w-5" />
+                    </Button>
+                </div>
+            );
+        },
         renderTopToolbarCustomActions: () => (
             <Button asChild variant="default" className="bg-[var(--primary)] text-[var(--primary-foreground)] hover:bg-[var(--primary)]/90">
                 <Link href={route('admin.examens.create')}>{translations?.add_examen_button || 'Add Examination'}</Link>

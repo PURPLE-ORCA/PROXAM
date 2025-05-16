@@ -272,5 +272,10 @@
     "add_unavailability_button": "Add Unavailability",
     "unavailabilities_page_title": "Professor Unavailabilities List",
     "delete_unavailability_modal_title": "Delete Unavailability",
-    "unavailability_delete_confirmation": "Are you sure you want to delete this unavailability period for {profName}?"
+    "unavailability_delete_confirmation": "Are you sure you want to delete this unavailability period for {profName}?",
+    "toasts.examen_assignment_triggered_successfully": "Exam assignment process completed successfully.",
+    "toasts.examen_assignment_partial_success": "Exam assignment process completed with some issues or warnings.",
+    "toasts.examen_assignment_failed": "Exam assignment process failed.",
+    "examen_assigned_profs_column_header": "Assigned",
+    "trigger_assignment_button_title": "Assign Professors"
 }

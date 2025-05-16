@@ -272,5 +272,10 @@
     "add_unavailability_button": "إضافة فترة عدم توفر",
     "unavailabilities_page_title": "قائمة فترات عدم توفر الأساتذة",
     "delete_unavailability_modal_title": "حذف فترة عدم التوفر",
-    "unavailability_delete_confirmation": "هل أنت متأكد أنك تريد حذف فترة عدم التوفر هذه للأستاذ {profName}؟"
+    "unavailability_delete_confirmation": "هل أنت متأكد أنك تريد حذف فترة عدم التوفر هذه للأستاذ {profName}؟",
+    "toasts.examen_assignment_triggered_successfully": "تمت عملية تعيين الامتحان بنجاح.",
+    "toasts.examen_assignment_partial_success": "تمت عملية تعيين الامتحان مع بعض المشاكل أو التحذيرات.",
+    "toasts.examen_assignment_failed": "فشلت عملية تعيين الامتحان.",
+    "examen_assigned_profs_column_header": "المعينون",
+    "trigger_assignment_button_title": "تعيين أساتذة"
 }

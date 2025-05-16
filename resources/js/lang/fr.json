@@ -272,5 +272,10 @@
     "add_unavailability_button": "Ajouter Indisponibilité",
     "unavailabilities_page_title": "Liste des Indisponibilités Prof.",
     "delete_unavailability_modal_title": "Supprimer Indisponibilité",
-    "unavailability_delete_confirmation": "Êtes-vous sûr de vouloir supprimer cette période d'indisponibilité pour {profName} ?"
+    "unavailability_delete_confirmation": "Êtes-vous sûr de vouloir supprimer cette période d'indisponibilité pour {profName} ?",
+    "toasts.examen_assignment_triggered_successfully": "Processus d'affectation d'examen terminé avec succès.",
+    "toasts.examen_assignment_partial_success": "Processus d'affectation d'examen terminé avec des problèmes ou avertissements.",
+    "toasts.examen_assignment_failed": "Échec du processus d'affectation d'examen.",
+    "examen_assigned_profs_column_header": "Assignés",
+    "trigger_assignment_button_title": "Assigner Professeurs"
 }

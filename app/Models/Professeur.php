@@ -60,6 +60,10 @@ class Professeur extends Model
         return $rawKeys ? array_keys($statuts) : $statuts;
     }
 
+    public const RANG_PA  = 'PA';
+    public const RANG_PAG = 'PAG';
+    public const RANG_PES = 'PES';
+
     public const SPECIALITE_MEDICAL = 'medical';
     public const SPECIALITE_SURGICAL = 'surgical'; // Using English keys for DB/code
 
