@@ -5,13 +5,8 @@ namespace App\Services;
 use App\Models\Examen;
 use App\Models\Professeur;
 use App\Models\Attribution;
-use App\Models\Module;
-use App\Models\Seson; // For type hinting if needed, though usually accessed via relations
-use App\Models\Quadrimestre; // For type hinting if needed
-use App\Models\Unavailability; // Corrected Model Name
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
-use Illuminate\Support\Facades\DB; // If using transactions for multiple creations
 use Illuminate\Support\Facades\Log;
 
 class ExamAssignmentService
@@ -28,8 +23,8 @@ class ExamAssignmentService
 
     public function assignProfessorsToExam(Examen $examen): array
     {
-        Log::info("------------------------------------------------------------------");
-        Log::info("[ASSIGNMENT_SERVICE] Starting assignment process for Exam '{$examen->nom_or_id}' (ID: {$examen->id})");
+        // Log::info("------------------------------------------------------------------");
+        // Log::info("[ASSIGNMENT_SERVICE] Starting assignment process for Exam '{$examen->nom_or_id}' (ID: {$examen->id})");
 
         $result = [
             'success' => true,
@@ -45,7 +40,7 @@ class ExamAssignmentService
         $existingAttributionsCount = $existingAttributions->count();
         $slotsToFill = $examen->required_professors - $existingAttributionsCount;
 
-        Log::info("[ASSIGNMENT_SERVICE] Exam '{$examen->nom_or_id}': Required={$examen->required_professors}, Existing={$existingAttributionsCount}, SlotsToFill={$slotsToFill}");
+        // Log::info("[ASSIGNMENT_SERVICE] Exam '{$examen->nom_or_id}': Required={$examen->required_professors}, Existing={$existingAttributionsCount}, SlotsToFill={$slotsToFill}");
 
         if ($slotsToFill <= 0) {
             $result['message'] = "Exam '{$examen->nom_or_id}' already has sufficient professors assigned.";
@@ -60,7 +55,7 @@ class ExamAssignmentService
             return $attribution->professeur && $attribution->professeur->modules->contains($examen->module_id);
         });
 
-        Log::info("[ASSIGNMENT_SERVICE] ResponsablesNeeded: {$responsablesNeeded}, IsModuleTeacherAlreadyPresent: " . ($isModuleTeacherAlreadyPresent ? 'Yes' : 'No'));
+        // Log::info("[ASSIGNMENT_SERVICE] ResponsablesNeeded: {$responsablesNeeded}, IsModuleTeacherAlreadyPresent: " . ($isModuleTeacherAlreadyPresent ? 'Yes' : 'No'));
 
         $allActiveProfesseurs = Professeur::where('statut', 'Active')
             ->where('is_chef_service', false)
@@ -70,21 +65,21 @@ class ExamAssignmentService
             ])
             ->get();
 
-        Log::info("[ASSIGNMENT_SERVICE] Fetched " . $allActiveProfesseurs->count() . " active, non-chef professors for consideration.");
+        // Log::info("[ASSIGNMENT_SERVICE] Fetched " . $allActiveProfesseurs->count() . " active, non-chef professors for consideration.");
 
         // Filter out professors already assigned to THIS exam for NEW slots
         $profIdsAlreadyAssignedToThisExam = $existingAttributions->pluck('professeur_id')->toArray();
         $candidatePoolForNewSlots = $allActiveProfesseurs->whereNotIn('id', $profIdsAlreadyAssignedToThisExam);
 
         $filteredCandidates = $this->filterCandidatesForExam($candidatePoolForNewSlots, $examen);
-        Log::info("[ASSIGNMENT_SERVICE] After initial filtering, " . $filteredCandidates->count() . " candidates remain.");
+        // Log::info("[ASSIGNMENT_SERVICE] After initial filtering, " . $filteredCandidates->count() . " candidates remain.");
 
 
         // --- Assign Responsable ---
         if ($responsablesNeeded > 0 && $slotsToFill > 0 && $filteredCandidates->isNotEmpty()) {
             $responsable = $this->selectResponsable($filteredCandidates, $examen);
             if ($responsable) {
-                Log::info("[ASSIGNMENT_SERVICE] Selected Responsable: Prof ID {$responsable->id} ({$responsable->prenom} {$responsable->nom})");
+                // Log::info("[ASSIGNMENT_SERVICE] Selected Responsable: Prof ID {$responsable->id} ({$responsable->prenom} {$responsable->nom})");
                 $this->createAttribution($examen, $responsable, true);
                 $result['attributions_made']++;
                 $slotsToFill--;
@@ -97,23 +92,23 @@ class ExamAssignmentService
             } else {
                 $warningMsg = "Could not assign a 'Responsable' for exam '{$examen->nom_or_id}'.";
                 $result['warnings'][] = $warningMsg;
-                Log::warning("[ASSIGNMENT_SERVICE] {$warningMsg}");
+                // Log::warning("[ASSIGNMENT_SERVICE] {$warningMsg}");
             }
         }
 
         // --- Assign Remaining Invigilators ---
         while ($slotsToFill > 0 && $filteredCandidates->isNotEmpty()) {
-            Log::info("[ASSIGNMENT_SERVICE] Attempting to fill {$slotsToFill} more slots. Candidates: {$filteredCandidates->count()}");
+            // Log::info("[ASSIGNMENT_SERVICE] Attempting to fill {$slotsToFill} more slots. Candidates: {$filteredCandidates->count()}");
             $poolToSelectFrom = $this->determineCandidatePool($filteredCandidates, $examen, $isModuleTeacherAlreadyPresent);
 
             if ($poolToSelectFrom->isEmpty()) {
-                Log::warning("[ASSIGNMENT_SERVICE] No candidates left in the determined pool.");
+                // Log::warning("[ASSIGNMENT_SERVICE] No candidates left in the determined pool.");
                 break;
             }
 
             $invigilator = $this->selectInvigilator($poolToSelectFrom, $examen);
             if ($invigilator) {
-                Log::info("[ASSIGNMENT_SERVICE] Selected Invigilator: Prof ID {$invigilator->id} ({$invigilator->prenom} {$invigilator->nom})");
+                // Log::info("[ASSIGNMENT_SERVICE] Selected Invigilator: Prof ID {$invigilator->id} ({$invigilator->prenom} {$invigilator->nom})");
                 $this->createAttribution($examen, $invigilator, false);
                 $result['attributions_made']++;
                 $slotsToFill--;
@@ -122,7 +117,7 @@ class ExamAssignmentService
                 }
                 $filteredCandidates = $filteredCandidates->except($invigilator->id);
             } else {
-                Log::warning("[ASSIGNMENT_SERVICE] No suitable invigilator found from the current pool.");
+                // Log::warning("[ASSIGNMENT_SERVICE] No suitable invigilator found from the current pool.");
                 break;
             }
         }
@@ -132,14 +127,14 @@ class ExamAssignmentService
             $errorMsg = "Could not fill all required slots for exam '{$examen->nom_or_id}'. {$slotsToFill} slots remain.";
             $result['errors'][] = $errorMsg;
             $result['success'] = false; // Mark as not fully successful if slots remain
-            Log::error("[ASSIGNMENT_SERVICE] {$errorMsg}");
+            // Log::error("[ASSIGNMENT_SERVICE] {$errorMsg}");
         }
         // Reload attributions to get the most current count for the module teacher check
         $finalAttributionsCount = $examen->fresh()->attributions()->count();
         if ($finalAttributionsCount > 0 && !$isModuleTeacherAlreadyPresent) {
             $warningMsg = "Warning: No module teacher assigned for exam '{$examen->nom_or_id}'.";
             $result['warnings'][] = $warningMsg;
-            Log::warning("[ASSIGNMENT_SERVICE] {$warningMsg}");
+            // Log::warning("[ASSIGNMENT_SERVICE] {$warningMsg}");
         }
 
         if (empty($result['errors']) && $result['attributions_made'] > 0) {
@@ -161,8 +156,8 @@ class ExamAssignmentService
         }
 
 
-        Log::info("[ASSIGNMENT_SERVICE] Finished assignment process for Exam ID: {$examen->id}. Result: ", $result);
-        Log::info("------------------------------------------------------------------");
+        // Log::info("[ASSIGNMENT_SERVICE] Finished assignment process for Exam ID: {$examen->id}. Result: ", $result);
+        // Log::info("------------------------------------------------------------------");
         return $result;
     }
 
@@ -174,7 +169,7 @@ class ExamAssignmentService
         $sessionForQuota = $examen->quadrimestre->seson; // Assumes quadrimestre.seson is loaded
 
         if (!$sessionForQuota) {
-            Log::error("[Filter] Exam ID {$examen->id} is missing session information for quota checks. Skipping quota filter.");
+            // Log::error("[Filter] Exam ID {$examen->id} is missing session information for quota checks. Skipping quota filter.");
             // Potentially return empty collection or throw exception if session is mandatory
         }
 
@@ -250,11 +245,11 @@ class ExamAssignmentService
                 return $prof->modules->contains($examen->module_id);
             });
             if ($moduleTeachers->isNotEmpty()) {
-                Log::debug("[ASSIGNMENT_SERVICE] Prioritizing Module Teacher pool ({$moduleTeachers->count()} candidates).");
+                // Log::debug("[ASSIGNMENT_SERVICE] Prioritizing Module Teacher pool ({$moduleTeachers->count()} candidates).");
                 return $moduleTeachers;
             }
         }
-        Log::debug("[ASSIGNMENT_SERVICE] Using General Candidate pool ({$availableCandidates->count()} candidates).");
+        // Log::debug("[ASSIGNMENT_SERVICE] Using General Candidate pool ({$availableCandidates->count()} candidates).");
         return $availableCandidates;
     }
 
@@ -285,7 +280,7 @@ class ExamAssignmentService
 
     private function createAttribution(Examen $examen, Professeur $professeur, bool $isResponsable): Attribution
     {
-        Log::info("[ASSIGNMENT_SERVICE] Creating attribution: Exam ID {$examen->id}, Prof ID {$professeur->id}, Responsable: " . ($isResponsable ? 'Yes' : 'No'));
+        // Log::info("[ASSIGNMENT_SERVICE] Creating attribution: Exam ID {$examen->id}, Prof ID {$professeur->id}, Responsable: " . ($isResponsable ? 'Yes' : 'No'));
         return Attribution::create([
             'examen_id' => $examen->id,
             'professeur_id' => $professeur->id,
