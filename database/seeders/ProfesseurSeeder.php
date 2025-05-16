@@ -14,12 +14,11 @@ class ProfesseurSeeder extends Seeder
 {
     public function run()
     {
-        $rangs = ['PA', 'PAG', 'PES'];
-        $statuts = ['Active', 'On_Leave', 'Sick_Leave', 'Vacation', 'Inactive'];
+        $rangs = Professeur::getRangs(true);
+        $statuts = Professeur::getStatuts(true); 
         $specialites = [
-            'Cardiologie', 'Neurologie', 'Pédiatrie', 'Chirurgie', 'Dermatologie',
-            'Radiologie', 'Anesthésiologie', 'Gynécologie', 'Ophtalmologie', 'ORL',
-            'Psychiatrie', 'Médecine Interne', 'Endocrinologie', 'Néphrologie', 'Pneumologie'
+            Professeur::SPECIALITE_MEDICAL,
+            Professeur::SPECIALITE_SURGICAL,
         ];
         
         $noms = [
@@ -68,12 +67,12 @@ class ProfesseurSeeder extends Seeder
                 'statut' => $statuts[array_rand($statuts)],
                 'is_chef_service' => false, // We'll handle chef assignment in a second pass
                 'date_recrutement' => Carbon::now()->subYears(rand(1, 20)),
-                'specialite' => $specialites[array_rand($specialites)],
+                'specialite' => $specialites[array_rand($specialites)], 
                 'service_id' => $selectedServiceId,
             ]);
         }
         
-        // Step 3: Ensure each service has one Chef de Service
+        // Ensure each service has one Chef de Service
         foreach (Service::all() as $service) {
             // Check if a chef is already assigned (less likely now, but good practice)
             $hasChef = Professeur::where('service_id', $service->id)

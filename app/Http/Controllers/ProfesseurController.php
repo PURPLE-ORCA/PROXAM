@@ -55,12 +55,14 @@ class ProfesseurController extends Controller
         // Assuming enums are defined in the Professeur model or a config
         $rangs = Professeur::getRangs();
         $statuts = Professeur::getStatuts();
+        $specialties = Professeur::getSpecialties(); // This will return {'medical' => 'Medical', 'surgical' => 'Surgical'}
 
         return Inertia::render($this->baseInertiaPath() . 'Create', [
             'services' => $services,
             'modules' => $modules,
             'rangs' => $rangs,
             'statuts' => $statuts,
+            'specialties' => $specialties, 
         ]);
     }
 
@@ -73,15 +75,13 @@ class ProfesseurController extends Controller
             'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
             // No password here, will be set via activation link
         ]);
-        $allowedSpecialties = ['chirurgical', 'medical'];
-
 
         $validatedProfesseurData = $request->validate([
             'rang' => ['required', Rule::in(Professeur::getRangs(true))], // Pass true to get raw keys
             'statut' => ['required', Rule::in(Professeur::getStatuts(true))],
             'is_chef_service' => 'required|boolean',
             'date_recrutement' => 'required|date',
-            'specialite' => ['required', 'string', Rule::in($allowedSpecialties)], 
+            'specialite' => ['required', Rule::in([Professeur::SPECIALITE_MEDICAL, Professeur::SPECIALITE_SURGICAL])],
             'service_id' => 'required|exists:services,id',
             'module_ids' => 'nullable|array',
             'module_ids.*' => 'exists:modules,id',
@@ -134,6 +134,7 @@ class ProfesseurController extends Controller
         $modules = Module::orderBy('nom')->get(['id', 'nom']);
         $rangs = Professeur::getRangs();
         $statuts = Professeur::getStatuts();
+        $specialties = Professeur::getSpecialties(); 
 
         return Inertia::render($this->baseInertiaPath() . 'Edit', [
             'professeurToEdit' => $professeur, // Use different prop name
@@ -141,6 +142,7 @@ class ProfesseurController extends Controller
             'modules' => $modules,
             'rangs' => $rangs,
             'statuts' => $statuts,
+            'specialties' => $specialties, 
         ]);
     }
 
@@ -149,7 +151,6 @@ class ProfesseurController extends Controller
          $validatedUserData = $request->validate([
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique(User::class)->ignore($professeur->user_id)],
         ]);
-        $allowedSpecialties = ['chirurgical', 'medical'];
 
         $validatedProfesseurData = $request->validate([
             'professeur_nom' => 'required|string|max:255',
@@ -158,7 +159,7 @@ class ProfesseurController extends Controller
             'statut' => ['required', Rule::in(Professeur::getStatuts(true))],
             'is_chef_service' => 'required|boolean',
             'date_recrutement' => 'required|date',
-            'specialite' => ['required', 'string', Rule::in($allowedSpecialties)], 
+            'specialite' => ['required', Rule::in([Professeur::SPECIALITE_MEDICAL, Professeur::SPECIALITE_SURGICAL])],
             'service_id' => 'required|exists:services,id',
             'module_ids' => 'nullable|array',
             'module_ids.*' => 'exists:modules,id',
