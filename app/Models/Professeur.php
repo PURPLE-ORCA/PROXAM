@@ -65,7 +65,7 @@ class Professeur extends Model
     public const RANG_PES = 'PES';
 
     public const SPECIALITE_MEDICAL = 'medical';
-    public const SPECIALITE_SURGICAL = 'surgical'; // Using English keys for DB/code
+    public const SPECIALITE_SURGICAL = 'surgical'; 
 
     public static function getSpecialties($displayTranslations = false, $translations = null) {
         $specialties = [
