@@ -50,8 +50,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::resource('users', UserController::class)->parameters(['users' => 'user'])->except(['show']);
         Route::resource('professeurs', ProfesseurController::class)->parameters(['professeurs' => 'professeur'])->except(['show']);
         Route::resource('examens', ExamenController::class)->parameters(['examens' => 'examen'])->except(['show']);
-        Route::resource('unavailabilities', UnavailabilityController::class)->parameters(['unavailabilities' => 'unavailability'])->except(['show']);
-    });
+        Route::resource('unavailabilities', UnavailabilityController::class)->parameters(['unavailabilities' => 'unavailability'])->except(['show']);    });
     
 }); 
 
