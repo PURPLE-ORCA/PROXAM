@@ -4,27 +4,24 @@ import { TranslationContext } from '@/context/TranslationProvider';
 import AppLayout from '@/layouts/app-layout';
 import { Icon } from '@iconify/react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { MaterialReactTable, useMaterialReactTable } from 'material-react-table'; // Removed type MRT_ColumnDef for JSX
+import { MaterialReactTable, useMaterialReactTable } from 'material-react-table';
 import { useContext, useEffect, useMemo, useState } from 'react';
-// Removed PageProps and other type imports for JSX
-// import { type PageProps } from '@/types';
 
 const defaultPageSize = 15;
 const defaultPageIndex = 0;
 
 export default function Index({ examens: examensPagination, filters }) {
     const { translations, language } = useContext(TranslationContext);
-    const { auth } = usePage().props; // Removed PageProps type for JSX
+    const { auth } = usePage().props;
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [itemToDelete, setItemToDelete] = useState(null);
-    const [processingAssignment, setProcessingAssignment] = useState(null); // Track which exam assignment is processing
+    const [processingAssignment, setProcessingAssignment] = useState(null);
 
     const formatDate = (datetimeString) => {
         if (!datetimeString) return 'N/A';
         try {
             return new Date(datetimeString).toLocaleString(language, {
-                // Use current language for formatting
                 year: 'numeric',
                 month: 'short',
                 day: 'numeric',
@@ -32,7 +29,7 @@ export default function Index({ examens: examensPagination, filters }) {
                 minute: '2-digit',
             });
         } catch (e) {
-            return datetimeString; // Fallback
+            return datetimeString;
         }
     };
 
@@ -77,7 +74,7 @@ export default function Index({ examens: examensPagination, filters }) {
             { accessorKey: 'nom', header: translations?.examen_name_column_header || 'Exam Name', size: 200 },
             { accessorKey: 'module.nom', header: translations?.module_name_column_header || 'Module', size: 150 },
             {
-                accessorKey: 'quadrimestre.code', // Display Quadrimestre code
+                accessorKey: 'quadrimestre.code',
                 header: translations?.quadrimestre_code_column_header || 'Semester',
                 Cell: ({ row }) =>
                     `${row.original.quadrimestre?.seson?.annee_uni?.annee || ''} - ${row.original.quadrimestre?.seson?.code || ''} - ${row.original.quadrimestre?.code || ''}`,
@@ -115,7 +112,6 @@ export default function Index({ examens: examensPagination, filters }) {
                 muiTableHeadCellProps: { align: 'center' },
             },
             {
-                // New column to show how many are assigned
                 accessorKey: 'attributions_count',
                 header: translations?.examen_assigned_profs_column_header || 'Assigned',
                 size: 80,
@@ -130,12 +126,10 @@ export default function Index({ examens: examensPagination, filters }) {
         setItemToDelete(examenItem);
         setIsModalOpen(true);
     };
-
     const closeDeleteModal = () => {
         setIsModalOpen(false);
         setItemToDelete(null);
     };
-
     const confirmDelete = () => {
         if (itemToDelete) {
             router.delete(route('admin.examens.destroy', { examen: itemToDelete.id }), {
@@ -147,7 +141,7 @@ export default function Index({ examens: examensPagination, filters }) {
     };
 
     const handleTriggerAssignment = (examenId) => {
-        setProcessingAssignment(examenId); // Set processing state for this specific exam
+        setProcessingAssignment(examenId);
         router.post(
             route('admin.examens.trigger-assignment', { examen: examenId }),
             {},
@@ -155,17 +149,14 @@ export default function Index({ examens: examensPagination, filters }) {
                 preserveScroll: true,
                 onSuccess: (page) => {
                     console.log('Assignment triggered successfully:', page.props.flash);
-                    // Toast is handled by flash message from backend
                     setProcessingAssignment(null);
                 },
                 onError: (errors) => {
-                    // Toast for error is handled by flash message
                     console.error('Error triggering assignment:', errors);
                     setProcessingAssignment(null);
                 },
                 onFinish: () => {
                     console.log('Assignment request finished (onFinish)');
-                    // Ensure processing state is cleared even if not success/error
                     setProcessingAssignment(null);
                 },
             },
@@ -179,8 +170,8 @@ export default function Index({ examens: examensPagination, filters }) {
         state: { pagination },
         rowCount: examensPagination.total,
         onPaginationChange: setPagination,
-        enableEditing: auth.abilities?.is_admin,
-        enableRowActions: auth.abilities?.is_admin,
+        enableEditing: auth.abilities?.is_admin_or_rh, // Admin or RH can edit exam details
+        enableRowActions: true, // Always enable row actions container
 
         muiTablePaperProps: {
             elevation: 0,
@@ -246,25 +237,43 @@ export default function Index({ examens: examensPagination, filters }) {
 
         renderRowActions: ({ row }) => {
             const examen = row.original;
-            const canAssign = examen.attributions_count < examen.required_professors;
+            const canRunEngineAssign = examen.attributions_count < examen.required_professors;
 
             return (
                 <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="icon" asChild className="text-[var(--foreground)] hover:bg-[var(--accent)]">
-                        <Link href={route('admin.examens.edit', { examen: examen.id })} title={translations?.edit_button_title || 'Modifier'}>
-                            <Icon icon="mdi:pencil" className="h-5 w-5" />
-                        </Link>
-                    </Button>
+                    {/* Edit Exam Button (Admin or RH) */}
+                    {(auth.abilities?.is_admin) && (
+                        <Button variant="ghost" size="icon" asChild className="text-[var(--foreground)] hover:bg-[var(--accent)]">
+                            <Link
+                                href={route('admin.examens.edit', { examen: examen.id })}
+                                title={translations?.edit_button_title || 'Modifier Examen'}
+                            >
+                                <Icon icon="mdi:pencil" className="h-5 w-5" />
+                            </Link>
+                        </Button>
+                    )}
 
-                    {/* Assign Professors Button */}
-                    {canAssign && (
+                    {/* Manage Assignments Button (Admin or RH) */}
+                    {(auth.abilities?.is_admin) && (
+                        <Button variant="ghost" size="icon" asChild className="text-purple-500 hover:bg-[var(--accent)]">
+                            <Link
+                                href={route('admin.examens.assignments.index', { examen: examen.id })}
+                                title={translations?.manage_assignments_button_title || 'Manage Assignments'}
+                            >
+                                <Icon icon="mdi:eye" className="h-5 w-5" />
+                            </Link>
+                        </Button>
+                    )}
+
+                    {/* Trigger Assignment Engine Button (Admin or RH, if slots available) */}
+                    {canRunEngineAssign && (auth.abilities?.is_admin) && (
                         <Button
                             variant="ghost"
                             size="icon"
                             onClick={() => handleTriggerAssignment(examen.id)}
-                            disabled={processingAssignment === examen.id} // Disable button while processing this specific exam
-                            className="text-blue-500 hover:bg-[var(--accent)]" // Example color
-                            title={translations?.trigger_assignment_button_title || 'Assign Professors'}
+                            disabled={processingAssignment === examen.id}
+                            className="text-blue-500 hover:bg-[var(--accent)]"
+                            title={translations?.trigger_assignment_button_title || 'Auto-Assign Professors'}
                         >
                             {processingAssignment === examen.id ? (
                                 <Icon icon="mdi:loading" className="h-5 w-5 animate-spin" />
@@ -274,23 +283,27 @@ export default function Index({ examens: examensPagination, filters }) {
                         </Button>
                     )}
 
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => openDeleteModal(examen)}
-                        className="text-[var(--foreground)] hover:bg-[var(--accent)] hover:text-[var(--destructive)]"
-                        title={translations?.delete_button_title || 'Supprimer'}
-                    >
-                        <Icon icon="mdi:delete" className="h-5 w-5" />
-                    </Button>
+                    {/* Delete Exam Button (Admin only) */}
+                    {auth.abilities?.is_admin && (
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => openDeleteModal(examen)}
+                            className="text-[var(--foreground)] hover:bg-[var(--accent)] hover:text-[var(--destructive)]"
+                            title={translations?.delete_button_title || 'Supprimer Examen'}
+                        >
+                            <Icon icon="mdi:delete" className="h-5 w-5" />
+                        </Button>
+                    )}
                 </div>
             );
         },
-        renderTopToolbarCustomActions: () => (
-            <Button asChild variant="default" className="bg-[var(--primary)] text-[var(--primary-foreground)] hover:bg-[var(--primary)]/90">
-                <Link href={route('admin.examens.create')}>{translations?.add_examen_button || 'Add Examination'}</Link>
-            </Button>
-        ),
+        renderTopToolbarCustomActions: () =>
+            (auth.abilities?.is_admin) && ( // Only Admin or RH can add exams
+                <Button asChild variant="default" className="bg-[var(--primary)] text-[var(--primary-foreground)] hover:bg-[var(--primary)]/90">
+                    <Link href={route('admin.examens.create')}>{translations?.add_examen_button || 'Add Examination'}</Link>
+                </Button>
+            ),
     });
 
     return (
@@ -308,7 +321,7 @@ export default function Index({ examens: examensPagination, filters }) {
                     itemToDelete
                         ? (translations?.examen_delete_confirmation || 'Are you sure you want to delete the examination "{name}"?').replace(
                               '{name}',
-                              itemToDelete.nom || 'Unnamed Exam',
+                              itemToDelete.nom || `ID ${itemToDelete.id}`,
                           )
                         : translations?.generic_delete_confirmation || 'Are you sure you want to delete this item?'
                 }
