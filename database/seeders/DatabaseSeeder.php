@@ -20,8 +20,8 @@ class DatabaseSeeder extends Seeder
             QuadrimestreSeeder::class,
             ExamenSeeder::class,
             ExamensSallesSeeder::class,
-            AttributionSeeder::class,
-            EchangeSeeder::class,
+            // AttributionSeeder::class,
+            // EchangeSeeder::class,
             UnavailabilitySeeder::class,
         ]);
     }

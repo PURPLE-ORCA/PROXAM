@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Controllers\Admin\ExamAssignmentManagementController;
 use App\Http\Controllers\AnneeUniController;
+use App\Http\Controllers\AttributionController;
 use App\Http\Controllers\ExamenController;
 use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\ProfesseurController;
@@ -50,8 +52,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::resource('users', UserController::class)->parameters(['users' => 'user'])->except(['show']);
         Route::resource('professeurs', ProfesseurController::class)->parameters(['professeurs' => 'professeur'])->except(['show']);
         Route::resource('examens', ExamenController::class)->parameters(['examens' => 'examen'])->except(['show']);
-        Route::resource('unavailabilities', UnavailabilityController::class)->parameters(['unavailabilities' => 'unavailability'])->except(['show']);    });
-    
+        Route::resource('unavailabilities', UnavailabilityController::class)->parameters(['unavailabilities' => 'unavailability'])->except(['show']);   
+        Route::post('/examens/{examen}/assign-professors', [ExamenController::class, 'triggerAssignment'])->name('examens.trigger-assignment');
+        Route::get('attributions', [AttributionController::class, 'index'])->name('attributions.index');   
+        Route::get('/examens/{examen}/manage-assignments', [ExamAssignmentManagementController::class, 'index'])->name('examens.assignments.index');
+        Route::post('/examens/{examen}/manage-assignments', [ExamAssignmentManagementController::class, 'storeAttribution'])->name('examens.assignments.store');
+        Route::put('/manage-assignments/{attribution}/toggle-responsable', [ExamAssignmentManagementController::class, 'toggleResponsable'])->name('attributions.toggle-responsable');
+        Route::delete('/manage-assignments/{attribution}', [ExamAssignmentManagementController::class, 'destroyAttribution'])->name('attributions.destroy_manual');
+    });
 }); 
 
 require __DIR__.'/settings.php';

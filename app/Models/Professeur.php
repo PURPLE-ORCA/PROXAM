@@ -59,4 +59,19 @@ class Professeur extends Model
         $statuts = ['Active' => 'Active', 'On_Leave' => 'On Leave', 'Sick_Leave' => 'Sick Leave', 'Vacation' => 'Vacation', 'Inactive' => 'Inactive'];
         return $rawKeys ? array_keys($statuts) : $statuts;
     }
+
+    public const RANG_PA  = 'PA';
+    public const RANG_PAG = 'PAG';
+    public const RANG_PES = 'PES';
+
+    public const SPECIALITE_MEDICAL = 'medical';
+    public const SPECIALITE_SURGICAL = 'surgical'; 
+
+    public static function getSpecialties($displayTranslations = false, $translations = null) {
+        $specialties = [
+            self::SPECIALITE_MEDICAL => $displayTranslations && $translations ? ($translations['professeur_specialty_medical'] ?? 'Medical') : 'Medical',
+            self::SPECIALITE_SURGICAL => $displayTranslations && $translations ? ($translations['professeur_specialty_surgical'] ?? 'Surgical') : 'Surgical',
+        ];
+        return $specialties;
+    }
 }

@@ -48,4 +48,8 @@ class Examen extends Model
     public static function getFilieres() {
         return ['Medicale' => 'Médicale', 'Pharmacie' => 'Pharmacie'];
     }
+    public function getNomOrIdAttribute(): string
+    {
+        return $this->nom ?? "Exam ID {$this->id}";
+    }
 }

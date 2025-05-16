@@ -10,6 +10,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
+use App\Services\ExamAssignmentService;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Log;
 
 class ExamenController extends Controller
 {
@@ -46,6 +49,7 @@ class ExamenController extends Controller
     public function index(Request $request)
     {
         $examens = Examen::with(['quadrimestre.seson.anneeUni', 'module'])
+            ->withCount('attributions')
             ->when($request->input('search'), function ($query, $search) {
                 $query->where('nom', 'like', "%{$search}%")
                       ->orWhereHas('module', fn($q) => $q->where('nom', 'like', "%{$search}%"))
@@ -174,5 +178,36 @@ class ExamenController extends Controller
 
         return redirect()->route('admin.examens.index')
             ->with('success', 'toasts.examen_deleted_successfully');
+    }
+
+    /**
+     * Trigger the assignment process for a specific exam.
+     */
+    public function triggerAssignment(Examen $examen, ExamAssignmentService $assignmentService): RedirectResponse
+    {
+        // Gate::authorize('assign-professors', $examen); // Optional: more granular policy if needed
+
+        Log::info("Controller: Triggering assignment for Exam ID: {$examen->id}");
+
+        $result = $assignmentService->assignProfessorsToExam($examen);
+
+        Log::info("Controller: Assignment service result for Exam ID {$examen->id}: ", $result);
+
+        // Prepare flash message based on the service result
+        if ($result['success'] && empty($result['errors']) && empty($result['warnings'])) {
+            $flash = ['success' => $result['message'] ?? 'toasts.examen_assignment_triggered_successfully'];
+        } elseif ($result['success'] && (!empty($result['errors']) || !empty($result['warnings']))) {
+            $warningMessage = $result['message'] ?? 'Assignment completed with issues.';
+            if (!empty($result['errors'])) $warningMessage .= " Errors: " . implode('; ', $result['errors']);
+            if (!empty($result['warnings'])) $warningMessage .= " Warnings: " . implode('; ', $result['warnings']);
+            // For now, use 'success' toast type for warnings until SonnerToastProvider is enhanced
+            $flash = ['success' => "Notice: " . $warningMessage]; // Or use a 'warning' key if Sonner supports it
+        } else { // Not successful or major errors
+            $errorMessage = $result['message'] ?? 'Assignment process failed.';
+            if(!empty($result['errors'])) $errorMessage .= " Details: " . implode('; ', $result['errors']);
+            $flash = ['error' => $errorMessage];
+        }
+
+        return redirect()->route('admin.examens.index')->with($flash);
     }
 }

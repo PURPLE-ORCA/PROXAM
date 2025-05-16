@@ -13,12 +13,13 @@ export default function ProfesseurForm({
     errors,
     processing,
     onSubmit,
-    services, // Array of { id, nom }
-    modules, // Array of { id, nom }
-    rangs, // Object like { 'PA': 'Professeur Assistant (PA)', ... }
-    statuts, // Object like { 'Active': 'Active', ... }
+    services,
+    modules,
+    rangs, 
+    statuts,
+    specialties,
     isEdit = false,
-    professeurToEdit, // Pass the full professor object for edit mode to pre-select modules
+    professeurToEdit, 
 }) {
     const { translations } = useContext(TranslationContext);
     const specialiteOptions = {
@@ -130,13 +131,13 @@ export default function ProfesseurForm({
                 <div className="sm:col-span-3">
                     <Label htmlFor="specialite">{translations?.professeur_form_specialty_label || 'Specialty'} *</Label>
                     <Select value={data.specialite || ''} onValueChange={(value) => setData('specialite', value)} required>
-                        <SelectTrigger className="mt-1 w-full border-[var(--border)] bg-[var(--background)] text-[var(--foreground)] focus:ring-[var(--ring)]">
+                        <SelectTrigger className="mt-1 w-full">
                             <SelectValue placeholder={translations?.professeur_form_select_specialty_placeholder || 'Select Specialty'} />
                         </SelectTrigger>
-                        <SelectContent className="border-[var(--border)] bg-[var(--popover)] text-[var(--popover-foreground)]">
-                            {Object.entries(specialiteOptions).map(([key, value]) => (
+                        <SelectContent>
+                            {Object.entries(specialties || {}).map(([key, displayText]) => (
                                 <SelectItem key={key} value={key}>
-                                    {value}
+                                    {displayText}
                                 </SelectItem>
                             ))}
                         </SelectContent>

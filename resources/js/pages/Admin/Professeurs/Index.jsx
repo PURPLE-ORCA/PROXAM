@@ -60,6 +60,7 @@ export default function Index({ professeurs: professeursPagination, filters, ser
                     service_id: filters?.service_id || undefined,
                     rang: filters?.rang || undefined,
                     statut: filters?.statut || undefined,
+                    statut: filters?.date_recrutement || undefined,
                 },
                 { preserveState: true, replace: true, preserveScroll: true },
             );
@@ -93,6 +94,7 @@ export default function Index({ professeurs: professeursPagination, filters, ser
                 size: 120,
             },
             { accessorKey: 'specialite', header: translations?.professeur_specialty_column_header || 'Specialty', size: 150 },
+            { accessorKey: 'date_recrutement', header:'recutment', size: 150 },
             {
                 accessorKey: 'is_chef_service',
                 header: translations?.professeur_is_head_column_header || 'Head',

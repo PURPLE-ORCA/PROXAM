@@ -16,7 +16,8 @@ import {
     UsersIcon,
     UserSquare,
     FileText,
-    UserMinus
+    UserMinus,
+    ListChecks,
 } from 'lucide-react';
 import AppLogo from './app-logo';
 import React, { useContext } from 'react'; // Added useContext
@@ -98,13 +99,19 @@ export function AppSidebar() {
             icon: FileText,
             active: route().current('admin.examens.*'),
         });
+        mainNavItems.push({
+            title: translations?.attributions_nav_item || 'Assignments',
+            href: route('admin.attributions.index'), 
+            icon: ListChecks, 
+            active: route().current('admin.attributions.index'), // Only one route for now
+        });
 
     }
     if (auth.user && auth.abilities?.is_admin_or_rh) {
         mainNavItems.push({
             title: translations?.unavailabilities_nav_item || 'Prof. Unavailabilities',
-            href: route('admin.unavailabilities.index'), // Matches route name
-            icon: UserMinus, // Example icon
+            href: route('admin.unavailabilities.index'), 
+            icon: UserMinus, 
             active: route().current('admin.unavailabilities.*'),
         });
     }
