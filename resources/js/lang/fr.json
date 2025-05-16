@@ -277,5 +277,13 @@
     "toasts.examen_assignment_partial_success": "Processus d'affectation d'examen terminé avec des problèmes ou avertissements.",
     "toasts.examen_assignment_failed": "Échec du processus d'affectation d'examen.",
     "examen_assigned_profs_column_header": "Assignés",
-    "trigger_assignment_button_title": "Assigner Professeurs"
+    "trigger_assignment_button_title": "Assigner Professeurs",
+    "attributions_nav_item": "Affectations",
+    "attributions_breadcrumb": "Affectations aux Examens",
+    "attributions_page_title": "Liste des Affectations",
+    "attribution_examen_name_column_header": "Examen",
+    "attribution_professeur_column_header": "Professeur",
+    "attribution_role_column_header": "Rôle",
+    "attribution_role_responsable": "Responsable",
+    "attribution_role_invigilator": "Surveillant"
 }

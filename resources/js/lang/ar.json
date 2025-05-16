@@ -277,5 +277,13 @@
     "toasts.examen_assignment_partial_success": "تمت عملية تعيين الامتحان مع بعض المشاكل أو التحذيرات.",
     "toasts.examen_assignment_failed": "فشلت عملية تعيين الامتحان.",
     "examen_assigned_profs_column_header": "المعينون",
-    "trigger_assignment_button_title": "تعيين أساتذة"
+    "trigger_assignment_button_title": "تعيين أساتذة",
+    "attributions_nav_item": "التكليفات",
+    "attributions_breadcrumb": "تكليفات الامتحانات",
+    "attributions_page_title": "قائمة التكليفات",
+    "attribution_examen_name_column_header": "الامتحان",
+    "attribution_professeur_column_header": "الأستاذ",
+    "attribution_role_column_header": "الدور",
+    "attribution_role_responsable": "مسؤول",
+    "attribution_role_invigilator": "مراقب"
 }

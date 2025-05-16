@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AnneeUniController;
+use App\Http\Controllers\AttributionController;
 use App\Http\Controllers\ExamenController;
 use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\ProfesseurController;
@@ -52,6 +53,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::resource('examens', ExamenController::class)->parameters(['examens' => 'examen'])->except(['show']);
         Route::resource('unavailabilities', UnavailabilityController::class)->parameters(['unavailabilities' => 'unavailability'])->except(['show']);   
         Route::post('/examens/{examen}/assign-professors', [ExamenController::class, 'triggerAssignment'])->name('examens.trigger-assignment');
+        Route::get('attributions', [AttributionController::class, 'index'])->name('attributions.index');   
     });
 }); 
 

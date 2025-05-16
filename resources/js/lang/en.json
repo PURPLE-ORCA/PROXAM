@@ -277,5 +277,13 @@
     "toasts.examen_assignment_partial_success": "Exam assignment process completed with some issues or warnings.",
     "toasts.examen_assignment_failed": "Exam assignment process failed.",
     "examen_assigned_profs_column_header": "Assigned",
-    "trigger_assignment_button_title": "Assign Professors"
+    "trigger_assignment_button_title": "Assign Professors",
+    "attributions_nav_item": "Assignments",
+    "attributions_breadcrumb": "Exam Assignments",
+    "attributions_page_title": "Exam Assignments List",
+    "attribution_examen_name_column_header": "Exam",
+    "attribution_professeur_column_header": "Professor",
+    "attribution_role_column_header": "Role",
+    "attribution_role_responsable": "Responsable",
+    "attribution_role_invigilator": "Invigilator"
 }
