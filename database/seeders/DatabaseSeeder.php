@@ -22,7 +22,7 @@ class DatabaseSeeder extends Seeder
             ExamensSallesSeeder::class,
             AttributionSeeder::class,
             EchangeSeeder::class,
-            ProfessorUnivabilitiesSeeder::class,
+            UnavailabilitySeeder::class,
         ]);
     }
 }

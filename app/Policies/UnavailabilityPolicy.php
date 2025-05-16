@@ -3,10 +3,10 @@
 namespace App\Policies;
 
 use App\Models\User;
-use App\Models\professor_univabilities;
+use App\Models\unavailability;
 use Illuminate\Auth\Access\Response;
 
-class ProfessorUnivabilitiesPolicy
+class UnavailabilityPolicy
 {
     /**
      * Determine whether the user can view any models.
@@ -19,7 +19,7 @@ class ProfessorUnivabilitiesPolicy
     /**
      * Determine whether the user can view the model.
      */
-    public function view(User $user, professor_univabilities $professorUnivabilities): bool
+    public function view(User $user, unavailability $unavailability): bool
     {
         return false;
     }
@@ -35,7 +35,7 @@ class ProfessorUnivabilitiesPolicy
     /**
      * Determine whether the user can update the model.
      */
-    public function update(User $user, professor_univabilities $professorUnivabilities): bool
+    public function update(User $user, unavailability $unavailability): bool
     {
         return false;
     }
@@ -43,7 +43,7 @@ class ProfessorUnivabilitiesPolicy
     /**
      * Determine whether the user can delete the model.
      */
-    public function delete(User $user, professor_univabilities $professorUnivabilities): bool
+    public function delete(User $user, unavailability $unavailability): bool
     {
         return false;
     }
@@ -51,7 +51,7 @@ class ProfessorUnivabilitiesPolicy
     /**
      * Determine whether the user can restore the model.
      */
-    public function restore(User $user, professor_univabilities $professorUnivabilities): bool
+    public function restore(User $user, unavailability $unavailability): bool
     {
         return false;
     }
@@ -59,7 +59,7 @@ class ProfessorUnivabilitiesPolicy
     /**
      * Determine whether the user can permanently delete the model.
      */
-    public function forceDelete(User $user, professor_univabilities $professorUnivabilities): bool
+    public function forceDelete(User $user, unavailability $unavailability): bool
     {
         return false;
     }

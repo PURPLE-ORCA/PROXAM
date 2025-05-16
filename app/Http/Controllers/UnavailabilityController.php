@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\professor_univabilities;
-use App\Http\Requests\Storeprofessor_univabilitiesRequest;
-use App\Http\Requests\Updateprofessor_univabilitiesRequest;
+use App\Models\unavailability;
+use App\Http\Requests\StoreunavailabilityRequest;
+use App\Http\Requests\UpdateunavailabilityRequest;
 
-class ProfessorUnivabilitiesController extends Controller
+class UnavailabilityController extends Controller
 {
     /**
      * Display a listing of the resource.
@@ -27,7 +27,7 @@ class ProfessorUnivabilitiesController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Storeprofessor_univabilitiesRequest $request)
+    public function store(StoreunavailabilityRequest $request)
     {
         //
     }
@@ -35,7 +35,7 @@ class ProfessorUnivabilitiesController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(professor_univabilities $professor_univabilities)
+    public function show(unavailability $unavailability)
     {
         //
     }
@@ -43,7 +43,7 @@ class ProfessorUnivabilitiesController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(professor_univabilities $professor_univabilities)
+    public function edit(unavailability $unavailability)
     {
         //
     }
@@ -51,7 +51,7 @@ class ProfessorUnivabilitiesController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Updateprofessor_univabilitiesRequest $request, professor_univabilities $professor_univabilities)
+    public function update(UpdateunavailabilityRequest $request, unavailability $unavailability)
     {
         //
     }
@@ -59,7 +59,7 @@ class ProfessorUnivabilitiesController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(professor_univabilities $professor_univabilities)
+    public function destroy(unavailability $unavailability)
     {
         //
     }

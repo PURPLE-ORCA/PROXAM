@@ -2,13 +2,16 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
-use App\Models\ProfessorUnivability;
 use App\Models\Professeur;
+use App\Models\Unavailability;
 use Carbon\Carbon;
+use Illuminate\Database\Seeder;
 
-class ProfessorUnivabilitiesSeeder extends Seeder
+class UnavailabilitySeeder extends Seeder
 {
+    /**
+     * Run the database seeds.
+     */
     public function run()
     {
         $professeurs = Professeur::pluck('id')->toArray();
@@ -21,7 +24,7 @@ class ProfessorUnivabilitiesSeeder extends Seeder
             $start = Carbon::now()->addDays(rand(1, 30))->addHours(rand(9, 15));
             $end = $start->copy()->addHours(rand(1, 8));
             
-            ProfessorUnivability::create([
+            Unavailability::create([
                 'professeur_id' => $professeurs[array_rand($professeurs)],
                 'start_datetime' => $start,
                 'end_datetime' => $end,
