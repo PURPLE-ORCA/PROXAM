@@ -164,7 +164,7 @@ class ExamAssignmentService
     private function filterCandidatesForExam(EloquentCollection $professeurs, Examen $examen): EloquentCollection
     {
         $examStart = Carbon::parse($examen->debut);
-        $examEnd = Carbon::parse($examen->fin);
+        $examEnd = $examen->end_datetime;
         $examDateStr = $examStart->toDateString();
         $sessionForQuota = $examen->quadrimestre->seson; // Assumes quadrimestre.seson is loaded
 

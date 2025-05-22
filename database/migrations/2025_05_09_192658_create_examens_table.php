@@ -15,9 +15,8 @@ return new class extends Migration
             $table->id();
             $table->string('nom')->nullable();
             $table->foreignId('quadrimestre_id')->constrained('quadrimestres')->cascadeOnDelete();
-            $table->enum('type', ['QCM', 'theoreique']);
+            $table->enum('type', ['QCM', 'theoreique','MIXED']);
             $table->dateTime('debut');
-            $table->dateTime('fin');
             $table->foreignId('module_id')->constrained('modules')->cascadeOnDelete();
             $table->enum('filiere', ['Medicale', 'Pharmacie']);
             $table->unsignedInteger('required_professors');

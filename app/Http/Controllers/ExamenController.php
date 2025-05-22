@@ -83,8 +83,7 @@ class ExamenController extends Controller
             'module_id' => 'required|exists:modules,id',
             'type' => ['required', Rule::in($allowedTypes)],
             'filiere' => ['required', Rule::in($allowedFilieres)],
-            'debut' => 'required|date|after_or_equal:today', // Or appropriate date logic
-            'fin' => 'required|date|after:debut',
+            'debut' => 'required|date|after_or_equal:today',
             'required_professors' => 'required|integer|min:1',
             'salles_pivot' => 'required|array|min:1', // Array of {salle_id, capacite}
             'salles_pivot.*.salle_id' => 'required|exists:salles,id',
@@ -99,7 +98,6 @@ class ExamenController extends Controller
                 'type' => $validated['type'],
                 'filiere' => $validated['filiere'],
                 'debut' => $validated['debut'],
-                'fin' => $validated['fin'],
                 'required_professors' => $validated['required_professors'],
             ]);
 
@@ -134,7 +132,6 @@ class ExamenController extends Controller
             'type' => ['required', Rule::in($allowedTypes)],
             'filiere' => ['required', Rule::in($allowedFilieres)],
             'debut' => 'required|date',
-            'fin' => 'required|date|after:debut',
             'required_professors' => 'required|integer|min:1',
             'salles_pivot' => 'required|array|min:1',
             'salles_pivot.*.salle_id' => 'required|exists:salles,id',
@@ -149,7 +146,6 @@ class ExamenController extends Controller
                 'type' => $validated['type'],
                 'filiere' => $validated['filiere'],
                 'debut' => $validated['debut'],
-                'fin' => $validated['fin'],
                 'required_professors' => $validated['required_professors'],
             ]);
 

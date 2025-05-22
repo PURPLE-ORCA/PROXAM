@@ -166,19 +166,7 @@ export default function ExamenForm({
                     {errors.debut && <p className="mt-1 text-sm text-[var(--destructive)]">{errors.debut}</p>}
                 </div>
 
-                <div className="sm:col-span-3">
-                    <Label htmlFor="fin">{translations?.examen_form_end_datetime_label || 'End Date & Time'} *</Label>
-                    <Input
-                        id="fin"
-                        type="datetime-local"
-                        value={data.fin || ''}
-                        onChange={(e) => setData('fin', e.target.value)}
-                        required
-                        className="mt-1"
-                    />
-                    {errors.fin && <p className="mt-1 text-sm text-[var(--destructive)]">{errors.fin}</p>}
-                </div>
-                <div className="sm:col-span-full">
+                <div className="sm:col-span-full sm:col-start-1">
                     <Label htmlFor="required_professors">{translations?.examen_form_req_profs_label || 'Required Professors'} *</Label>
                     <Input
                         id="required_professors"

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -9,15 +10,22 @@ class Examen extends Model
 {
     use HasFactory;
     protected $fillable = [
-        'nom', 'quadrimestre_id', 'type', 'debut', 'fin', 
+        'nom', 'quadrimestre_id', 'type', 'debut', 
         'module_id', 'filiere', 'required_professors'
     ];
 
     protected $casts = [
         'debut' => 'datetime',
-        'fin' => 'datetime',
     ];
 
+    public function getEndDatetimeAttribute(): Carbon
+    {
+        return Carbon::parse($this->debut)->addHours(2);
+    }
+
+    // Append it so it's included in toArray() / JSON
+    protected $appends = ['end_datetime'];
+    
     public function quadrimestre()
     {
         return $this->belongsTo(Quadrimestre::class);
@@ -42,7 +50,7 @@ class Examen extends Model
 
     public static function getTypes() {
         // Key is what's stored in DB, Value is for display
-        return ['QCM' => 'QCM', 'theoreique' => 'Théorique'];
+        return ['QCM' => 'QCM', 'theoreique' => 'Théorique', 'MIXED' => 'MIXED'];
     }
 
     public static function getFilieres() {

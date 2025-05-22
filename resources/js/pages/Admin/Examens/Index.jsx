@@ -99,12 +99,6 @@ export default function Index({ examens: examensPagination, filters }) {
                 size: 180,
             },
             {
-                accessorKey: 'fin',
-                header: translations?.examen_end_time_column_header || 'End Time',
-                Cell: ({ cell }) => formatDate(cell.getValue()),
-                size: 180,
-            },
-            {
                 accessorKey: 'required_professors',
                 header: translations?.examen_req_profs_column_header || 'Req. Profs',
                 size: 80,
