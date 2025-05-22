@@ -4,7 +4,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { TranslationContext } from '@/context/TranslationProvider';
 import { Icon } from '@iconify/react';
-import { Link } from '@inertiajs/react'; // Import router for route() helper
+import { Link } from '@inertiajs/react';
 import axios from 'axios';
 import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
@@ -25,14 +25,39 @@ export default function ExamenForm({
 }) {
     const { translations } = useContext(TranslationContext);
 
-    const [selectedFiliereForModule, setSelectedFiliereForModule] = useState('');
-    const [availableLevelsForModule, setAvailableLevelsForModule] = useState([]);
-    const [selectedLevelForModule, setSelectedLevelForModule] = useState('');
-    const [availableModules, setAvailableModules] = useState([]);
+    const [selectedFiliereId, setSelectedFiliereId] = useState('');
+    const [availableLevels, setAvailableLevels] = useState([]);
+    const [selectedLevelId, setSelectedLevelId] = useState('');
+    const [availableModulesForSelect, setAvailableModulesForSelect] = useState([]);
     const [isLoadingModuleConfig, setIsLoadingModuleConfig] = useState(false);
+    const [isInitialized, setIsInitialized] = useState(false);
 
+    // Helper function to initialize cascading selects based on module_id
+    const initializeCascadingSelects = useCallback(
+        (moduleId) => {
+            if (!moduleId || !allModules || !allLevels || !allFilieres) return;
+
+            const currentModule = allModules.find((m) => m.id.toString() === moduleId.toString());
+            if (currentModule && currentModule.level_id) {
+                const currentLevel = allLevels.find((l) => l.id === currentModule.level_id);
+                if (currentLevel && currentLevel.filiere_id) {
+                    setSelectedFiliereId(currentLevel.filiere_id.toString());
+                    setSelectedLevelId(currentLevel.id.toString());
+
+                    // Set available levels for this filiere
+                    setAvailableLevels(allLevels.filter((l) => l.filiere_id.toString() === currentLevel.filiere_id.toString()));
+
+                    // Set available modules for this level
+                    setAvailableModulesForSelect(allModules.filter((m) => m.level_id.toString() === currentLevel.id.toString()));
+                }
+            }
+        },
+        [allModules, allLevels, allFilieres],
+    );
+
+    // Effect to initialize form state when in EDIT mode
     useEffect(() => {
-        if (isEdit && examenToEdit) {
+        if (isEdit && examenToEdit && !isInitialized) {
             setData({
                 nom: examenToEdit.nom || '',
                 quadrimestre_id: examenToEdit.quadrimestre_id?.toString() || '',
@@ -50,61 +75,94 @@ export default function ExamenForm({
                 })),
             });
 
-            if (examenToEdit.module_id && allModules && allLevels && allFilieres) {
-                const currentModule = allModules.find((m) => m.id.toString() === examenToEdit.module_id.toString());
-                if (currentModule) {
-                    const currentLevel = allLevels.find((l) => l.id === currentModule.level_id);
-                    if (currentLevel) {
-                        setSelectedFiliereForModule(currentLevel.filiere_id.toString());
-                        setSelectedLevelForModule(currentLevel.id.toString());
-                    }
+            // Initialize cascading selects
+            if (examenToEdit.module_id) {
+                initializeCascadingSelects(examenToEdit.module_id.toString());
+            }
+
+            setIsInitialized(true);
+        } else if (!isEdit && !isInitialized) {
+            // Reset for CREATE mode
+            setData({
+                nom: '',
+                quadrimestre_id: '',
+                module_id: '',
+                type: '',
+                debut: '',
+                salles_pivot: [],
+            });
+            setSelectedFiliereId('');
+            setSelectedLevelId('');
+            setAvailableLevels([]);
+            setAvailableModulesForSelect([]);
+            setIsInitialized(true);
+        }
+    }, [isEdit, examenToEdit, setData, initializeCascadingSelects, isInitialized]);
+
+    // Update available levels when selectedFiliereId changes (user interaction)
+    useEffect(() => {
+        if (!isInitialized) return; // Don't run during initialization
+
+        if (selectedFiliereId && allLevels) {
+            const newAvailableLevels = allLevels.filter((l) => l.filiere_id.toString() === selectedFiliereId);
+            setAvailableLevels(newAvailableLevels);
+
+            // If current level doesn't belong to new filiere, reset it
+            if (data.module_id && allModules && allLevels) {
+                const currentModule = allModules.find((m) => m.id.toString() === data.module_id);
+                const currentLevel = currentModule ? allLevels.find((l) => l.id === currentModule.level_id) : null;
+                if (!currentLevel || currentLevel.filiere_id.toString() !== selectedFiliereId) {
+                    setSelectedLevelId('');
+                    setData('module_id', '');
                 }
             }
         } else {
-            setData('salles_pivot', []);
-        }
-    }, [isEdit, examenToEdit]); // Removed setData from here as it's called inside
-
-    useEffect(() => {
-        if (selectedFiliereForModule && allLevels) {
-            const filteredLevels = allLevels.filter((l) => l.filiere_id.toString() === selectedFiliereForModule);
-            setAvailableLevelsForModule(filteredLevels);
-            // If current selected level is not in new list of available levels, reset it
-            if (selectedLevelForModule && !filteredLevels.some((l) => l.id.toString() === selectedLevelForModule)) {
-                setSelectedLevelForModule('');
-                setData('module_id', ''); // Also reset module
-            }
-        } else {
-            setAvailableLevelsForModule([]);
-            setSelectedLevelForModule(''); // Reset if no filiere
-            setData('module_id', ''); // Reset module if no filiere
-        }
-    }, [selectedFiliereForModule, allLevels, setData, selectedLevelForModule]); // Added selectedLevelForModule
-
-    useEffect(() => {
-        if (selectedLevelForModule && allModules) {
-            const filteredModules = allModules.filter((m) => m.level_id.toString() === selectedLevelForModule);
-            setAvailableModules(filteredModules);
-            // If current selected module is not in new list of available modules, reset it
-            if (data.module_id && !filteredModules.some((m) => m.id.toString() === data.module_id)) {
+            setAvailableLevels([]);
+            if (!selectedFiliereId) {
+                setSelectedLevelId('');
                 setData('module_id', '');
             }
-        } else {
-            setAvailableModules([]);
-            setData('module_id', ''); // Reset module if no level
         }
-    }, [selectedLevelForModule, allModules, setData, data.module_id]);
+    }, [selectedFiliereId, allLevels, allModules, data.module_id, setData, isInitialized]);
+
+    // Update available modules when selectedLevelId changes (user interaction)
+    useEffect(() => {
+        if (!isInitialized) return; // Don't run during initialization
+
+        if (selectedLevelId && allModules) {
+            const newAvailableModules = allModules.filter((m) => m.level_id.toString() === selectedLevelId);
+            setAvailableModulesForSelect(newAvailableModules);
+
+            // If current module doesn't belong to new level, reset it
+            if (data.module_id && allModules) {
+                const currentModule = allModules.find((m) => m.id.toString() === data.module_id);
+                if (!currentModule || currentModule.level_id.toString() !== selectedLevelId) {
+                    setData('module_id', '');
+                }
+            }
+        } else {
+            setAvailableModulesForSelect([]);
+            if (!selectedLevelId) {
+                setData('module_id', '');
+            }
+        }
+    }, [selectedLevelId, allModules, data.module_id, setData, isInitialized]);
 
     const fetchAndApplyModuleConfig = useCallback(
         async (moduleId) => {
-            if (!moduleId || isEdit) {
-                if (!isEdit && !moduleId) setData('salles_pivot', []);
+            if (!moduleId) {
+                if (!isEdit) setData('salles_pivot', []);
                 return;
             }
+
+            // Don't fetch if in edit mode and module hasn't changed
+            if (isEdit && examenToEdit && moduleId === examenToEdit.module_id?.toString()) {
+                return;
+            }
+
             setIsLoadingModuleConfig(true);
             try {
-                const url = route('admin.modules.default-exam-config', { module: moduleId });
-                const response = await axios.get(url);
+                const response = await axios.get(route('admin.modules.default-exam-config', { module: moduleId }));
                 const config = response.data;
                 setData((prevData) => ({
                     ...prevData,
@@ -121,14 +179,19 @@ export default function ExamenForm({
                 setIsLoadingModuleConfig(false);
             }
         },
-        [setData, isEdit],
+        [setData, isEdit, examenToEdit],
     );
 
+    // Effect to fetch module config when module_id changes
     useEffect(() => {
-        if (data.module_id && !isEdit) {
+        if (!isInitialized) return; // Don't run during initialization
+
+        if (data.module_id) {
             fetchAndApplyModuleConfig(data.module_id);
+        } else if (!isEdit) {
+            setData('salles_pivot', []);
         }
-    }, [data.module_id, isEdit, fetchAndApplyModuleConfig]);
+    }, [data.module_id, fetchAndApplyModuleConfig, isEdit, setData, isInitialized]);
 
     const handleSalleChange = (index, field, value) => {
         const updatedSalles = JSON.parse(JSON.stringify(data.salles_pivot || []));
@@ -136,7 +199,7 @@ export default function ExamenForm({
         if (field === 'salle_id' && value) {
             const selectedSalleInfo = salles.find((s) => s.id.toString() === value);
             if (selectedSalleInfo) {
-                if (!updatedSalles[index].capacite) {
+                if (updatedSalles[index].capacite === undefined || updatedSalles[index].capacite === '') {
                     updatedSalles[index].capacite = selectedSalleInfo.default_capacite.toString();
                 }
                 if (updatedSalles[index].professeurs_assignes_salle === undefined || updatedSalles[index].professeurs_assignes_salle === '') {
@@ -184,7 +247,7 @@ export default function ExamenForm({
 
                 <div className="sm:col-span-3">
                     <Label htmlFor="filiere_for_module_select">{translations?.examen_form_filiere_label || 'Study Field'} *</Label>
-                    <Select value={selectedFiliereForModule} onValueChange={setSelectedFiliereForModule} required>
+                    <Select value={selectedFiliereId} onValueChange={setSelectedFiliereId} required>
                         <SelectTrigger id="filiere_for_module_select" className="mt-1">
                             <SelectValue placeholder={translations?.examen_form_select_filiere_placeholder || 'Select Field'} />
                         </SelectTrigger>
@@ -200,12 +263,12 @@ export default function ExamenForm({
 
                 <div className="sm:col-span-3">
                     <Label htmlFor="level_for_module_select">{translations?.examen_form_level_label || 'Level'} *</Label>
-                    <Select value={selectedLevelForModule} onValueChange={setSelectedLevelForModule} disabled={!selectedFiliereForModule} required>
+                    <Select value={selectedLevelId} onValueChange={setSelectedLevelId} disabled={!selectedFiliereId} required>
                         <SelectTrigger id="level_for_module_select" className="mt-1">
                             <SelectValue placeholder={translations?.examen_form_select_level_placeholder || 'Select Level'} />
                         </SelectTrigger>
                         <SelectContent>
-                            {(availableLevelsForModule || []).map((l) => (
+                            {(availableLevels || []).map((l) => (
                                 <SelectItem key={l.id} value={l.id.toString()}>
                                     {l.nom}
                                 </SelectItem>
@@ -216,17 +279,12 @@ export default function ExamenForm({
 
                 <div className="sm:col-span-3">
                     <Label htmlFor="module_id">{translations?.examen_form_module_label || 'Module'} *</Label>
-                    <Select
-                        value={data.module_id?.toString() || ''}
-                        onValueChange={(v) => setData('module_id', v)}
-                        disabled={!selectedLevelForModule}
-                        required
-                    >
+                    <Select value={data.module_id || ''} onValueChange={(v) => setData('module_id', v)} disabled={!selectedLevelId} required>
                         <SelectTrigger id="module_id" className="mt-1">
                             <SelectValue placeholder={translations?.examen_form_select_module_placeholder || 'Select Module'} />
                         </SelectTrigger>
                         <SelectContent>
-                            {(availableModules || []).map((m) => (
+                            {(availableModulesForSelect || []).map((m) => (
                                 <SelectItem key={m.id} value={m.id.toString()}>
                                     {m.nom}
                                 </SelectItem>
@@ -238,7 +296,7 @@ export default function ExamenForm({
 
                 <div className="sm:col-span-full">
                     <Label htmlFor="quadrimestre_id">{translations?.examen_form_quadrimestre_label || 'Semester'} *</Label>
-                    <Select value={data.quadrimestre_id?.toString() || ''} onValueChange={(v) => setData('quadrimestre_id', v)} required>
+                    <Select value={data.quadrimestre_id || ''} onValueChange={(v) => setData('quadrimestre_id', v)} required>
                         <SelectTrigger className="mt-1">
                             <SelectValue placeholder={translations?.examen_form_select_quadrimestre_placeholder || 'Select Semester'} />
                         </SelectTrigger>

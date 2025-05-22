@@ -96,36 +96,42 @@ class ExamenController extends Controller
     {
         // Define allowed enum values from model or config
         $allowedTypes = array_keys(Examen::getTypes());
-
+    
         $validated = $request->validate([
             'nom' => 'nullable|string|max:255',
             'quadrimestre_id' => 'required|exists:quadrimestres,id',
             'module_id' => 'required|exists:modules,id',
             'type' => ['required', Rule::in($allowedTypes)],
             'debut' => 'required|date|after_or_equal:today',
-            'required_professors' => 'required|integer|min:1',
-            'salles_pivot' => 'required|array|min:1', // Array of {salle_id, capacite}
+            'salles_pivot' => 'required|array|min:1',
             'salles_pivot.*.salle_id' => 'required|exists:salles,id',
-            'salles_pivot.*.capacite' => 'required|integer|min:0', // 0 might mean use default
+            'salles_pivot.*.capacite' => 'required|integer|min:0',
+            'salles_pivot.*.professeurs_assignes_salle' => 'required|integer|min:1', // Add this line
         ]);
-
+    
         return DB::transaction(function () use ($validated) {
+            // Calculate total required professors from salles_pivot
+            $totalRequiredProfessors = array_sum(array_column($validated['salles_pivot'], 'professeurs_assignes_salle'));
+            
             $examen = Examen::create([
                 'nom' => $validated['nom'],
                 'quadrimestre_id' => $validated['quadrimestre_id'],
                 'module_id' => $validated['module_id'],
                 'type' => $validated['type'],
                 'debut' => $validated['debut'],
-                'required_professors' => $validated['required_professors'],
+                'required_professors' => $totalRequiredProfessors, // Use calculated value
             ]);
-
+    
             // Sync salles with pivot data
             $sallesToSync = [];
             foreach ($validated['salles_pivot'] as $salleData) {
-                $sallesToSync[$salleData['salle_id']] = ['capacite' => $salleData['capacite']];
+                $sallesToSync[$salleData['salle_id']] = [
+                    'capacite' => $salleData['capacite'],
+                    'professeurs_assignes_salle' => $salleData['professeurs_assignes_salle'] // Add this line
+                ];
             }
             $examen->salles()->sync($sallesToSync);
-
+    
             return redirect()->route('admin.examens.index')
                 ->with('success', 'toasts.examen_created_successfully');
         });
@@ -141,35 +147,41 @@ class ExamenController extends Controller
     public function update(Request $request, Examen $examen)
     {
         $allowedTypes = array_keys(Examen::getTypes());
-
+    
         $validated = $request->validate([
             'nom' => 'nullable|string|max:255',
             'quadrimestre_id' => 'required|exists:quadrimestres,id',
             'module_id' => 'required|exists:modules,id',
             'type' => ['required', Rule::in($allowedTypes)],
             'debut' => 'required|date',
-            'required_professors' => 'required|integer|min:1',
             'salles_pivot' => 'required|array|min:1',
             'salles_pivot.*.salle_id' => 'required|exists:salles,id',
             'salles_pivot.*.capacite' => 'required|integer|min:0',
+            'salles_pivot.*.professeurs_assignes_salle' => 'required|integer|min:1', // Add this line
         ]);
-
+    
         return DB::transaction(function () use ($examen, $validated) {
+            // Calculate total required professors from salles_pivot
+            $totalRequiredProfessors = array_sum(array_column($validated['salles_pivot'], 'professeurs_assignes_salle'));
+            
             $examen->update([
                 'nom' => $validated['nom'],
                 'quadrimestre_id' => $validated['quadrimestre_id'],
                 'module_id' => $validated['module_id'],
                 'type' => $validated['type'],
                 'debut' => $validated['debut'],
-                'required_professors' => $validated['required_professors'],
+                'required_professors' => $totalRequiredProfessors, // Use calculated value
             ]);
-
+    
             $sallesToSync = [];
             foreach ($validated['salles_pivot'] as $salleData) {
-                $sallesToSync[$salleData['salle_id']] = ['capacite' => $salleData['capacite']];
+                $sallesToSync[$salleData['salle_id']] = [
+                    'capacite' => $salleData['capacite'],
+                    'professeurs_assignes_salle' => $salleData['professeurs_assignes_salle'] // Add this line
+                ];
             }
             $examen->salles()->sync($sallesToSync);
-
+    
             return redirect()->route('admin.examens.index')
                 ->with('success', 'toasts.examen_updated_successfully');
         });

@@ -99,13 +99,13 @@ export default function Index({ examens: examensPagination, filters }) {
                 Cell: ({ cell }) => formatDate(cell.getValue()),
                 size: 180,
             },
-            {
-                accessorKey: 'required_professors',
-                header: translations?.examen_req_profs_column_header || 'Req. Profs',
-                size: 80,
-                muiTableBodyCellProps: { align: 'center' },
-                muiTableHeadCellProps: { align: 'center' },
-            },
+            // {
+            //     accessorKey: 'required_professors',
+            //     header: translations?.examen_req_profs_column_header || 'Req. Profs',
+            //     size: 80,
+            //     muiTableBodyCellProps: { align: 'center' },
+            //     muiTableHeadCellProps: { align: 'center' },
+            // },
             {
                 accessorKey: 'attributions_count',
                 header: translations?.examen_assigned_profs_column_header || 'Assigned',
