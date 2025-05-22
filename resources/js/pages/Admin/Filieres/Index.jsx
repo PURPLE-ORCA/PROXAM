@@ -60,7 +60,7 @@ export default function Index({ filieres }) {
                                 onMouseLeave={() => setHoveredCard(null)}
                             >
                                 <Link
-                                    // href={route('admin.levels.index', { filiere: filiere.id })}
+                                    href={route('admin.levels.index', { filiere: filiere.id })}
                                     className="block p-6 pb-4 transition-colors duration-200"
                                 >
                                     {/* Card Header with Icon */}

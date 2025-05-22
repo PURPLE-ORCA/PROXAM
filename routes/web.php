@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\ExamAssignmentManagementController;
+use App\Http\Controllers\LevelController;
 use App\Http\Controllers\FiliereController;
 use App\Http\Controllers\AnneeUniController;
 use App\Http\Controllers\AttributionController;
@@ -54,6 +55,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::resource('professeurs', ProfesseurController::class)->parameters(['professeurs' => 'professeur'])->except(['show']);
         Route::resource('examens', ExamenController::class)->parameters(['examens' => 'examen'])->except(['show']);
         Route::resource('unavailabilities', UnavailabilityController::class)->parameters(['unavailabilities' => 'unavailability'])->except(['show']);   
+        
         Route::post('/examens/{examen}/assign-professors', [ExamenController::class, 'triggerAssignment'])->name('examens.trigger-assignment');
         Route::get('attributions', [AttributionController::class, 'index'])->name('attributions.index');   
         Route::get('/examens/{examen}/manage-assignments', [ExamAssignmentManagementController::class, 'index'])->name('examens.assignments.index');
@@ -61,6 +63,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::put('/manage-assignments/{attribution}/toggle-responsable', [ExamAssignmentManagementController::class, 'toggleResponsable'])->name('attributions.toggle-responsable');
         Route::delete('/manage-assignments/{attribution}', [ExamAssignmentManagementController::class, 'destroyAttribution'])->name('attributions.destroy_manual');
         Route::resource('filieres', FiliereController::class)->parameters(['filieres' => 'filiere'])->except(['show']);
+    
+        Route::get('/filieres/{filiere}/levels', [LevelController::class, 'index'])->name('levels.index');
+        Route::get('/levels/create', [LevelController::class, 'create'])->name('levels.create'); // Can take ?filiere_id=X
+        Route::post('/levels', [LevelController::class, 'store'])->name('levels.store');
+        Route::get('/levels/{level}/edit', [LevelController::class, 'edit'])->name('levels.edit');
+        Route::put('/levels/{level}', [LevelController::class, 'update'])->name('levels.update');
+        Route::delete('/levels/{level}', [LevelController::class, 'destroy'])->name('levels.destroy');
     });
 }); 
 
