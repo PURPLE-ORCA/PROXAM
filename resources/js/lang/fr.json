@@ -347,5 +347,13 @@
     "no_levels_found_for_filiere": "Aucun niveau trouvé pour cette filière. Commencez par en ajouter un.",
     "no_levels_found_heading": "Aucun Niveau Pour L'instant",
     "delete_level_modal_title": "Supprimer le Niveau",
-    "level_delete_confirmation": "Êtes-vous sûr de vouloir supprimer le niveau « {name} » ? Cela pourrait aussi supprimer les modules et examens associés."
+    "level_delete_confirmation": "Êtes-vous sûr de vouloir supprimer le niveau « {name} » ? Cela pourrait aussi supprimer les modules et examens associés.",
+    "module_form_filiere_filter_label": "Filtrer par Filière",
+    "module_form_select_filiere_placeholder": "Sélectionner d'abord une Filière",
+    "module_form_level_label": "Niveau",
+    "module_form_select_level_placeholder": "Sélectionner Niveau",
+    "modules_page_title_for_level": "Modules pour",
+    "modules_heading_for_level": "Modules dans",
+    "no_modules_found_for_level": "Aucun module trouvé pour {levelName} dans {filiereName}. Commencez par en ajouter un.",
+    "no_modules_found_heading": "Aucun Module Pour L'instant"
 }

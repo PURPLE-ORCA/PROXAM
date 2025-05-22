@@ -347,5 +347,13 @@
     "no_levels_found_for_filiere": "لم يتم العثور على مستويات لهذه الشعبة الدراسية. ابدأ بإضافة واحد.",
     "no_levels_found_heading": "لا توجد مستويات بعد",
     "delete_level_modal_title": "حذف المستوى",
-    "level_delete_confirmation": "هل أنت متأكد أنك تريد حذف المستوى \"{name}\"؟ قد يؤدي هذا أيضًا إلى حذف الوحدات والامتحانات المرتبطة به."
+    "level_delete_confirmation": "هل أنت متأكد أنك تريد حذف المستوى \"{name}\"؟ قد يؤدي هذا أيضًا إلى حذف الوحدات والامتحانات المرتبطة به.",
+    "module_form_filiere_filter_label": "تصفية حسب الشعبة",
+    "module_form_select_filiere_placeholder": "اختر الشعبة أولاً",
+    "module_form_level_label": "المستوى",
+    "module_form_select_level_placeholder": "اختر المستوى",
+    "modules_page_title_for_level": "وحدات لـ",
+    "modules_heading_for_level": "الوحدات في",
+    "no_modules_found_for_level": "لم يتم العثور على وحدات للمستوى {levelName} في الشعبة {filiereName}. ابدأ بإضافة واحدة.",
+    "no_modules_found_heading": "لا توجد وحدات بعد"
 }

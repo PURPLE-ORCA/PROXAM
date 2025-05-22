@@ -46,7 +46,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::prefix('admin')->name('admin.')->middleware('can:is_admin')->group(function () {
         Route::resource('services', ServiceController::class)->except(['show']);
-        Route::resource('modules', ModuleController::class)->except(['show']);
+        // Route::resource('modules', ModuleController::class)->except(['show']);
         Route::resource('salles', SalleController::class)->except(['show']); 
         Route::resource('annees-universitaires', AnneeUniController::class)->parameters(['annees-universitaires' => 'anneeUni']) ->except(['show']);
         Route::resource('sesons', SesonController::class) ->parameters(['sesons' => 'seson']) ->except(['show']);
@@ -70,6 +70,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/levels/{level}/edit', [LevelController::class, 'edit'])->name('levels.edit');
         Route::put('/levels/{level}', [LevelController::class, 'update'])->name('levels.update');
         Route::delete('/levels/{level}', [LevelController::class, 'destroy'])->name('levels.destroy');
+    
+        Route::get('/levels/{level}/modules', [ModuleController::class, 'indexForLevel'])->name('modules.index'); // New method
+
+        Route::get('/levels/{level}/modules/create', [ModuleController::class, 'create'])->name('modules.create'); // Pass level_id
+
+        Route::post('/modules', [ModuleController::class, 'store'])->name('modules.store'); 
+        Route::get('/modules/{module}/edit', [ModuleController::class, 'edit'])->name('modules.edit');
+        Route::put('/modules/{module}', [ModuleController::class, 'update'])->name('modules.update');
+        Route::delete('/modules/{module}', [ModuleController::class, 'destroy'])->name('modules.destroy');
     });
 }); 
 

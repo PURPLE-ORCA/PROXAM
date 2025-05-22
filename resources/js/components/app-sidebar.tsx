@@ -51,13 +51,7 @@ export function AppSidebar() {
             href: route('admin.services.index'),
             icon: LayoutGrid,
             active: route().current('admin.services.*'),
-        });
-        mainNavItems.push({
-            title: translations?.modules_nav_item || 'Modules',
-            href: route('admin.modules.index'),
-            icon: BookOpen, 
-            active: route().current('admin.modules.*'),
-        });
+        }); 
         mainNavItems.push({
             title: translations?.salles_nav_item || 'Salles',
             href: route('admin.salles.index'),
