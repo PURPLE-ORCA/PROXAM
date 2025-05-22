@@ -10,6 +10,8 @@ class Module extends Model
     use HasFactory;
     protected $fillable = ['nom', 'level_id'];
 
+    protected $appends = ['default_total_required_professors']; 
+
     public function professeurs()
     {
         return $this->belongsToMany(Professeur::class, 'professeur_modules');
@@ -20,8 +22,19 @@ class Module extends Model
         return $this->hasMany(Examen::class);
     }
     
-    public function level() // <<< NEW RELATIONSHIP
+    public function level()
     {
         return $this->belongsTo(Level::class);
+    }
+    public function examRoomConfigs()
+    {
+        return $this->hasMany(ModuleExamRoomConfig::class);
+    }
+    public function getDefaultTotalRequiredProfessorsAttribute(): int
+    {
+        if (!$this->relationLoaded('examRoomConfigs')) {
+            $this->load('examRoomConfigs');
+        }
+        return $this->examRoomConfigs->sum('configured_prof_count') ?: 0; 
     }
 }

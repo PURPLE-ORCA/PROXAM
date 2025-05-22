@@ -86,12 +86,13 @@ export default function Index({ examens: examensPagination, filters }) {
                 Cell: ({ cell }) => getTypeTranslation(cell.getValue()),
                 size: 100,
             },
-            {
-                accessorKey: 'filiere',
-                header: translations?.examen_filiere_column_header || 'Field',
-                Cell: ({ cell }) => getFiliereTranslation(cell.getValue()),
-                size: 100,
-            },
+            // {
+            //     accessorKey: 'module.level.filiere.nom',
+            //     header: translations?.examen_filiere_column_header || 'Field', // Translation key remains same
+            //     // Cell rendering might not be needed if accessorKey works directly
+            //     // Cell: ({ row }) => row.original.module?.level?.filiere?.nom || 'N/A',
+            //     size: 100,
+            // },
             {
                 accessorKey: 'debut',
                 header: translations?.examen_start_time_column_header || 'Start Time',

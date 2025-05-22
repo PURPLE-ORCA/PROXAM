@@ -15,7 +15,7 @@ const formatDatetimeForInput = (datetimeString) => {
     }
 };
 
-export default function Edit({ examenToEdit, quadrimestres, modules, salles, types, filieres }) {
+export default function Edit({ examenToEdit, quadrimestres, modules, salles, types, filieres, quadrimestres, allLevels, allModules, salles, types }) {
     const { translations } = useContext(TranslationContext);
 
     const { data, setData, put, processing, errors, reset } = useForm({
@@ -29,11 +29,10 @@ export default function Edit({ examenToEdit, quadrimestres, modules, salles, typ
         required_professors: examenToEdit?.required_professors || 1,
         salles_pivot:
             examenToEdit?.salles?.map((s) => ({
-                salle_id: s.id.toString(), 
-                capacite: s.pivot.capacite.toString(), 
+                salle_id: s.id.toString(),
+                capacite: s.pivot.capacite.toString(),
             })) || [],
     });
-
 
     const handleSubmit = (e) => {
         e.preventDefault();

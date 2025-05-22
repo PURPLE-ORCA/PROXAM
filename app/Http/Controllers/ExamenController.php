@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Examen;
+use App\Models\Filiere;
+use App\Models\Level;
 use App\Models\Quadrimestre;
 use App\Models\Module;
 use App\Models\Salle;
@@ -23,28 +25,36 @@ class ExamenController extends Controller
 
     private function getFormData()
     {
-        // Fetch Quadrimestres with their Seson and AnneeUni for better display
-        $quadrimestres = Quadrimestre::with(['seson.anneeUni'])
-            ->get()
-            ->map(function ($q) {
-                return [
-                    'id' => $q->id,
-                    'display_name' => $q->seson->anneeUni->annee . ' - ' . $q->seson->code . ' - ' . $q->code,
-                ];
-            })
-            ->sortBy('display_name') // Sort after mapping
-            ->values(); // Re-index array
-
-        $modules = Module::orderBy('nom')->get(['id', 'nom']);
+        // Test this part first
+        $quadrimestres = Quadrimestre::with(['seson.anneeUni'])->get();
+        // dd($quadrimestres->first()?->seson?->anneeUni?->annee); // Check if relations are loading
+        $quadrimestres = $quadrimestres->map(function ($q) {
+            return [
+                'id' => $q->id,
+                'display_name' => ($q->seson && $q->seson->anneeUni ? $q->seson->anneeUni->annee : 'ERR_ANNEE') .
+                                  ' - ' . ($q->seson ? $q->seson->code : 'ERR_SESON') .
+                                  ' - ' . ($q->code ?? 'ERR_QUAD'),
+            ];
+        })->sortBy('display_name')->values();
+        // dd('Quadrimestres loaded and mapped');
+    
+        $filieres = Filiere::orderBy('nom')->get(['id', 'nom']);
+        // dd('Filieres loaded');
+    
+        $allLevels = Level::with('filiere:id,nom')->orderBy('filiere_id')->orderBy('nom')->get(['id', 'nom', 'filiere_id']);
+        // dd('Levels loaded');
+        
+        $allModules = Module::with('level.filiere')->orderBy('level_id')->orderBy('nom')->get(['id', 'nom', 'level_id']);
+        // dd('Modules loaded');
+    
         $salles = Salle::orderBy('nom')->get(['id', 'nom', 'default_capacite']);
-
-        // Assuming enums are defined in the Examen model or a config
-        $types = Examen::getTypes();     // e.g., ['QCM' => 'QCM', 'theoreique' => 'Théorique']
-        $filieres = Examen::getFilieres(); // e.g., ['Medicale' => 'Médicale', 'Pharmacie' => 'Pharmacie']
-
-        return compact('quadrimestres', 'modules', 'salles', 'types', 'filieres');
+        // dd('Salles loaded');
+        
+        $types = Examen::getTypes();
+        // dd('Types loaded');
+    
+        return compact('quadrimestres', 'filieres', 'allLevels', 'allModules', 'salles', 'types');
     }
-
 
     public function index(Request $request)
     {
@@ -55,7 +65,7 @@ class ExamenController extends Controller
                       ->orWhereHas('module', fn($q) => $q->where('nom', 'like', "%{$search}%"))
                       ->orWhereHas('quadrimestre.seson.anneeUni', fn($q) => $q->where('annee', 'like', "%{$search}%"));
             })
-            // Add more sophisticated ordering if needed
+
             ->orderBy('debut', 'desc')
             ->paginate(15)
             ->withQueryString();
@@ -66,23 +76,32 @@ class ExamenController extends Controller
         ]);
     }
 
+// In ExamenController@create
     public function create()
     {
-        return Inertia::render($this->baseInertiaPath() . 'Create', $this->getFormData());
+        $formData = $this->getFormData();
+        // dd($formData); // Last check here to see the full structure before Inertia render
+
+        return Inertia::render($this->baseInertiaPath() . 'Create', [
+            'quadrimestres' => $formData['quadrimestres']->toArray(), // Explicitly toArray()
+            'filieres' => $formData['filieres']->toArray(),
+            'allLevels' => $formData['allLevels']->toArray(),
+            'allModules' => $formData['allModules']->toArray(),
+            'salles' => $formData['salles']->toArray(),
+            'types' => $formData['types'], // This is already an array from Examen::getTypes()
+        ]);
     }
 
     public function store(Request $request)
     {
         // Define allowed enum values from model or config
         $allowedTypes = array_keys(Examen::getTypes());
-        $allowedFilieres = array_keys(Examen::getFilieres());
 
         $validated = $request->validate([
             'nom' => 'nullable|string|max:255',
             'quadrimestre_id' => 'required|exists:quadrimestres,id',
             'module_id' => 'required|exists:modules,id',
             'type' => ['required', Rule::in($allowedTypes)],
-            'filiere' => ['required', Rule::in($allowedFilieres)],
             'debut' => 'required|date|after_or_equal:today',
             'required_professors' => 'required|integer|min:1',
             'salles_pivot' => 'required|array|min:1', // Array of {salle_id, capacite}
@@ -96,7 +115,6 @@ class ExamenController extends Controller
                 'quadrimestre_id' => $validated['quadrimestre_id'],
                 'module_id' => $validated['module_id'],
                 'type' => $validated['type'],
-                'filiere' => $validated['filiere'],
                 'debut' => $validated['debut'],
                 'required_professors' => $validated['required_professors'],
             ]);
@@ -123,14 +141,12 @@ class ExamenController extends Controller
     public function update(Request $request, Examen $examen)
     {
         $allowedTypes = array_keys(Examen::getTypes());
-        $allowedFilieres = array_keys(Examen::getFilieres());
 
         $validated = $request->validate([
             'nom' => 'nullable|string|max:255',
             'quadrimestre_id' => 'required|exists:quadrimestres,id',
             'module_id' => 'required|exists:modules,id',
             'type' => ['required', Rule::in($allowedTypes)],
-            'filiere' => ['required', Rule::in($allowedFilieres)],
             'debut' => 'required|date',
             'required_professors' => 'required|integer|min:1',
             'salles_pivot' => 'required|array|min:1',
@@ -144,7 +160,6 @@ class ExamenController extends Controller
                 'quadrimestre_id' => $validated['quadrimestre_id'],
                 'module_id' => $validated['module_id'],
                 'type' => $validated['type'],
-                'filiere' => $validated['filiere'],
                 'debut' => $validated['debut'],
                 'required_professors' => $validated['required_professors'],
             ]);

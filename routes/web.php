@@ -79,6 +79,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/modules/{module}/edit', [ModuleController::class, 'edit'])->name('modules.edit');
         Route::put('/modules/{module}', [ModuleController::class, 'update'])->name('modules.update');
         Route::delete('/modules/{module}', [ModuleController::class, 'destroy'])->name('modules.destroy');
+    
+        Route::get('/modules/{module}/default-exam-config', [ModuleController::class, 'getDefaultExamConfig'])->name('modules.default-exam-config');
     });
 }); 
 

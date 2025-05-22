@@ -56,7 +56,25 @@ class ModuleController extends Controller
             'currentLevel' => $level, // Pass the specific level context
             'selectedLevelId' => $level->id, // Pre-fill and potentially disable level selection in the form
         ]);
-    }    
+    }  
+    
+    public function getDefaultExamConfig(Module $module)
+    {
+        $module->load('examRoomConfigs.salle');
+        return response()->json([
+            // This now uses the accessor on the Module model
+            'default_total_required_professors' => $module->default_total_required_professors,
+            'room_configs' => $module->examRoomConfigs->map(function ($config) {
+                return [
+                    'salle_id' => $config->salle_id,
+                    'salle_nom' => $config->salle->nom,
+                    'default_capacite' => $config->salle->default_capacite,
+                    'configured_capacity' => $config->configured_capacity,
+                    'configured_prof_count' => $config->configured_prof_count,
+                ];
+            }),
+        ]);
+    }
 
     public function store(Request $request)
     {

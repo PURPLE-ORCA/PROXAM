@@ -80,7 +80,7 @@ export default function LevelModulesIndex({ level, modules, filiere, filters }) 
                                         // For now, it could link to the module's edit page, or a future detail page.
                                         // Or to the "Module Exam Config" page we planned (Point 7).
                                         // Let's make it link to the "Module Exam Config" page (to be created).
-                                        // href={route('admin.modules.exam-configs.index', { module: moduleItem.id })} // Placeholder route
+                                        // href={route('admin.modules.edit', { module: moduleItem.id })} // Placeholder route
                                         className="block p-6 pb-4 transition-colors duration-200"
                                     >
                                         <div className="absolute top-4 right-4 opacity-20 transition-opacity duration-300 group-hover:opacity-40">

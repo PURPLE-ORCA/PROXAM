@@ -11,7 +11,7 @@ class Examen extends Model
     use HasFactory;
     protected $fillable = [
         'nom', 'quadrimestre_id', 'type', 'debut', 
-        'module_id', 'required_professors'
+        'module_id'
     ];
 
     protected $casts = [
@@ -24,7 +24,7 @@ class Examen extends Model
     }
 
     // Append it so it's included in toArray() / JSON
-    protected $appends = ['end_datetime'];
+    protected $appends = ['end_datetime', 'total_required_professors'];
     
     public function quadrimestre()
     {
@@ -36,11 +36,14 @@ class Examen extends Model
         return $this->belongsTo(Module::class);
     }
 
-    public function salles()
-    {
+    public function salles() {
         return $this->belongsToMany(Salle::class, 'examens_salles')
-                    ->withPivot('capacite') // Crucial for accessing the override
-                    ->withTimestamps(); // If your pivot table has timestamps
+                    ->withPivot('capacite', 'professeurs_assignes_salle')
+                    ->withTimestamps();
+    }
+    public function getTotalRequiredProfessorsAttribute(): int {
+        if (!$this->relationLoaded('salles')) { $this->load('salles'); }
+        return $this->salles->sum('pivot.professeurs_assignes_salle') ?: 0;
     }
 
     public function attributions()
