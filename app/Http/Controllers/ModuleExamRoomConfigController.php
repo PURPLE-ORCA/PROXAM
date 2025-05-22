@@ -2,65 +2,86 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Controller;
+use App\Models\Module;
+use App\Models\Salle;
 use App\Models\ModuleExamRoomConfig;
-use App\Http\Requests\StoreModuleExamRoomConfigRequest;
-use App\Http\Requests\UpdateModuleExamRoomConfigRequest;
+use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+use Inertia\Inertia;
 
 class ModuleExamRoomConfigController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    protected function baseInertiaPath(): string
     {
-        //
+        return 'Admin/Modules/ExamConfigs/'; // New view path
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Display the exam room configurations for a specific module.
      */
-    public function create()
+    public function index(Module $module)
     {
-        //
+        $module->load(['examRoomConfigs.salle', 'level.filiere']); // Eager load for display
+
+        $configuredSalleIds = $module->examRoomConfigs->pluck('salle_id')->toArray();
+        $availableSalles = Salle::whereNotIn('id', $configuredSalleIds)
+                                ->orderBy('nom')
+                                ->get(['id', 'nom', 'default_capacite']);
+
+        return Inertia::render($this->baseInertiaPath() . 'Index', [
+            'module' => $module,
+            'currentConfigs' => $module->examRoomConfigs,
+            'availableSalles' => $availableSalles, // For the "Add Room" form
+        ]);
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Store a new room configuration for a module.
      */
-    public function store(StoreModuleExamRoomConfigRequest $request)
+    public function store(Request $request, Module $module)
     {
-        //
+        $validated = $request->validate([
+            'salle_id' => [
+                'required',
+                'exists:salles,id',
+                Rule::unique('module_exam_room_configs')->where(function ($query) use ($module) {
+                    return $query->where('module_id', $module->id);
+                }), // Ensure salle is not already configured for this module
+            ],
+            'configured_capacity' => 'required|integer|min:1',
+            'configured_prof_count' => 'required|integer|min:1',
+        ]);
+
+        $module->examRoomConfigs()->create($validated);
+
+        return back()->with('success', 'toasts.module_exam_config_added');
     }
 
     /**
-     * Display the specified resource.
+     * Update an existing room configuration.
+     * (We might not have a dedicated edit form, edits might be inline or part of delete/re-add)
+     * This method assumes you pass all fields to update a specific config.
      */
-    public function show(ModuleExamRoomConfig $moduleExamRoomConfig)
+    public function update(Request $request, ModuleExamRoomConfig $config) // $config is the ModuleExamRoomConfig instance
     {
-        //
+        $validated = $request->validate([
+            // salle_id typically isn't changed on update, one would delete and re-add with new salle
+            'configured_capacity' => 'required|integer|min:1',
+            'configured_prof_count' => 'required|integer|min:1',
+        ]);
+
+        $config->update($validated);
+
+        return back()->with('success', 'toasts.module_exam_config_updated');
     }
 
     /**
-     * Show the form for editing the specified resource.
+     * Remove a room configuration from a module.
      */
-    public function edit(ModuleExamRoomConfig $moduleExamRoomConfig)
+    public function destroy(ModuleExamRoomConfig $config)
     {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(UpdateModuleExamRoomConfigRequest $request, ModuleExamRoomConfig $moduleExamRoomConfig)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(ModuleExamRoomConfig $moduleExamRoomConfig)
-    {
-        //
+        $config->delete();
+        return back()->with('success', 'toasts.module_exam_config_removed');
     }
 }

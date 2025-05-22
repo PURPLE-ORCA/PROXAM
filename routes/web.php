@@ -7,6 +7,7 @@ use App\Http\Controllers\AnneeUniController;
 use App\Http\Controllers\AttributionController;
 use App\Http\Controllers\ExamenController;
 use App\Http\Controllers\ModuleController;
+use App\Http\Controllers\ModuleExamRoomConfigController;
 use App\Http\Controllers\ProfesseurController;
 use App\Http\Controllers\QuadrimestresController;
 use App\Http\Controllers\SalleController;
@@ -81,7 +82,21 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('/modules/{module}', [ModuleController::class, 'destroy'])->name('modules.destroy');
     
         Route::get('/modules/{module}/default-exam-config', [ModuleController::class, 'getDefaultExamConfig'])->name('modules.default-exam-config');
-    });
+    
+        Route::get('/modules/{module}/exam-configs', [ModuleExamRoomConfigController::class, 'index']) // <<< ADD
+        ->name('modules.exam-configs.index'); // This is the page module cards will link to
+
+        Route::post('/modules/{module}/exam-configs', [ModuleExamRoomConfigController::class, 'store']) // <<< ADD
+            ->name('modules.exam-configs.store');
+
+        Route::put('/module-exam-room-configs/{config}', [ModuleExamRoomConfigController::class, 'update']) // <<< ADD
+            ->name('module-exam-configs.update')
+            ->setBindingFields(['config' => 'id']); // Ensures {config} binds by ID
+
+        Route::delete('/module-exam-room-configs/{config}', [ModuleExamRoomConfigController::class, 'destroy']) // <<< ADD
+            ->name('module-exam-configs.destroy')
+            ->setBindingFields(['config' => 'id']);
+        });
 }); 
 
 require __DIR__.'/settings.php';
