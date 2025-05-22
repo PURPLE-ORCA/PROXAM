@@ -18,6 +18,7 @@ import {
     FileText,
     UserMinus,
     ListChecks,
+    Network,
 } from 'lucide-react';
 import AppLogo from './app-logo';
 import React, { useContext } from 'react'; // Added useContext
@@ -104,6 +105,12 @@ export function AppSidebar() {
             href: route('admin.attributions.index'), 
             icon: ListChecks, 
             active: route().current('admin.attributions.index'), // Only one route for now
+        });
+        mainNavItems.push({
+            title: translations?.filieres_nav_item || 'Study Fields',
+            href: route('admin.filieres.index'),
+            icon: Network,
+            active: route().current('admin.filieres.*'),
         });
 
     }

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\ExamAssignmentManagementController;
+use App\Http\Controllers\FiliereController;
 use App\Http\Controllers\AnneeUniController;
 use App\Http\Controllers\AttributionController;
 use App\Http\Controllers\ExamenController;
@@ -59,6 +60,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/examens/{examen}/manage-assignments', [ExamAssignmentManagementController::class, 'storeAttribution'])->name('examens.assignments.store');
         Route::put('/manage-assignments/{attribution}/toggle-responsable', [ExamAssignmentManagementController::class, 'toggleResponsable'])->name('attributions.toggle-responsable');
         Route::delete('/manage-assignments/{attribution}', [ExamAssignmentManagementController::class, 'destroyAttribution'])->name('attributions.destroy_manual');
+        Route::resource('filieres', FiliereController::class)->parameters(['filieres' => 'filiere'])->except(['show']);
     });
 }); 
 
