@@ -305,5 +305,6 @@
     "no_assignments_yet": "No professors assigned to this exam yet.",
     "delete_assignment_modal_title": "Delete Assignment",
     "assignment_delete_confirmation": "Are you sure you want to remove professor {profName} from this exam?",
-    "module_label": "Module"
+    "module_label": "Module",
+    "user_form_password_admin_edit_notice": "Password changes should be done by the user via their profile settings or the \"Forgot Password\" link."
 }

@@ -5,20 +5,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { TranslationContext } from '@/context/TranslationProvider';
 import { Link } from '@inertiajs/react';
 import { useContext } from 'react';
+import { Icon } from '@iconify/react';
 
-export default function UserForm({
-    data,
-    setData,
-    errors,
-    processing,
-    onSubmit,
-    availableRoles, // Array of role strings: ['admin', 'rh', ...]
-    isEdit = false,
-}) {
+
+export default function UserForm({ data, setData, errors, processing, onSubmit, availableRoles, isEdit = false }) {
     const { translations } = useContext(TranslationContext);
 
-    // Helper to get translated role name or fallback
     const getRoleTranslation = (roleKey) => {
+        if (!roleKey) return translations?.role_undefined || 'N/A';
         const translationKey = `role_${roleKey}`;
         return translations?.[translationKey] || roleKey.charAt(0).toUpperCase() + roleKey.slice(1);
     };
@@ -76,42 +70,59 @@ export default function UserForm({
                 {errors.role && <p className="mt-1 text-sm text-[var(--destructive)]">{errors.role}</p>}
             </div>
 
-            <div>
-                <Label htmlFor="password" className="text-[var(--foreground)]">
-                    {translations?.user_form_password_label || 'Password'} {isEdit ? '' : '*'}
-                </Label>
-                <Input
-                    id="password"
-                    type="password"
-                    value={data.password}
-                    onChange={(e) => setData('password', e.target.value)}
-                    required={!isEdit} // Password required on create, optional on edit
-                    className="mt-1 block w-full border-[var(--border)] bg-[var(--background)] text-[var(--foreground)] focus:ring-[var(--ring)]"
-                    isInvalid={errors.password}
-                />
-                {isEdit && (
-                    <p className="mt-1 text-xs text-[var(--muted-foreground)]">
-                        {translations?.user_form_password_edit_notice || 'Leave blank to keep current password.'}
-                    </p>
-                )}
-                {errors.password && <p className="mt-1 text-sm text-[var(--destructive)]">{errors.password}</p>}
-            </div>
+            {/* Conditionally render password fields only for create (not edit) */}
+            {!isEdit && (
+                <>
+                    <div>
+                        <Label htmlFor="password" className="text-[var(--foreground)]">
+                            {translations?.user_form_password_label || 'Password'} *
+                        </Label>
+                        <Input
+                            id="password"
+                            type="password"
+                            value={data.password}
+                            onChange={(e) => setData('password', e.target.value)}
+                            required
+                            className="mt-1 block w-full border-[var(--border)] bg-[var(--background)] text-[var(--foreground)] focus:ring-[var(--ring)]"
+                            isInvalid={errors.password}
+                        />
+                        {errors.password && <p className="mt-1 text-sm text-[var(--destructive)]">{errors.password}</p>}
+                    </div>
 
-            <div>
-                <Label htmlFor="password_confirmation" className="text-[var(--foreground)]">
-                    {translations?.user_form_password_confirm_label || 'Confirm Password'} {isEdit && !data.password ? '' : '*'}
-                </Label>
-                <Input
-                    id="password_confirmation"
-                    type="password"
-                    value={data.password_confirmation}
-                    onChange={(e) => setData('password_confirmation', e.target.value)}
-                    required={!isEdit || (isEdit && data.password)} // Required if creating or if password field is filled during edit
-                    className="mt-1 block w-full border-[var(--border)] bg-[var(--background)] text-[var(--foreground)] focus:ring-[var(--ring)]"
-                    isInvalid={errors.password_confirmation}
-                />
-                {errors.password_confirmation && <p className="mt-1 text-sm text-[var(--destructive)]">{errors.password_confirmation}</p>}
-            </div>
+                    <div>
+                        <Label htmlFor="password_confirmation" className="text-[var(--foreground)]">
+                            {translations?.user_form_password_confirm_label || 'Confirm Password'} *
+                        </Label>
+                        <Input
+                            id="password_confirmation"
+                            type="password"
+                            value={data.password_confirmation}
+                            onChange={(e) => setData('password_confirmation', e.target.value)}
+                            required
+                            className="mt-1 block w-full border-[var(--border)] bg-[var(--background)] text-[var(--foreground)] focus:ring-[var(--ring)]"
+                            isInvalid={errors.password_confirmation}
+                        />
+                        {errors.password_confirmation && <p className="mt-1 text-sm text-[var(--destructive)]">{errors.password_confirmation}</p>}
+                    </div>
+                </>
+            )}
+
+            {/* Notice for password handling can be removed or adapted if passwords are not handled here at all in edit mode */}
+            {isEdit && (
+                <div className="rounded-md bg-blue-50 p-4 dark:bg-blue-900/30">
+                    <div className="flex">
+                        <div className="flex-shrink-0">
+                            <Icon icon="mdi:information" className="h-5 w-5 text-blue-400 dark:text-blue-300" aria-hidden="true" />
+                        </div>
+                        <div className="ml-3 flex-1 md:flex md:justify-between">
+                            <p className="text-sm text-blue-700 dark:text-blue-200">
+                                {translations?.user_form_password_admin_edit_notice ||
+                                    'Password changes should be done by the user via profile settings or "Forgot Password" link.'}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <div className="mt-8 flex items-center justify-end gap-x-4 border-t border-[var(--border)] pt-6">
                 <Button variant="outline" type="button" asChild>

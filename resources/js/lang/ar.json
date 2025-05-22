@@ -305,5 +305,6 @@
     "no_assignments_yet": "لم يتم تعيين أساتذة لهذا الامتحان بعد.",
     "delete_assignment_modal_title": "حذف التكليف",
     "assignment_delete_confirmation": "هل أنت متأكد أنك تريد إزالة الأستاذ {profName} من هذا الامتحان؟",
-    "module_label": "الوحدة"
+    "module_label": "الوحدة",
+    "user_form_password_admin_edit_notice": "يجب أن يتم تغيير كلمة المرور من قبل المستخدم عبر إعدادات ملفه الشخصي أو رابط \"هل نسيت كلمة المرور\"."
 }

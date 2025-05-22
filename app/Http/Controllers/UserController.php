@@ -88,13 +88,9 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique(User::class)->ignore($user->id)],
             'role' => ['required', Rule::in(['admin', 'rh', 'professeur', 'chef_service'])],
-            'password' => ['nullable', 'confirmed', Password::defaults()], // Password is optional on update
         ]);
 
         $userData = $request->only('name', 'email', 'role');
-        if ($request->filled('password')) {
-            $userData['password'] = Hash::make($request->password);
-        }
 
         $user->update($userData);
 

@@ -305,5 +305,6 @@
     "no_assignments_yet": "Aucun professeur affecté à cet examen pour le moment.",
     "delete_assignment_modal_title": "Supprimer l'Affectation",
     "assignment_delete_confirmation": "Êtes-vous sûr de vouloir retirer le professeur {profName} de cet examen ?",
-    "module_label": "Module"
+    "module_label": "Module",
+    "user_form_password_admin_edit_notice": "Les modifications de mot de passe doivent être effectuées par l'utilisateur via les paramètres de son profil ou le lien « Mot de passe oublié »."
 }
