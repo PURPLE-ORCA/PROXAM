@@ -18,7 +18,6 @@ return new class extends Migration
             $table->enum('type', ['QCM', 'theoreique','MIXED']);
             $table->dateTime('debut');
             $table->foreignId('module_id')->constrained('modules')->cascadeOnDelete();
-            $table->enum('filiere', ['Medicale', 'Pharmacie']);
             $table->unsignedInteger('required_professors');
             $table->timestamps();
         });

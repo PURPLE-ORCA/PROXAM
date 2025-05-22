@@ -11,7 +11,7 @@ class Examen extends Model
     use HasFactory;
     protected $fillable = [
         'nom', 'quadrimestre_id', 'type', 'debut', 
-        'module_id', 'filiere', 'required_professors'
+        'module_id', 'required_professors'
     ];
 
     protected $casts = [

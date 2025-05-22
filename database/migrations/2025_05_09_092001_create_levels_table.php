@@ -11,10 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('modules', function (Blueprint $table) {
+        Schema::create('levels', function (Blueprint $table) {
             $table->id();
             $table->string('nom');
-            $table->foreignId('level_id')->nullable()->after('nom')->constrained('levels')->cascadeOnDelete();
+            $table->foreignId('filiere_id')->constrained('filieres')->cascadeOnDelete();
+            $table->unique(['nom', 'filiere_id']); // A level name should be unique within a filiere
             $table->timestamps();
         });
     }
@@ -24,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('modules');
+        Schema::dropIfExists('levels');
     }
 };
