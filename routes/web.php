@@ -15,6 +15,7 @@ use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\SesonController;
 use App\Http\Controllers\UnavailabilityController;
 use App\Http\Controllers\UserController;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -96,7 +97,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('/module-exam-room-configs/{config}', [ModuleExamRoomConfigController::class, 'destroy']) // <<< ADD
             ->name('module-exam-configs.destroy')
             ->setBindingFields(['config' => 'id']);
-        });
+    
+        Route::post('/select-academic-year', function(Request $request) {
+            $validated = $request->validate(['annee_uni_id' => 'required|exists:annee_unis,id']);
+            session(['selected_annee_uni_id' => (int)$validated['annee_uni_id']]);
+            return back(); // Or redirect()->intended()
+        })->name('academic-year.select');
+    });
 }); 
 
 require __DIR__.'/settings.php';

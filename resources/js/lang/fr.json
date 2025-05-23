@@ -375,5 +375,9 @@
     "configured_prof_count_header": "Profs/Salle (Défaut)",
     "no_module_exam_configs_found": "Aucune configuration de salle par défaut définie pour ce module.",
     "delete_module_exam_config_modal_title": "Supprimer Config. Salle",
-    "module_exam_config_delete_confirmation": "Êtes-vous sûr de vouloir retirer la salle {salleName} de la configuration par défaut de ce module ?"
+    "module_exam_config_delete_confirmation": "Êtes-vous sûr de vouloir retirer la salle {salleName} de la configuration par défaut de ce module ?",
+    
+    "current_academic_year_label": "Academic Year",
+    "no_academic_year_selected_label": "No Year Selected",
+    "select_academic_year_placeholder": "Switch Academic Year"
 }

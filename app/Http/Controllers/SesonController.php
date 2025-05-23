@@ -16,19 +16,25 @@ class SesonController extends Controller
 
     public function index(Request $request)
     {
-        $sesons = Seson::with('anneeUni') // Eager load the related academic year
+        $latestAnneeUni = AnneeUni::orderBy('annee', 'desc')->first();
+        $selectedAnneeUniId = session('selected_annee_uni_id', $latestAnneeUni?->id);
+
+        $sesonsQuery = Seson::with('anneeUni');
+
+        if ($selectedAnneeUniId) {
+            $sesonsQuery->where('annee_uni_id', $selectedAnneeUniId);
+        } else {
+            // If no academic year selected or exists, show no sessions
+            $sesonsQuery->whereRaw('1 = 0');
+            // Log::warning('SesonController@index: No selected_annee_uni_id. Displaying no sesons.');
+        }
+
+        $sesons = $sesonsQuery
             ->when($request->input('search'), function ($query, $search) {
                 $query->where('code', 'like', "%{$search}%")
-                      ->orWhereHas('anneeUni', function ($q) use ($search) {
-                          $q->where('annee', 'like', "%{$search}%");
-                      });
+                      ->orWhereHas('anneeUni', fn($q) => $q->where('annee', 'like', "%{$search}%"));
             })
-            ->orderByDesc( // Order by academic year desc, then session code asc
-                AnneeUni::select('annee')
-                    ->whereColumn('annee_unis.id', 'sesons.annee_uni_id')
-                    ->orderBy('annee', 'desc')
-                    ->limit(1)
-            )
+            ->orderBy(AnneeUni::select('annee')->whereColumn('annee_unis.id', 'sesons.annee_uni_id')->orderBy('annee', 'desc')->limit(1), 'desc') // Order by AnneeUni's annee
             ->orderBy('code', 'asc')
             ->paginate(15)
             ->withQueryString();

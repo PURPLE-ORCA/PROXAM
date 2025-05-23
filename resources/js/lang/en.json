@@ -374,5 +374,9 @@
     "configured_prof_count_header": "Default Profs for Room",
     "no_module_exam_configs_found": "No default room configurations set for this module.",
     "delete_module_exam_config_modal_title": "Delete Room Configuration",
-    "module_exam_config_delete_confirmation": "Are you sure you want to remove room {salleName} from this module's default exam configuration?"
+    
+    "module_exam_config_delete_confirmation": "Are you sure you want to remove room {salleName} from this module's default exam configuration?",
+    "current_academic_year_label": "Academic Year",
+    "no_academic_year_selected_label": "No Year Selected",
+    "select_academic_year_placeholder": "Switch Academic Year"
 }

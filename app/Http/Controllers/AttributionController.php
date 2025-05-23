@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AnneeUni;
 use App\Models\Attribution;
 use App\Models\Examen;
 use App\Models\Professeur;
@@ -13,53 +14,51 @@ class AttributionController extends Controller
 {
     public function index(Request $request)
     {
-        // Admin/RH can see all attributions
-        // Gate::authorize('viewAny', Attribution::class); // Or use 'is_admin_or_rh' gate
+        $latestAnneeUni = AnneeUni::orderBy('annee', 'desc')->first();
+        $selectedAnneeUniId = session('selected_annee_uni_id', $latestAnneeUni?->id);
 
-        $attributions = Attribution::with([
-                'examen.module',
-                'examen.quadrimestre.seson.anneeUni',
-                'professeur.user',
-                'professeur.service'
-            ])
-            ->when($request->input('search_examen'), function ($query, $search) {
-                $query->whereHas('examen', fn($q) => $q->where('nom', 'like', "%{$search}%")
-                    ->orWhereHas('module', fn($qm) => $qm->where('nom', 'like', "%{$search}%")));
-            })
-            ->when($request->input('search_professeur'), function ($query, $search) {
-                $query->whereHas('professeur', fn($q) => $q->where('nom', 'like', "%{$search}%")
-                    ->orWhere('prenom', 'like', "%{$search}%")
-                    ->orWhereHas('user', fn($qu) => $qu->where('email', 'like', "%{$search}%")));
-            })
-            ->when($request->input('seson_id'), function ($query, $sesonId) {
-                $query->whereHas('examen.quadrimestre', fn($q) => $q->where('seson_id', $sesonId));
-            })
-            ->orderByDesc(Examen::select('debut') // Order by exam start date
-                ->whereColumn('examens.id', 'attributions.examen_id')
-                ->limit(1)
-            )
-            ->orderBy(Professeur::select('nom') // Then by professor name
-                ->whereColumn('professeurs.id', 'attributions.professeur_id')
-                ->limit(1)
-            )
-            ->paginate(20) // Or your preferred page size
+        $attributionsQuery = Attribution::with([
+            'examen.module.level.filiere',
+            'examen.quadrimestre.seson.anneeUni',
+            'professeur.user',
+            'professeur.service'
+        ]);
+
+        if ($selectedAnneeUniId) {
+            $attributionsQuery->whereHas('examen.quadrimestre.seson', function ($query) use ($selectedAnneeUniId) {
+                $query->where('annee_uni_id', $selectedAnneeUniId);
+            });
+        } else {
+            $attributionsQuery->whereRaw('1 = 0');
+            // Log::warning('AttributionController@index: No selected_annee_uni_id. Displaying no attributions.');
+        }
+
+        // Apply other filters
+        $attributionsQuery
+            ->when($request->input('search_examen'), function ($query, $search) { /* ... */ })
+            ->when($request->input('search_professeur'), function ($query, $search) { /* ... */ });
+            // seson_id filter was here, now academic year is the primary filter
+
+        $attributions = $attributionsQuery
+            ->orderByDesc(Examen::select('debut')->whereColumn('examens.id', 'attributions.examen_id')->limit(1))
+            ->orderBy(Professeur::select('nom')->whereColumn('professeurs.id', 'attributions.professeur_id')->limit(1))
+            ->paginate(20)
             ->withQueryString();
 
-        // Data for filters
-        $sesonsForFilter = Seson::with('anneeUni')->get()->map(fn($s) => [
-            'id' => $s->id,
-            'display_name' => "{$s->anneeUni->annee} - {$s->code}"
-        ])->sortBy('display_name')->values();
+        // Data for filters - now AnneeUni is primary, Sesons might be a secondary filter
+        $sesonsForFilter = [];
+        if ($selectedAnneeUniId) {
+             $sesonsForFilter = Seson::where('annee_uni_id', $selectedAnneeUniId)
+                                    ->orderBy('code')->get(['id', 'code'])
+                                    ->map(fn($s) => ['id' => $s->id, 'display_name' => $s->code]); // Simpler display for filter
+        }
+
 
         return Inertia::render('Admin/Attributions/Index', [
             'attributions' => $attributions,
-            'filters' => $request->only(['search_examen', 'search_professeur', 'seson_id']),
+            'filters' => $request->only(['search_examen', 'search_professeur', 'seson_id']), // Keep seson_id if you want to filter by session *within* an annee_uni
             'sesonsForFilter' => $sesonsForFilter,
         ]);
     }
 
-    // Other CRUD methods (create, store, edit, update, destroy) for Attributions
-    // might be very limited for admins. Usually, attributions are created by the engine
-    // or through a specific "manual override" interface on an Exam's detail page.
-    // For now, we focus on `index`.
 }

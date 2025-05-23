@@ -2,20 +2,20 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AnneeUni;
 use App\Models\Examen;
 use App\Models\Filiere;
 use App\Models\Level;
 use App\Models\Quadrimestre;
 use App\Models\Module;
 use App\Models\Salle;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use App\Services\ExamAssignmentService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Log;
-
+use Illuminate\Http\Request;
 class ExamenController extends Controller
 {
     protected function baseInertiaPath(): string
@@ -55,24 +55,50 @@ class ExamenController extends Controller
     
         return compact('quadrimestres', 'filieres', 'allLevels', 'allModules', 'salles', 'types');
     }
-
     public function index(Request $request)
     {
-        $examens = Examen::with(['quadrimestre.seson.anneeUni', 'module'])
-            ->withCount('attributions')
-            ->when($request->input('search'), function ($query, $search) {
-                $query->where('nom', 'like', "%{$search}%")
-                      ->orWhereHas('module', fn($q) => $q->where('nom', 'like', "%{$search}%"))
-                      ->orWhereHas('quadrimestre.seson.anneeUni', fn($q) => $q->where('annee', 'like', "%{$search}%"));
-            })
+        // Determine the selected academic year ID
+        // It defaults to the latest AnneeUni if not found in session
+        $latestAnneeUni = AnneeUni::orderBy('annee', 'desc')->first();
+        $selectedAnneeUniId = session('selected_annee_uni_id', $latestAnneeUni?->id);
 
-            ->orderBy('debut', 'desc')
+        $examensQuery = Examen::with([
+                'module.level.filiere',
+                'quadrimestre.seson.anneeUni'
+            ])
+            ->withCount('attributions');
+
+        // Filter by selected academic year if one is effectively selected
+        if ($selectedAnneeUniId) {
+            $examensQuery->whereHas('quadrimestre.seson', function ($query) use ($selectedAnneeUniId) {
+                $query->where('annee_uni_id', $selectedAnneeUniId);
+            });
+        } else {
+            // If no academic years exist at all, or none selected, show no exams by default.
+            // This prevents accidentally showing all exams from all time if setup is incomplete.
+            $examensQuery->whereRaw('1 = 0'); // Effectively an empty result set
+            Log::warning('ExamenController@index: No selected_annee_uni_id available or no AnneeUni records exist. Displaying no exams.');
+        }
+
+        // Apply search filter
+        $examensQuery->when($request->input('search'), function ($query, $search) {
+            $query->where(function($q) use ($search) { // Group search conditions
+                $q->where('nom', 'like', "%{$search}%")
+                  ->orWhereHas('module', fn($subQ) => $subQ->where('nom', 'like', "%{$search}%"))
+                  ->orWhereHas('module.level.filiere', fn($subQ) => $subQ->where('nom', 'like', "%{$search}%"));
+                  // Note: Searching by AnneeUni name via relation is implicitly handled by the main year filter
+            });
+        });
+
+        $examens = $examensQuery
+            ->orderBy('debut', 'desc') // Order by exam start date
             ->paginate(15)
             ->withQueryString();
 
         return Inertia::render($this->baseInertiaPath() . 'Index', [
             'examens' => $examens,
             'filters' => $request->only(['search']),
+            // 'currentSelectedAnneeUniId' => $selectedAnneeUniId, // Optionally pass for debugging or filter display
         ]);
     }
 

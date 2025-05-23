@@ -375,5 +375,9 @@
     "configured_prof_count_header": "أساتذة/قاعة (افتراضي)",
     "no_module_exam_configs_found": "لا توجد إعدادات قاعات افتراضية محددة لهذه الوحدة.",
     "delete_module_exam_config_modal_title": "حذف إعداد القاعة",
-    "module_exam_config_delete_confirmation": "هل أنت متأكد أنك تريد إزالة القاعة {salleName} من إعدادات الامتحان الافتراضية لهذه الوحدة؟"
+
+    "module_exam_config_delete_confirmation": "Are you sure you want to remove room {salleName} from this module's default exam configuration?",
+    "current_academic_year_label": "Academic Year",
+    "no_academic_year_selected_label": "No Year Selected",
+    "select_academic_year_placeholder": "Switch Academic Year"
 }
