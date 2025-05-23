@@ -103,6 +103,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
             session(['selected_annee_uni_id' => (int)$validated['annee_uni_id']]);
             return back(); // Or redirect()->intended()
         })->name('academic-year.select');
+    
+        Route::post('/sesons/{seson}/batch-assign-exams', [SesonController::class, 'batchAssignExams']) // <<< ADD THIS
+        ->name('sesons.batch-assign-exams');  
+    
     });
 }); 
 
