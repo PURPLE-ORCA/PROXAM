@@ -1,11 +1,17 @@
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox'; // Shadcn Checkbox
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { SelectContent, SelectItem, SelectTrigger, SelectValue, Select as ShadcnSelect } from '@/components/ui/select';
 import { TranslationContext } from '@/context/TranslationProvider';
+import { Combobox, ComboboxButton, ComboboxInput, ComboboxOption, ComboboxOptions } from '@headlessui/react';
+import { Icon } from '@iconify/react';
 import { Link } from '@inertiajs/react';
-import { useContext, useEffect } from 'react';
+import { useContext, useEffect, useMemo, useState } from 'react';
+
+// Define string constants
+const SPECIALITE_MEDICAL_KEY = 'medical';
+const SPECIALITE_SURGICAL_KEY = 'surgical';
 
 export default function ProfesseurForm({
     data,
@@ -15,18 +21,62 @@ export default function ProfesseurForm({
     onSubmit,
     services,
     modules,
-    rangs, 
+    rangs,
     statuts,
-    specialties,
+    existingSpecialties = [],
     isEdit = false,
-    professeurToEdit, 
+    professeurToEdit,
 }) {
     const { translations } = useContext(TranslationContext);
-    const specialiteOptions = {
-        chirurgical: translations?.professeur_specialty_chirurgical || 'Chirurgical',
-        medical: translations?.professeur_specialty_medical || 'Médical',
-    };
-    // Handle module_ids selection (array of selected module IDs)
+    const [specialtyQuery, setSpecialtyQuery] = useState('');
+
+    const allSpecialtyOptions = useMemo(() => {
+        const preferred = [
+            { id: SPECIALITE_MEDICAL_KEY, name: translations?.professeur_specialty_medical || 'Medical' },
+            { id: SPECIALITE_SURGICAL_KEY, name: translations?.professeur_specialty_surgical || 'Surgical' },
+        ];
+
+        const existing = (existingSpecialties || [])
+            .filter((spec) => spec !== SPECIALITE_MEDICAL_KEY && spec !== SPECIALITE_SURGICAL_KEY)
+            .map((spec) => ({ id: spec, name: spec }));
+
+        const combined = [...preferred, ...existing];
+        const uniqueMap = new Map();
+        combined.forEach((item) => uniqueMap.set(item.id, item));
+        return Array.from(uniqueMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+    }, [existingSpecialties, translations]);
+
+    const filteredSpecialties =
+        specialtyQuery === ''
+            ? allSpecialtyOptions
+            : allSpecialtyOptions.filter((spec) => spec.name.toLowerCase().includes(specialtyQuery.toLowerCase()));
+
+    // Initialize form data when editing
+    useEffect(() => {
+        if (isEdit && professeurToEdit) {
+
+            setData({
+                professeur_nom: professeurToEdit.nom || '',
+                professeur_prenom: professeurToEdit.prenom || '',
+                email: professeurToEdit.user?.email || '',
+                rang: professeurToEdit.rang || '',
+                statut: professeurToEdit.statut || '',
+                is_chef_service: Boolean(professeurToEdit.is_chef_service),
+                date_recrutement: professeurToEdit.date_recrutement || '',
+                specialite: professeurToEdit.specialite || '',
+                service_id: professeurToEdit.service_id?.toString() || '',
+                module_ids: professeurToEdit.modules ? professeurToEdit.modules.map((m) => m.id) : [],
+            });
+        }
+    }, [isEdit, professeurToEdit, setData]);
+
+    // Reset specialty query when specialty data changes
+    useEffect(() => {
+        if (data.specialite && specialtyQuery !== '') {
+            setSpecialtyQuery('');
+        }
+    }, [data.specialite]);
+
     const handleModuleChange = (moduleId) => {
         const currentModules = data.module_ids || [];
         if (currentModules.includes(moduleId)) {
@@ -39,14 +89,26 @@ export default function ProfesseurForm({
         }
     };
 
-    useEffect(() => {
-        if (isEdit && professeurToEdit && professeurToEdit.modules) {
-            setData(
-                'module_ids',
-                professeurToEdit.modules.map((m) => m.id),
-            );
+    // Improved display value function for specialty combobox
+    const getSpecialtyDisplayValue = (value) => {
+        if (!value) return '';
+
+        // Check if it's one of our predefined options
+        const predefinedOption = allSpecialtyOptions.find((opt) => opt.id === value);
+        if (predefinedOption) {
+            return predefinedOption.name;
         }
-    }, [professeurToEdit, isEdit, setData]);
+
+        // If not predefined, return the value as is (custom specialty)
+        return value;
+    };
+
+    // Handle specialty selection properly
+    const handleSpecialtyChange = (value) => {
+        console.log('Specialty changed to:', value);
+        setData('specialite', value);
+        setSpecialtyQuery('');
+    };
 
     return (
         <form onSubmit={onSubmit} className="space-y-6">
@@ -61,10 +123,10 @@ export default function ProfesseurForm({
                     <Input
                         id="professeur_prenom"
                         type="text"
-                        value={data.professeur_prenom}
+                        value={data.professeur_prenom || ''}
                         onChange={(e) => setData('professeur_prenom', e.target.value)}
                         required
-                        className="mt-1"
+                        className="mt-1 block w-full border-[var(--border)] bg-[var(--background)] text-[var(--foreground)] focus:ring-[var(--ring)]"
                     />
                     {errors.professeur_prenom && <p className="mt-1 text-sm text-[var(--destructive)]">{errors.professeur_prenom}</p>}
                 </div>
@@ -75,10 +137,10 @@ export default function ProfesseurForm({
                     <Input
                         id="professeur_nom"
                         type="text"
-                        value={data.professeur_nom}
+                        value={data.professeur_nom || ''}
                         onChange={(e) => setData('professeur_nom', e.target.value)}
                         required
-                        className="mt-1"
+                        className="mt-1 block w-full border-[var(--border)] bg-[var(--background)] text-[var(--foreground)] focus:ring-[var(--ring)]"
                     />
                     {errors.professeur_nom && <p className="mt-1 text-sm text-[var(--destructive)]">{errors.professeur_nom}</p>}
                 </div>
@@ -89,15 +151,14 @@ export default function ProfesseurForm({
                     <Input
                         id="email"
                         type="email"
-                        value={data.email}
+                        value={data.email || ''}
                         onChange={(e) => setData('email', e.target.value)}
                         required
-                        className="mt-1"
-                        disabled={isEdit && professeurToEdit?.user?.email}
+                        className="mt-1 block w-full border-[var(--border)] bg-[var(--background)] text-[var(--foreground)] focus:ring-[var(--ring)]"
                     />
                     {isEdit && (
                         <p className="mt-1 text-xs text-[var(--muted-foreground)]">
-                            {translations?.professeur_form_email_edit_notice || 'Email cannot be changed after creation for login consistency.'}
+                            {translations?.professeur_form_email_edit_notice || 'Email can be changed during edit.'}
                         </p>
                     )}
                     {errors.email && <p className="mt-1 text-sm text-[var(--destructive)]">{errors.email}</p>}
@@ -110,70 +171,102 @@ export default function ProfesseurForm({
                 </legend>
                 <div className="sm:col-span-3">
                     <Label htmlFor="service_id">{translations?.professeur_form_service_label || 'Service'} *</Label>
-                    <Select
-                        value={data.service_id?.toString()}
-                        onValueChange={(value) => setData('service_id', value ? parseInt(value, 10) : '')}
-                        required
-                    >
-                        <SelectTrigger className="mt-1">
+                    <ShadcnSelect value={data.service_id?.toString() || ''} onValueChange={(value) => setData('service_id', value)} required>
+                        <SelectTrigger className="mt-1 w-full border-[var(--border)] bg-[var(--background)] text-[var(--foreground)] focus:ring-[var(--ring)]">
                             <SelectValue placeholder={translations?.professeur_form_select_service_placeholder || 'Select Service'} />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="border-[var(--border)] bg-[var(--popover)] text-[var(--popover-foreground)]">
                             {(services || []).map((s) => (
                                 <SelectItem key={s.id} value={s.id.toString()}>
                                     {s.nom}
                                 </SelectItem>
                             ))}
                         </SelectContent>
-                    </Select>
+                    </ShadcnSelect>
                     {errors.service_id && <p className="mt-1 text-sm text-[var(--destructive)]">{errors.service_id}</p>}
                 </div>
+
                 <div className="sm:col-span-3">
-                    <Label htmlFor="specialite">{translations?.professeur_form_specialty_label || 'Specialty'} *</Label>
-                    <Select value={data.specialite || ''} onValueChange={(value) => setData('specialite', value)} required>
-                        <SelectTrigger className="mt-1 w-full">
-                            <SelectValue placeholder={translations?.professeur_form_select_specialty_placeholder || 'Select Specialty'} />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {Object.entries(specialties || {}).map(([key, displayText]) => (
-                                <SelectItem key={key} value={key}>
-                                    {displayText}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                    <Label className="block text-sm leading-6 font-medium text-[var(--foreground)]">
+                        {translations?.professeur_form_specialty_label || 'Specialty'} *
+                    </Label>
+                    <div className="relative mt-1">
+                        <Combobox value={data.specialite || ''} onChange={handleSpecialtyChange} name="specialite">
+                            <div className="relative">
+                                <ComboboxInput
+                                    className="w-full rounded-md border-0 bg-[var(--background)] py-1.5 pr-10 pl-3 text-[var(--foreground)] shadow-sm ring-1 ring-[var(--border)] ring-inset focus:ring-2 focus:ring-[var(--ring)] focus:ring-inset sm:text-sm sm:leading-6"
+                                    onChange={(event) => setSpecialtyQuery(event.target.value)}
+                                    displayValue={() => getSpecialtyDisplayValue(data.specialite)}
+                                    autoComplete="off"
+                                    required
+                                />
+                                <ComboboxButton className="absolute inset-y-0 right-0 flex items-center rounded-r-md px-2 focus:outline-none">
+                                    <Icon icon="mdi:chevron-down" className="h-5 w-5 text-gray-400 dark:text-gray-500" aria-hidden="true" />
+                                </ComboboxButton>
+                            </div>
+
+                            <ComboboxOptions className="ring-opacity-5 absolute z-10 mt-1 max-h-56 w-full overflow-auto rounded-md bg-[var(--popover)] py-1 text-base shadow-lg ring-1 ring-[var(--border)] focus:outline-none sm:text-sm">
+                                {specialtyQuery.length > 0 &&
+                                    !allSpecialtyOptions.some((opt) => opt.name.toLowerCase() === specialtyQuery.toLowerCase()) && (
+                                        <ComboboxOption
+                                            value={specialtyQuery}
+                                            className="relative cursor-default py-2 pr-9 pl-3 text-[var(--popover-foreground)] select-none data-[focus]:bg-[var(--accent)] data-[focus]:text-[var(--accent-foreground)]"
+                                        >
+                                            <span className="block truncate italic">
+                                                {translations?.create_new_specialty || 'Create:'} "{specialtyQuery}"
+                                            </span>
+                                        </ComboboxOption>
+                                    )}
+                                {filteredSpecialties.map((spec) => (
+                                    <ComboboxOption
+                                        key={spec.id}
+                                        value={spec.id}
+                                        className="relative cursor-default py-2 pr-4 pl-8 text-[var(--popover-foreground)] select-none data-[focus]:bg-[var(--accent)] data-[focus]:text-[var(--accent-foreground)]"
+                                    >
+                                        <span className={`block truncate ${data.specialite === spec.id ? 'font-semibold' : ''}`}>{spec.name}</span>
+                                        {data.specialite === spec.id && (
+                                            <span className="absolute inset-y-0 left-0 flex items-center pl-1.5 text-[var(--primary)]">
+                                                <Icon icon="mdi:check" className="h-5 w-5" aria-hidden="true" />
+                                            </span>
+                                        )}
+                                    </ComboboxOption>
+                                ))}
+                            </ComboboxOptions>
+                        </Combobox>
+                    </div>
                     {errors.specialite && <p className="mt-1 text-sm text-[var(--destructive)]">{errors.specialite}</p>}
                 </div>
+
                 <div className="sm:col-span-2">
                     <Label htmlFor="rang">{translations?.professeur_form_rank_label || 'Rank'} *</Label>
-                    <Select value={data.rang} onValueChange={(value) => setData('rang', value)} required>
-                        <SelectTrigger className="mt-1">
+                    <ShadcnSelect value={data.rang || ''} onValueChange={(value) => setData('rang', value)} required>
+                        <SelectTrigger className="mt-1 w-full border-[var(--border)] bg-[var(--background)] text-[var(--foreground)] focus:ring-[var(--ring)]">
                             <SelectValue placeholder={translations?.professeur_form_select_rank_placeholder || 'Select Rank'} />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="border-[var(--border)] bg-[var(--popover)] text-[var(--popover-foreground)]">
                             {Object.entries(rangs || {}).map(([key, value]) => (
                                 <SelectItem key={key} value={key}>
                                     {value}
                                 </SelectItem>
                             ))}
                         </SelectContent>
-                    </Select>
+                    </ShadcnSelect>
                     {errors.rang && <p className="mt-1 text-sm text-[var(--destructive)]">{errors.rang}</p>}
                 </div>
                 <div className="sm:col-span-2">
                     <Label htmlFor="statut">{translations?.professeur_form_status_label || 'Status'} *</Label>
-                    <Select value={data.statut} onValueChange={(value) => setData('statut', value)} required>
-                        <SelectTrigger className="mt-1">
+                    <ShadcnSelect value={data.statut || ''} onValueChange={(value) => setData('statut', value)} required>
+                        <SelectTrigger className="mt-1 w-full border-[var(--border)] bg-[var(--background)] text-[var(--foreground)] focus:ring-[var(--ring)]">
                             <SelectValue placeholder={translations?.professeur_form_select_status_placeholder || 'Select Status'} />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="border-[var(--border)] bg-[var(--popover)] text-[var(--popover-foreground)]">
                             {Object.entries(statuts || {}).map(([key, value]) => (
                                 <SelectItem key={key} value={key}>
                                     {value}
                                 </SelectItem>
                             ))}
                         </SelectContent>
-                    </Select>
+                    </ShadcnSelect>
                     {errors.statut && <p className="mt-1 text-sm text-[var(--destructive)]">{errors.statut}</p>}
                 </div>
                 <div className="sm:col-span-2">
@@ -181,20 +274,22 @@ export default function ProfesseurForm({
                     <Input
                         id="date_recrutement"
                         type="date"
-                        value={data.date_recrutement}
+                        value={data.date_recrutement || ''}
                         onChange={(e) => setData('date_recrutement', e.target.value)}
                         required
-                        className="mt-1"
+                        className="mt-1 block w-full border-[var(--border)] bg-[var(--background)] text-[var(--foreground)] focus:ring-[var(--ring)]"
                     />
                     {errors.date_recrutement && <p className="mt-1 text-sm text-[var(--destructive)]">{errors.date_recrutement}</p>}
                 </div>
                 <div className="flex items-center space-x-2 pt-2 sm:col-span-full">
                     <Checkbox
                         id="is_chef_service"
-                        checked={data.is_chef_service}
-                        onCheckedChange={(checked) => setData('is_chef_service', checked)}
+                        checked={Boolean(data.is_chef_service)}
+                        onCheckedChange={(checkedState) => setData('is_chef_service', checkedState === true)}
                     />
-                    <Label htmlFor="is_chef_service">{translations?.professeur_form_head_of_service_label || 'Head of Service'}</Label>
+                    <Label htmlFor="is_chef_service" className="font-normal text-[var(--foreground)]">
+                        {translations?.professeur_form_head_of_service_label || 'Head of Service'}
+                    </Label>
                     {errors.is_chef_service && <p className="ml-2 text-sm text-[var(--destructive)]">{errors.is_chef_service}</p>}
                 </div>
             </fieldset>
@@ -211,7 +306,7 @@ export default function ProfesseurForm({
                                 checked={(data.module_ids || []).includes(module.id)}
                                 onCheckedChange={() => handleModuleChange(module.id)}
                             />
-                            <Label htmlFor={`module-${module.id}`} className="font-normal">
+                            <Label htmlFor={`module-${module.id}`} className="font-normal text-[var(--foreground)]">
                                 {module.nom}
                             </Label>
                         </div>
@@ -222,7 +317,7 @@ export default function ProfesseurForm({
 
             <div className="mt-8 flex items-center justify-end gap-x-4 border-t border-[var(--border)] pt-6">
                 <Button variant="outline" type="button" asChild>
-                    <Link href={route('admin.professeurs.index')}>{translations?.cancel_button || 'Annuler'}</Link>
+                    <Link href={route('admin.professeurs.index')}>{translations?.cancel_button || 'Cancel'}</Link>
                 </Button>
                 <Button
                     type="submit"

@@ -38,6 +38,7 @@ export default function Index({ filieres }) {
 
             <div className="container mx-auto px-4 py-6 sm:px-6 lg:px-8">
                 <div className="mb-8 flex items-center justify-between">
+                    <h1 className="text-2xl font-semibold text-[var(--foreground)]">{translations?.filieres_heading || 'Study Field'}</h1>
                     <Button asChild className="shadow-lg transition-all duration-200 hover:shadow-xl">
                         <Link href={route('admin.filieres.create')}>
                             <Icon icon="mdi:plus-circle-outline" className="mr-2 h-5 w-5" />
