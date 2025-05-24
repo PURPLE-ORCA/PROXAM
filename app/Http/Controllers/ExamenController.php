@@ -165,8 +165,11 @@ class ExamenController extends Controller
 
     public function edit(Examen $examen)
     {
-        $examen->load(['quadrimestre.seson.anneeUni', 'module', 'salles']); // Eager load relations
-        $formData = array_merge($this->getFormData(), ['examenToEdit' => $examen]);
+        $examen->load(['quadrimestre.seson.anneeUni', 'module', 'salles']); // Ensure relations are loaded
+        $formData = array_merge($this->getFormData(), [
+            'examenToEdit' => $examen,
+            'allModules' => Module::all(), 
+        ]);
         return Inertia::render($this->baseInertiaPath() . 'Edit', $formData);
     }
 

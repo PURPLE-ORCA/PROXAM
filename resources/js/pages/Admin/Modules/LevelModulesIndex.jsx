@@ -8,7 +8,6 @@ import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useContext, useMemo, useState } from 'react';
 
 export default function LevelModulesIndex({ level, modules, filiere, filters }) {
-    // Receives parent level, its modules, and parent filiere
     const { translations } = useContext(TranslationContext);
     const { auth } = usePage().props;
     const [itemToDelete, setItemToDelete] = useState(null);
@@ -19,7 +18,7 @@ export default function LevelModulesIndex({ level, modules, filiere, filters }) 
         () => [
             { title: translations?.filieres_breadcrumb || 'Study Fields', href: route('admin.filieres.index') },
             { title: filiere.nom, href: route('admin.levels.index', { filiere: filiere.id }) },
-            { title: level.nom }, // Current level name
+            { title: level.nom }, 
         ],
         [translations, filiere, level],
     );
@@ -63,7 +62,7 @@ export default function LevelModulesIndex({ level, modules, filiere, filters }) 
                     <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                         {modules.map(
                             (
-                                moduleItem, // Renamed map variable to moduleItem
+                                moduleItem,
                             ) => (
                                 <div
                                     key={moduleItem.id}
@@ -76,10 +75,6 @@ export default function LevelModulesIndex({ level, modules, filiere, filters }) 
                                     onMouseLeave={() => setHoveredCard(null)}
                                 >
                                     <Link
-                                        // TODO: Define where a module card links to.
-                                        // For now, it could link to the module's edit page, or a future detail page.
-                                        // Or to the "Module Exam Config" page we planned (Point 7).
-                                        // Let's make it link to the "Module Exam Config" page (to be created).
                                         href={route('admin.modules.exam-configs.index', { module: moduleItem.id })} // Placeholder route
                                         className="block p-6 pb-4 transition-colors duration-200"
                                     >

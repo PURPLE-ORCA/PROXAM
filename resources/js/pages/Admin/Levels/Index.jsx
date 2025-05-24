@@ -8,9 +8,8 @@ import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useContext, useMemo, useState } from 'react';
 
 export default function Index({ filiere, levels }) {
-    // Receives parent filiere and its levels
     const { translations } = useContext(TranslationContext);
-    const { auth } = usePage().props; // For permissions
+    const { auth } = usePage().props; 
     const [itemToDelete, setItemToDelete] = useState(null);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [hoveredCard, setHoveredCard] = useState(null);
@@ -18,7 +17,7 @@ export default function Index({ filiere, levels }) {
     const breadcrumbs = useMemo(
         () => [
             { title: translations?.filieres_breadcrumb || 'Study Fields', href: route('admin.filieres.index') },
-            { title: filiere.nom }, // Current filiere name, not a link as we are on its levels page
+            { title: filiere.nom }, 
         ],
         [translations, filiere],
     );
@@ -33,7 +32,7 @@ export default function Index({ filiere, levels }) {
             router.delete(route('admin.levels.destroy', { level: itemToDelete.id }), {
                 preserveScroll: true,
                 onSuccess: () => setIsDeleteModalOpen(false),
-                onError: () => setIsDeleteModalOpen(false), // Close modal even on error for now
+                onError: () => setIsDeleteModalOpen(false),
             });
         }
     };
@@ -47,7 +46,7 @@ export default function Index({ filiere, levels }) {
                     <h1 className="text-2xl font-semibold text-[var(--foreground)]">
                         {translations?.levels_heading || 'Levels in'} {filiere.nom}
                     </h1>
-                    {(auth.abilities?.is_admin || auth.abilities?.is_rh) && ( // Assuming Admin or RH can add levels
+                    {(auth.abilities?.is_admin || auth.abilities?.is_rh) && (
                         <Button asChild className="shadow-lg transition-all duration-200 hover:shadow-xl">
                             <Link href={route('admin.levels.create', { filiere_id: filiere.id })}>
                                 <Icon icon="mdi:plus-circle-outline" className="mr-2 h-5 w-5" />
@@ -71,7 +70,7 @@ export default function Index({ filiere, levels }) {
                                 onMouseLeave={() => setHoveredCard(null)}
                             >
                                 <Link
-                                    href={route('admin.modules.index', { level: level.id })} // Link to modules index, passing level ID
+                                    href={route('admin.modules.index', { level: level.id })} 
                                     className="block p-6 pb-4 transition-colors duration-200"
                                 >
                                     <div className="absolute top-4 right-4 opacity-20 transition-opacity duration-300 group-hover:opacity-40">
@@ -85,11 +84,11 @@ export default function Index({ filiere, levels }) {
                                 <div className="px-6 pb-4">
                                     <div className="flex items-center justify-between border-t border-[var(--border)]/50 pt-4 dark:border-[var(--border)]/20">
                                         <div className="flex items-center text-xs text-[var(--muted-foreground)]">
-                                            <Icon icon="mdi:book-open-variant" className="mr-1 h-3 w-3" />
-                                            <span>{level.modules_count || 0} Modules</span>
+                                            {/* <Icon icon="mdi:book-open-variant" className="mr-1 h-3 w-3" />
+                                            <span>{level.modules_count || 0} Modules</span> */}
                                         </div>
 
-                                        {(auth.abilities?.is_admin || auth.abilities?.is_rh) && ( // Actions only for Admin/RH
+                                        {(auth.abilities?.is_admin || auth.abilities?.is_rh) && (
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>
                                                     <Button

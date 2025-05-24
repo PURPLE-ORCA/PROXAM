@@ -37,7 +37,7 @@ class ExamAssignmentService
      */
     public function assignExamsForSeson(Seson $seson): array
     {
-        Log::info("BATCH ASSIGNMENT: Starting for Seson ID {$seson->id} ('{$seson->code}') of AnneeUni ID {$seson->annee_uni_id}.");
+        // Log::info("BATCH ASSIGNMENT: Starting for Seson ID {$seson->id} ('{$seson->code}') of AnneeUni ID {$seson->annee_uni_id}.");
         $this->initializeBatchState($seson);
 
         $overallResult = [
@@ -65,7 +65,7 @@ class ExamAssignmentService
             });
 
         $overallResult['total_exams_processed'] = $examsToAssign->count();
-        Log::info("BATCH ASSIGNMENT: Found {$examsToAssign->count()} exams needing assignments in Seson ID {$seson->id}.");
+        // Log::info("BATCH ASSIGNMENT: Found {$examsToAssign->count()} exams needing assignments in Seson ID {$seson->id}.");
 
         if ($examsToAssign->isEmpty()) {
             $overallResult['final_summary_message'] = "No exams currently require assignment in this session.";
@@ -76,7 +76,7 @@ class ExamAssignmentService
             ->where('is_chef_service', false)
             ->with(['user', 'service', 'modules', 'unavailabilities', 'attributions.examen.quadrimestre.seson'])
             ->get();
-        Log::info("BATCH ASSIGNMENT: Fetched " . $this->allActiveProfesseursForBatch->count() . " total active, non-chef professors for consideration.");
+        // Log::info("BATCH ASSIGNMENT: Fetched " . $this->allActiveProfesseursForBatch->count() . " total active, non-chef professors for consideration.");
 
         foreach ($examsToAssign as $examen) {
             $singleExamResult = $this->assignSingleExamInBatch($examen, $seson); // Pass $seson for context
@@ -101,7 +101,7 @@ class ExamAssignmentService
         if (!empty($overallResult['exams_with_errors'])) $finalMessage .= " Exams with errors: " . count($overallResult['exams_with_errors']) . ".";
         if (!empty($overallResult['exams_with_warnings'])) $finalMessage .= " Exams with warnings: " . count($overallResult['exams_with_warnings']) . ".";
         $overallResult['final_summary_message'] = $finalMessage;
-        Log::info("BATCH ASSIGNMENT: {$finalMessage}");
+        // Log::info("BATCH ASSIGNMENT: {$finalMessage}");
         return $overallResult;
     }
 
@@ -124,7 +124,7 @@ class ExamAssignmentService
         $profId = $professeur->id;
         $this->profAssignmentsInCurrentBatch[$profId] = ($this->profAssignmentsInCurrentBatch[$profId] ?? 0) + 1;
         $this->profAssignmentsInSessionTotal[$profId] = ($this->profAssignmentsInSessionTotal[$profId] ?? 0) + 1;
-        Log::debug("[BATCH_COUNTS_UPDATE] Prof ID {$profId}: Batch assignments = {$this->profAssignmentsInCurrentBatch[$profId]}, Total in session = {$this->profAssignmentsInSessionTotal[$profId]}");
+        // Log::debug("[BATCH_COUNTS_UPDATE] Prof ID {$profId}: Batch assignments = {$this->profAssignmentsInCurrentBatch[$profId]}, Total in session = {$this->profAssignmentsInSessionTotal[$profId]}");
     }
 
     /**
@@ -132,7 +132,7 @@ class ExamAssignmentService
      */
     private function assignSingleExamInBatch(Examen $examen, Seson $sessionContext): array
     {
-        Log::info("--- Processing Exam '{$examen->nom_or_id}' (ID: {$examen->id}) ---");
+        // Log::info("--- Processing Exam '{$examen->nom_or_id}' (ID: {$examen->id}) ---");
         $result = ['success' => true, 'attributions_made' => 0, 'message' => '', 'errors' => [], 'warnings' => []];
         $this->professorsAssignedToCurrentExamOverall = $examen->attributions->pluck('professeur_id')->toArray(); // Init with existing
 
@@ -142,10 +142,10 @@ class ExamAssignmentService
             $existingAttributionsInThisSalle = $examen->attributions->where('salle_id', $salle->id);
             $slotsToFillInThisSalle = $profNeededInThisSalle - $existingAttributionsInThisSalle->count();
 
-            Log::info("[EXAM_SALLE] Salle '{$salle->nom}' (ID: {$salle->id}) for Exam '{$examen->nom_or_id}': ProfsNeeded={$profNeededInThisSalle}, ExistingInSalle={$existingAttributionsInThisSalle->count()}, SlotsToFillInSalle={$slotsToFillInThisSalle}");
+            // Log::info("[EXAM_SALLE] Salle '{$salle->nom}' (ID: {$salle->id}) for Exam '{$examen->nom_or_id}': ProfsNeeded={$profNeededInThisSalle}, ExistingInSalle={$existingAttributionsInThisSalle->count()}, SlotsToFillInSalle={$slotsToFillInThisSalle}");
 
             if ($slotsToFillInThisSalle <= 0) {
-                Log::info("[EXAM_SALLE] Salle '{$salle->nom}' already has sufficient staff for Exam '{$examen->nom_or_id}'.");
+                // Log::info("[EXAM_SALLE] Salle '{$salle->nom}' already has sufficient staff for Exam '{$examen->nom_or_id}'.");
                 continue;
             }
 
@@ -157,7 +157,7 @@ class ExamAssignmentService
             // Candidates are those active profs not yet assigned to ANY room of THIS exam
             $candidatePoolForSalle = $this->allActiveProfesseursForBatch->whereNotIn('id', $this->professorsAssignedToCurrentExamOverall);
             $filteredCandidatesForSalle = $this->filterCandidatesForExamInBatch($candidatePoolForSalle, $examen, $isPESAlreadyInThisSalle, $sessionContext);
-            Log::info("[EXAM_SALLE] Salle '{$salle->nom}': Filtered candidates before assignment = {$filteredCandidatesForSalle->count()}");
+            // Log::info("[EXAM_SALLE] Salle '{$salle->nom}': Filtered candidates before assignment = {$filteredCandidatesForSalle->count()}");
 
             // Assign Responsable for this Salle
             if ($responsableNeededInThisSalle > 0 && $slotsToFillInThisSalle > 0 && $filteredCandidatesForSalle->isNotEmpty()) {
@@ -213,13 +213,13 @@ class ExamAssignmentService
             $result['success'] = false; // Mark overall as not fully successful for this exam
             $slotsStillUnfilled = $examen->total_required_professors - $finalAttributions->count();
             $result['errors'][] = "Exam '{$examen->nom_or_id}' still has {$slotsStillUnfilled} unassigned slots overall.";
-            Log::error("[ASSIGNMENT_SERVICE] Exam '{$examen->nom_or_id}' unfilled slots: {$slotsStillUnfilled}");
+            // Log::error("[ASSIGNMENT_SERVICE] Exam '{$examen->nom_or_id}' unfilled slots: {$slotsStillUnfilled}");
         }
 
         $finalIsModuleTeacherPresentForExam = $finalAttributions->contains(fn($att) => $att->professeur && $att->professeur->modules->contains($examen->module_id));
         if ($finalAttributions->count() > 0 && !$finalIsModuleTeacherPresentForExam) {
             $result['warnings'][] = "Warning: No module teacher assigned overall for exam '{$examen->nom_or_id}'.";
-            Log::warning("[ASSIGNMENT_SERVICE] {$result['warnings'][count($result['warnings'])-1]}");
+            // Log::warning("[ASSIGNMENT_SERVICE] {$result['warnings'][count($result['warnings'])-1]}");
         }
 
         // Construct message for this single exam
@@ -237,7 +237,7 @@ class ExamAssignmentService
         } elseif(!empty($result['warnings'])) {
             $result['message'] = "Process for exam '{$examen->nom_or_id}' completed with warnings.";
         }
-        Log::info("[ASSIGNMENT_SERVICE] Finished processing Exam '{$examen->nom_or_id}'. Results: ", $result);
+        // Log::info("[ASSIGNMENT_SERVICE] Finished processing Exam '{$examen->nom_or_id}'. Results: ", $result);
         return $result;
     }
 
@@ -248,7 +248,7 @@ class ExamAssignmentService
         $examDateStr = $examStart->toDateString();
 
         if (!$sessionContext) {
-            Log::error("[Filter] Exam ID {$examen->id} ('{$examen->nom_or_id}') is missing session context for quota checks during batch. Quota filter might be inaccurate.");
+            // Log::error("[Filter] Exam ID {$examen->id} ('{$examen->nom_or_id}') is missing session context for quota checks during batch. Quota filter might be inaccurate.");
         }
 
         return $professeurs->filter(function (Professeur $prof) use ($examen, $examStart, $examEnd, $examDateStr, $sessionContext, $isPESAlreadyAssignedToThisSalle) {
@@ -302,7 +302,7 @@ class ExamAssignmentService
     public function assignProfessorsToExam(Examen $examen): array
     {
         if (!$examen->quadrimestre || !$examen->quadrimestre->seson) {
-             Log::error("[ASSIGNMENT_SERVICE] Single Exam Assign: Exam ID {$examen->id} ('{$examen->nom_or_id}') is missing quadrimestre or session context.");
+            //  Log::error("[ASSIGNMENT_SERVICE] Single Exam Assign: Exam ID {$examen->id} ('{$examen->nom_or_id}') is missing quadrimestre or session context.");
              return ['success' => false, 'attributions_made' => 0, 'message' => 'Exam session context missing for assignment.', 'errors' => ["Exam '{$examen->nom_or_id}' is missing necessary session information."], 'warnings' => []];
         }
         $this->initializeBatchState($examen->quadrimestre->seson);
@@ -318,11 +318,11 @@ class ExamAssignmentService
         if (!$isModuleTeacherAlreadyPresent) {
             $moduleTeachers = $availableCandidates->filter(fn($prof) => $prof->modules->contains($examen->module_id));
             if ($moduleTeachers->isNotEmpty()) {
-                Log::debug("[POOL_DETERMINATION] Prioritizing Module Teacher pool ({$moduleTeachers->count()}) for Exam '{$examen->nom_or_id}'.");
+                // Log::debug("[POOL_DETERMINATION] Prioritizing Module Teacher pool ({$moduleTeachers->count()}) for Exam '{$examen->nom_or_id}'.");
                 return $moduleTeachers;
             }
         }
-        Log::debug("[POOL_DETERMINATION] Using General Candidate pool ({$availableCandidates->count()}) for Exam '{$examen->nom_or_id}'.");
+        // Log::debug("[POOL_DETERMINATION] Using General Candidate pool ({$availableCandidates->count()}) for Exam '{$examen->nom_or_id}'.");
         return $availableCandidates;
     }
 
@@ -356,7 +356,7 @@ class ExamAssignmentService
 
     private function createAttribution(Examen $examen, Professeur $professeur, bool $isResponsable, int $salle_id): Attribution // Added $salle_id
     {
-        Log::info("[ATTRIBUTION_CREATED] Exam ID {$examen->id} ('{$examen->nom_or_id}'), Prof ID {$professeur->id} ('{$professeur->prenom} {$professeur->nom}'), Salle ID {$salle_id}, Responsable: " . ($isResponsable ? 'Yes' : 'No'));
+        // Log::info("[ATTRIBUTION_CREATED] Exam ID {$examen->id} ('{$examen->nom_or_id}'), Prof ID {$professeur->id} ('{$professeur->prenom} {$professeur->nom}'), Salle ID {$salle_id}, Responsable: " . ($isResponsable ? 'Yes' : 'No'));
         return Attribution::create([
             'examen_id' => $examen->id,
             'professeur_id' => $professeur->id,

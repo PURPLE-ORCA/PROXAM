@@ -83,10 +83,6 @@ export default function Index({ filieres }) {
                                 {/* Action Bar */}
                                 <div className="px-6 pb-4">
                                     <div className="flex items-center justify-between border-t border-[var(--border)]/50 pt-4">
-                                        <div className="flex items-center text-xs text-[var(--muted-foreground)]">
-                                            <Icon icon="mdi:clock-outline" className="mr-1 h-3 w-3" />
-                                            <span>Recently updated</span>
-                                        </div>
 
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
