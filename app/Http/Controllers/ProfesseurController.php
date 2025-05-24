@@ -52,17 +52,23 @@ class ProfesseurController extends Controller
     {
         $services = Service::orderBy('nom')->get(['id', 'nom']);
         $modules = Module::orderBy('nom')->get(['id', 'nom']);
-        // Assuming enums are defined in the Professeur model or a config
         $rangs = Professeur::getRangs();
         $statuts = Professeur::getStatuts();
-        $specialties = Professeur::getSpecialties(); // This will return {'medical' => 'Medical', 'surgical' => 'Surgical'}
+        // Fetch distinct existing specialties from the database
+        $existingSpecialties = Professeur::select('specialite')
+                                        ->whereNotNull('specialite')
+                                        ->where('specialite', '!=', '')
+                                        ->distinct()
+                                        ->pluck('specialite')
+                                        ->toArray();
 
         return Inertia::render($this->baseInertiaPath() . 'Create', [
             'services' => $services,
             'modules' => $modules,
             'rangs' => $rangs,
             'statuts' => $statuts,
-            'specialties' => $specialties, 
+            'existingSpecialties' => $existingSpecialties, // Pass to form
+            // 'specialties' prop (key-value for medical/surgical) is no longer needed if form handles it directly
         ]);
     }
 
@@ -81,7 +87,7 @@ class ProfesseurController extends Controller
             'statut' => ['required', Rule::in(Professeur::getStatuts(true))],
             'is_chef_service' => 'required|boolean',
             'date_recrutement' => 'required|date',
-            'specialite' => ['required', Rule::in([Professeur::SPECIALITE_MEDICAL, Professeur::SPECIALITE_SURGICAL])],
+            'specialite' => ['required', 'string', 'max:255'],
             'service_id' => 'required|exists:services,id',
             'module_ids' => 'nullable|array',
             'module_ids.*' => 'exists:modules,id',
@@ -129,20 +135,25 @@ class ProfesseurController extends Controller
 
     public function edit(Professeur $professeur)
     {
-        $professeur->load(['user', 'service', 'modules']); // Eager load for form
+        $professeur->load(['user', 'service', 'modules']);
         $services = Service::orderBy('nom')->get(['id', 'nom']);
         $modules = Module::orderBy('nom')->get(['id', 'nom']);
         $rangs = Professeur::getRangs();
         $statuts = Professeur::getStatuts();
-        $specialties = Professeur::getSpecialties(); 
+        $existingSpecialties = Professeur::select('specialite')
+                                        ->whereNotNull('specialite')
+                                        ->where('specialite', '!=', '')
+                                        ->distinct()
+                                        ->pluck('specialite')
+                                        ->toArray();
 
         return Inertia::render($this->baseInertiaPath() . 'Edit', [
-            'professeurToEdit' => $professeur, // Use different prop name
+            'professeurToEdit' => $professeur,
             'services' => $services,
             'modules' => $modules,
             'rangs' => $rangs,
             'statuts' => $statuts,
-            'specialties' => $specialties, 
+            'existingSpecialties' => $existingSpecialties, // Pass to form
         ]);
     }
 
@@ -159,7 +170,7 @@ class ProfesseurController extends Controller
             'statut' => ['required', Rule::in(Professeur::getStatuts(true))],
             'is_chef_service' => 'required|boolean',
             'date_recrutement' => 'required|date',
-            'specialite' => ['required', Rule::in([Professeur::SPECIALITE_MEDICAL, Professeur::SPECIALITE_SURGICAL])],
+            'specialite' => ['required', 'string', 'max:255'], // Validation is now just a string
             'service_id' => 'required|exists:services,id',
             'module_ids' => 'nullable|array',
             'module_ids.*' => 'exists:modules,id',

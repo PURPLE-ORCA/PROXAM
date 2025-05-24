@@ -2,18 +2,20 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AnneeUni;
 use App\Models\Examen;
+use App\Models\Filiere;
+use App\Models\Level;
 use App\Models\Quadrimestre;
 use App\Models\Module;
 use App\Models\Salle;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use App\Services\ExamAssignmentService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Log;
-
+use Illuminate\Http\Request;
 class ExamenController extends Controller
 {
     protected function baseInertiaPath(): string
@@ -23,93 +25,139 @@ class ExamenController extends Controller
 
     private function getFormData()
     {
-        // Fetch Quadrimestres with their Seson and AnneeUni for better display
-        $quadrimestres = Quadrimestre::with(['seson.anneeUni'])
-            ->get()
-            ->map(function ($q) {
-                return [
-                    'id' => $q->id,
-                    'display_name' => $q->seson->anneeUni->annee . ' - ' . $q->seson->code . ' - ' . $q->code,
-                ];
-            })
-            ->sortBy('display_name') // Sort after mapping
-            ->values(); // Re-index array
-
-        $modules = Module::orderBy('nom')->get(['id', 'nom']);
+        // Test this part first
+        $quadrimestres = Quadrimestre::with(['seson.anneeUni'])->get();
+        // dd($quadrimestres->first()?->seson?->anneeUni?->annee); // Check if relations are loading
+        $quadrimestres = $quadrimestres->map(function ($q) {
+            return [
+                'id' => $q->id,
+                'display_name' => ($q->seson && $q->seson->anneeUni ? $q->seson->anneeUni->annee : 'ERR_ANNEE') .
+                                  ' - ' . ($q->seson ? $q->seson->code : 'ERR_SESON') .
+                                  ' - ' . ($q->code ?? 'ERR_QUAD'),
+            ];
+        })->sortBy('display_name')->values();
+        // dd('Quadrimestres loaded and mapped');
+    
+        $filieres = Filiere::orderBy('nom')->get(['id', 'nom']);
+        // dd('Filieres loaded');
+    
+        $allLevels = Level::with('filiere:id,nom')->orderBy('filiere_id')->orderBy('nom')->get(['id', 'nom', 'filiere_id']);
+        // dd('Levels loaded');
+        
+        $allModules = Module::with('level.filiere')->orderBy('level_id')->orderBy('nom')->get(['id', 'nom', 'level_id']);
+        // dd('Modules loaded');
+    
         $salles = Salle::orderBy('nom')->get(['id', 'nom', 'default_capacite']);
-
-        // Assuming enums are defined in the Examen model or a config
-        $types = Examen::getTypes();     // e.g., ['QCM' => 'QCM', 'theoreique' => 'Théorique']
-        $filieres = Examen::getFilieres(); // e.g., ['Medicale' => 'Médicale', 'Pharmacie' => 'Pharmacie']
-
-        return compact('quadrimestres', 'modules', 'salles', 'types', 'filieres');
+        // dd('Salles loaded');
+        
+        $types = Examen::getTypes();
+        // dd('Types loaded');
+    
+        return compact('quadrimestres', 'filieres', 'allLevels', 'allModules', 'salles', 'types');
     }
-
-
     public function index(Request $request)
     {
-        $examens = Examen::with(['quadrimestre.seson.anneeUni', 'module'])
-            ->withCount('attributions')
-            ->when($request->input('search'), function ($query, $search) {
-                $query->where('nom', 'like', "%{$search}%")
-                      ->orWhereHas('module', fn($q) => $q->where('nom', 'like', "%{$search}%"))
-                      ->orWhereHas('quadrimestre.seson.anneeUni', fn($q) => $q->where('annee', 'like', "%{$search}%"));
-            })
-            // Add more sophisticated ordering if needed
-            ->orderBy('debut', 'desc')
+        // Determine the selected academic year ID
+        // It defaults to the latest AnneeUni if not found in session
+        $latestAnneeUni = AnneeUni::orderBy('annee', 'desc')->first();
+        $selectedAnneeUniId = session('selected_annee_uni_id', $latestAnneeUni?->id);
+
+        $examensQuery = Examen::with([
+                'module.level.filiere',
+                'quadrimestre.seson.anneeUni'
+            ])
+            ->withCount('attributions');
+
+        // Filter by selected academic year if one is effectively selected
+        if ($selectedAnneeUniId) {
+            $examensQuery->whereHas('quadrimestre.seson', function ($query) use ($selectedAnneeUniId) {
+                $query->where('annee_uni_id', $selectedAnneeUniId);
+            });
+        } else {
+            // If no academic years exist at all, or none selected, show no exams by default.
+            // This prevents accidentally showing all exams from all time if setup is incomplete.
+            $examensQuery->whereRaw('1 = 0'); // Effectively an empty result set
+            Log::warning('ExamenController@index: No selected_annee_uni_id available or no AnneeUni records exist. Displaying no exams.');
+        }
+
+        // Apply search filter
+        $examensQuery->when($request->input('search'), function ($query, $search) {
+            $query->where(function($q) use ($search) { // Group search conditions
+                $q->where('nom', 'like', "%{$search}%")
+                  ->orWhereHas('module', fn($subQ) => $subQ->where('nom', 'like', "%{$search}%"))
+                  ->orWhereHas('module.level.filiere', fn($subQ) => $subQ->where('nom', 'like', "%{$search}%"));
+                  // Note: Searching by AnneeUni name via relation is implicitly handled by the main year filter
+            });
+        });
+
+        $examens = $examensQuery
+            ->orderBy('debut', 'desc') // Order by exam start date
             ->paginate(15)
             ->withQueryString();
 
         return Inertia::render($this->baseInertiaPath() . 'Index', [
             'examens' => $examens,
             'filters' => $request->only(['search']),
+            // 'currentSelectedAnneeUniId' => $selectedAnneeUniId, // Optionally pass for debugging or filter display
         ]);
     }
 
+// In ExamenController@create
     public function create()
     {
-        return Inertia::render($this->baseInertiaPath() . 'Create', $this->getFormData());
+        $formData = $this->getFormData();
+        // dd($formData); // Last check here to see the full structure before Inertia render
+
+        return Inertia::render($this->baseInertiaPath() . 'Create', [
+            'quadrimestres' => $formData['quadrimestres']->toArray(), // Explicitly toArray()
+            'filieres' => $formData['filieres']->toArray(),
+            'allLevels' => $formData['allLevels']->toArray(),
+            'allModules' => $formData['allModules']->toArray(),
+            'salles' => $formData['salles']->toArray(),
+            'types' => $formData['types'], // This is already an array from Examen::getTypes()
+        ]);
     }
 
     public function store(Request $request)
     {
         // Define allowed enum values from model or config
         $allowedTypes = array_keys(Examen::getTypes());
-        $allowedFilieres = array_keys(Examen::getFilieres());
-
+    
         $validated = $request->validate([
             'nom' => 'nullable|string|max:255',
             'quadrimestre_id' => 'required|exists:quadrimestres,id',
             'module_id' => 'required|exists:modules,id',
             'type' => ['required', Rule::in($allowedTypes)],
-            'filiere' => ['required', Rule::in($allowedFilieres)],
-            'debut' => 'required|date|after_or_equal:today', // Or appropriate date logic
-            'fin' => 'required|date|after:debut',
-            'required_professors' => 'required|integer|min:1',
-            'salles_pivot' => 'required|array|min:1', // Array of {salle_id, capacite}
+            'debut' => 'required|date|after_or_equal:today',
+            'salles_pivot' => 'required|array|min:1',
             'salles_pivot.*.salle_id' => 'required|exists:salles,id',
-            'salles_pivot.*.capacite' => 'required|integer|min:0', // 0 might mean use default
+            'salles_pivot.*.capacite' => 'required|integer|min:0',
+            'salles_pivot.*.professeurs_assignes_salle' => 'required|integer|min:1', // Add this line
         ]);
-
+    
         return DB::transaction(function () use ($validated) {
+            // Calculate total required professors from salles_pivot
+            $totalRequiredProfessors = array_sum(array_column($validated['salles_pivot'], 'professeurs_assignes_salle'));
+            
             $examen = Examen::create([
                 'nom' => $validated['nom'],
                 'quadrimestre_id' => $validated['quadrimestre_id'],
                 'module_id' => $validated['module_id'],
                 'type' => $validated['type'],
-                'filiere' => $validated['filiere'],
                 'debut' => $validated['debut'],
-                'fin' => $validated['fin'],
-                'required_professors' => $validated['required_professors'],
+                'required_professors' => $totalRequiredProfessors, // Use calculated value
             ]);
-
+    
             // Sync salles with pivot data
             $sallesToSync = [];
             foreach ($validated['salles_pivot'] as $salleData) {
-                $sallesToSync[$salleData['salle_id']] = ['capacite' => $salleData['capacite']];
+                $sallesToSync[$salleData['salle_id']] = [
+                    'capacite' => $salleData['capacite'],
+                    'professeurs_assignes_salle' => $salleData['professeurs_assignes_salle'] // Add this line
+                ];
             }
             $examen->salles()->sync($sallesToSync);
-
+    
             return redirect()->route('admin.examens.index')
                 ->with('success', 'toasts.examen_created_successfully');
         });
@@ -117,48 +165,52 @@ class ExamenController extends Controller
 
     public function edit(Examen $examen)
     {
-        $examen->load(['quadrimestre.seson.anneeUni', 'module', 'salles']); // Eager load relations
-        $formData = array_merge($this->getFormData(), ['examenToEdit' => $examen]);
+        $examen->load(['quadrimestre.seson.anneeUni', 'module', 'salles']); // Ensure relations are loaded
+        $formData = array_merge($this->getFormData(), [
+            'examenToEdit' => $examen,
+            'allModules' => Module::all(), 
+        ]);
         return Inertia::render($this->baseInertiaPath() . 'Edit', $formData);
     }
 
     public function update(Request $request, Examen $examen)
     {
         $allowedTypes = array_keys(Examen::getTypes());
-        $allowedFilieres = array_keys(Examen::getFilieres());
-
+    
         $validated = $request->validate([
             'nom' => 'nullable|string|max:255',
             'quadrimestre_id' => 'required|exists:quadrimestres,id',
             'module_id' => 'required|exists:modules,id',
             'type' => ['required', Rule::in($allowedTypes)],
-            'filiere' => ['required', Rule::in($allowedFilieres)],
             'debut' => 'required|date',
-            'fin' => 'required|date|after:debut',
-            'required_professors' => 'required|integer|min:1',
             'salles_pivot' => 'required|array|min:1',
             'salles_pivot.*.salle_id' => 'required|exists:salles,id',
             'salles_pivot.*.capacite' => 'required|integer|min:0',
+            'salles_pivot.*.professeurs_assignes_salle' => 'required|integer|min:1', // Add this line
         ]);
-
+    
         return DB::transaction(function () use ($examen, $validated) {
+            // Calculate total required professors from salles_pivot
+            $totalRequiredProfessors = array_sum(array_column($validated['salles_pivot'], 'professeurs_assignes_salle'));
+            
             $examen->update([
                 'nom' => $validated['nom'],
                 'quadrimestre_id' => $validated['quadrimestre_id'],
                 'module_id' => $validated['module_id'],
                 'type' => $validated['type'],
-                'filiere' => $validated['filiere'],
                 'debut' => $validated['debut'],
-                'fin' => $validated['fin'],
-                'required_professors' => $validated['required_professors'],
+                'required_professors' => $totalRequiredProfessors, // Use calculated value
             ]);
-
+    
             $sallesToSync = [];
             foreach ($validated['salles_pivot'] as $salleData) {
-                $sallesToSync[$salleData['salle_id']] = ['capacite' => $salleData['capacite']];
+                $sallesToSync[$salleData['salle_id']] = [
+                    'capacite' => $salleData['capacite'],
+                    'professeurs_assignes_salle' => $salleData['professeurs_assignes_salle'] // Add this line
+                ];
             }
             $examen->salles()->sync($sallesToSync);
-
+    
             return redirect()->route('admin.examens.index')
                 ->with('success', 'toasts.examen_updated_successfully');
         });

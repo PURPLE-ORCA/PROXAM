@@ -18,6 +18,7 @@ import {
     FileText,
     UserMinus,
     ListChecks,
+    Network,
 } from 'lucide-react';
 import AppLogo from './app-logo';
 import React, { useContext } from 'react'; // Added useContext
@@ -50,13 +51,7 @@ export function AppSidebar() {
             href: route('admin.services.index'),
             icon: LayoutGrid,
             active: route().current('admin.services.*'),
-        });
-        mainNavItems.push({
-            title: translations?.modules_nav_item || 'Modules',
-            href: route('admin.modules.index'),
-            icon: BookOpen, 
-            active: route().current('admin.modules.*'),
-        });
+        }); 
         mainNavItems.push({
             title: translations?.salles_nav_item || 'Salles',
             href: route('admin.salles.index'),
@@ -104,6 +99,12 @@ export function AppSidebar() {
             href: route('admin.attributions.index'), 
             icon: ListChecks, 
             active: route().current('admin.attributions.index'), // Only one route for now
+        });
+        mainNavItems.push({
+            title: translations?.filieres_nav_item || 'Study Fields',
+            href: route('admin.filieres.index'),
+            icon: Network,
+            active: route().current('admin.filieres.*'),
         });
 
     }

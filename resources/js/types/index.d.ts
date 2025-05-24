@@ -1,6 +1,18 @@
 import { type LucideIcon } from 'lucide-react';
 import type { Config as ZiggyConfig } from 'ziggy-js'; 
 
+export interface AnneeUniType {
+    id: number;
+    annee: string;
+}
+
+export interface AcademicYearSharedData {
+    current: AnneeUniType | null;
+    all: AnneeUniType[];
+    selected_id: number | null;
+    selected_annee: string | null;
+}
+
 export interface Abilities {
     is_admin: boolean;
     is_rh: boolean;
@@ -53,8 +65,9 @@ export interface PageProps {
         error?: string;
     };
     sidebarOpen: boolean;
-    errors?: Record<string, string>; 
-    [key: string]: unknown; 
+    errors?: Record<string, string>;
+    [key: string]: unknown;
+    academicYear: AcademicYearSharedData; 
 }
 
 declare module '@inertiajs/react' {

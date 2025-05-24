@@ -1,11 +1,10 @@
-
 import { TranslationContext } from '@/context/TranslationProvider';
 import AppLayout from '@/layouts/app-layout';
 import { Head, useForm } from '@inertiajs/react';
 import { useContext } from 'react';
 import ProfesseurForm from './ProfesseurForm';
 
-export default function Create({ services, modules, rangs, statuts }) {
+export default function Create({ services, modules, rangs, statuts, existingSpecialties = [] }) {
     const { translations } = useContext(TranslationContext);
     const { data, setData, post, processing, errors, reset } = useForm({
         professeur_nom: '',
@@ -22,9 +21,16 @@ export default function Create({ services, modules, rangs, statuts }) {
 
     const handleSubmit = (e) => {
         e.preventDefault();
+        console.log('Submitting form data:', data); // Debug log
         post(route('admin.professeurs.store'), {
             preserveScroll: true,
-            onSuccess: () => reset(), 
+            onSuccess: () => {
+                console.log('Form submitted successfully');
+                reset();
+            },
+            onError: (errors) => {
+                console.log('Form submission errors:', errors);
+            },
         });
     };
 
@@ -50,6 +56,7 @@ export default function Create({ services, modules, rangs, statuts }) {
                     modules={modules}
                     rangs={rangs}
                     statuts={statuts}
+                    existingSpecialties={existingSpecialties}
                     isEdit={false}
                 />
             </div>

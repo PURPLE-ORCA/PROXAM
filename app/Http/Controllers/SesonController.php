@@ -6,6 +6,9 @@ use App\Models\Seson;
 use App\Models\AnneeUni; // To fetch Academic Years for the form
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use App\Services\ExamAssignmentService; 
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Log;
 
 class SesonController extends Controller
 {
@@ -16,19 +19,25 @@ class SesonController extends Controller
 
     public function index(Request $request)
     {
-        $sesons = Seson::with('anneeUni') // Eager load the related academic year
+        $latestAnneeUni = AnneeUni::orderBy('annee', 'desc')->first();
+        $selectedAnneeUniId = session('selected_annee_uni_id', $latestAnneeUni?->id);
+
+        $sesonsQuery = Seson::with('anneeUni');
+
+        if ($selectedAnneeUniId) {
+            $sesonsQuery->where('annee_uni_id', $selectedAnneeUniId);
+        } else {
+            // If no academic year selected or exists, show no sessions
+            $sesonsQuery->whereRaw('1 = 0');
+            // Log::warning('SesonController@index: No selected_annee_uni_id. Displaying no sesons.');
+        }
+
+        $sesons = $sesonsQuery
             ->when($request->input('search'), function ($query, $search) {
                 $query->where('code', 'like', "%{$search}%")
-                      ->orWhereHas('anneeUni', function ($q) use ($search) {
-                          $q->where('annee', 'like', "%{$search}%");
-                      });
+                      ->orWhereHas('anneeUni', fn($q) => $q->where('annee', 'like', "%{$search}%"));
             })
-            ->orderByDesc( // Order by academic year desc, then session code asc
-                AnneeUni::select('annee')
-                    ->whereColumn('annee_unis.id', 'sesons.annee_uni_id')
-                    ->orderBy('annee', 'desc')
-                    ->limit(1)
-            )
+            ->orderBy(AnneeUni::select('annee')->whereColumn('annee_unis.id', 'sesons.annee_uni_id')->orderBy('annee', 'desc')->limit(1), 'desc') // Order by AnneeUni's annee
             ->orderBy('code', 'asc')
             ->paginate(15)
             ->withQueryString();
@@ -99,5 +108,33 @@ class SesonController extends Controller
 
         return redirect()->route('admin.sesons.index')
             ->with('success', 'toasts.seson_deleted_successfully');
+    }
+
+    public function batchAssignExams(Seson $seson, ExamAssignmentService $assignmentService): RedirectResponse
+    {
+        // Optional: Add specific authorization if needed, though route middleware covers basic access.
+        // Gate::authorize('batch-assign-exams-for-seson', $seson);
+
+        Log::info("Controller: Triggering BATCH assignment for Seson ID: {$seson->id}");
+
+        $result = $assignmentService->assignExamsForSeson($seson);
+
+        Log::info("Controller: BATCH Assignment service result for Seson ID {$seson->id}: ", $result);
+
+        $flashMessage = $result['final_summary_message'] ?? 'Batch assignment process completed.';
+        $flashType = 'success'; // Default
+
+        if (!empty($result['exams_with_errors'])) {
+            $flashType = 'error';
+            // You might want to append a note about errors to the summary message
+            // or rely on the user checking the logs/a future report.
+        } elseif (!empty($result['exams_with_warnings'])) {
+            // If you have a 'warning' toast type, use it. Otherwise, prepend "Notice:"
+            $flashType = 'success'; // Or 'warning' if your toast system supports it
+            $flashMessage = "Notice: " . $flashMessage;
+        }
+
+        return redirect()->route('admin.sesons.index', ['anneeUni' => $seson->annee_uni_id]) // Redirect back to sessions list for that year
+            ->with($flashType, $flashMessage);
     }
 }

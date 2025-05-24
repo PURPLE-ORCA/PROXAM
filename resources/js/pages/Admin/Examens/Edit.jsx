@@ -1,45 +1,72 @@
 import { TranslationContext } from '@/context/TranslationProvider';
 import AppLayout from '@/layouts/app-layout';
 import { Head, useForm } from '@inertiajs/react';
-import { useContext } from 'react';
-import ExamenForm from './ExamenForm';
+import { useContext, useEffect } from 'react'; // Removed useState as it's not directly used
+import ExamenForm from './ExamenForm'; // Assuming ExamenForm is in the same directory
 
 const formatDatetimeForInput = (datetimeString) => {
     if (!datetimeString) return '';
     try {
         const date = new Date(datetimeString);
+        // Adjust for timezone offset to display correctly in local time input
         date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
         return date.toISOString().slice(0, 16); // YYYY-MM-DDTHH:mm
     } catch (e) {
-        return ''; 
+        return '';
     }
 };
 
-export default function Edit({ examenToEdit, quadrimestres, modules, salles, types, filieres }) {
+export default function Edit({
+    examenToEdit,
+    quadrimestres, // From controller
+    filieres, // From controller (will be passed as allFilieres to form)
+    allLevels, // From controller
+    allModules, // From controller
+    salles, // From controller
+    types, // From controller
+}) {
     const { translations } = useContext(TranslationContext);
 
-    const { data, setData, put, processing, errors, reset } = useForm({
+    const { data, setData, put, processing, errors } = useForm({
+        // Removed reset as not explicitly used
         nom: examenToEdit?.nom || '',
-        quadrimestre_id: examenToEdit?.quadrimestre_id || '',
-        module_id: examenToEdit?.module_id || '',
+        quadrimestre_id: examenToEdit?.quadrimestre_id?.toString() || '',
+        module_id: examenToEdit?.module_id?.toString() || '',
         type: examenToEdit?.type || '',
-        filiere: examenToEdit?.filiere || '',
         debut: formatDatetimeForInput(examenToEdit?.debut),
-        fin: formatDatetimeForInput(examenToEdit?.fin),
-        required_professors: examenToEdit?.required_professors || 1,
+        // 'fin' is removed
+        // 'required_professors' is removed (it's calculated)
         salles_pivot:
             examenToEdit?.salles?.map((s) => ({
-                salle_id: s.id.toString(), 
-                capacite: s.pivot.capacite.toString(), 
+                salle_id: s.id.toString(),
+                capacite: s.pivot.capacite.toString(),
+                professeurs_assignes_salle: s.pivot.professeurs_assignes_salle.toString(), // Added
             })) || [],
     });
 
+    // This useEffect might be redundant if useForm's initial values are sufficient
+    // and correctly handle examenToEdit changes, but can be kept for explicit re-sync.
+    useEffect(() => {
+        if (examenToEdit) {
+            setData({
+                nom: examenToEdit.nom || '',
+                quadrimestre_id: examenToEdit.quadrimestre_id?.toString() || '',
+                module_id: examenToEdit.module_id?.toString() || '',
+                type: examenToEdit.type || '',
+                debut: formatDatetimeForInput(examenToEdit.debut),
+                salles_pivot: (examenToEdit.salles || []).map((s) => ({
+                    salle_id: s.id.toString(),
+                    capacite: s.pivot.capacite.toString(),
+                    professeurs_assignes_salle: s.pivot.professeurs_assignes_salle.toString(),
+                })),
+            });
+        }
+    }, [examenToEdit, setData]); // setData should ideally not be in deps if function is stable
 
     const handleSubmit = (e) => {
         e.preventDefault();
         put(route('admin.examens.update', { examen: examenToEdit.id }), {
             preserveScroll: true,
-            // onSuccess: () => { /* Potentially reset parts of form or do nothing */ }
         });
     };
 
@@ -62,12 +89,13 @@ export default function Edit({ examenToEdit, quadrimestres, modules, salles, typ
                     processing={processing}
                     onSubmit={handleSubmit}
                     quadrimestres={quadrimestres}
-                    modules={modules}
                     salles={salles}
                     types={types}
-                    filieres={filieres}
+                    allFilieres={filieres} // Pass 'filieres' prop as 'allFilieres'
+                    allLevels={allLevels}
+                    allModules={allModules}
                     isEdit={true}
-                    examenToEdit={examenToEdit} // Pass to pre-fill salles_pivot correctly in form
+                    examenToEdit={examenToEdit}
                 />
             </div>
         </AppLayout>

@@ -86,31 +86,26 @@ export default function Index({ examens: examensPagination, filters }) {
                 Cell: ({ cell }) => getTypeTranslation(cell.getValue()),
                 size: 100,
             },
-            {
-                accessorKey: 'filiere',
-                header: translations?.examen_filiere_column_header || 'Field',
-                Cell: ({ cell }) => getFiliereTranslation(cell.getValue()),
-                size: 100,
-            },
+            // {
+            //     accessorKey: 'module.level.filiere.nom',
+            //     header: translations?.examen_filiere_column_header || 'Field', // Translation key remains same
+            //     // Cell rendering might not be needed if accessorKey works directly
+            //     // Cell: ({ row }) => row.original.module?.level?.filiere?.nom || 'N/A',
+            //     size: 100,
+            // },
             {
                 accessorKey: 'debut',
                 header: translations?.examen_start_time_column_header || 'Start Time',
                 Cell: ({ cell }) => formatDate(cell.getValue()),
                 size: 180,
             },
-            {
-                accessorKey: 'fin',
-                header: translations?.examen_end_time_column_header || 'End Time',
-                Cell: ({ cell }) => formatDate(cell.getValue()),
-                size: 180,
-            },
-            {
-                accessorKey: 'required_professors',
-                header: translations?.examen_req_profs_column_header || 'Req. Profs',
-                size: 80,
-                muiTableBodyCellProps: { align: 'center' },
-                muiTableHeadCellProps: { align: 'center' },
-            },
+            // {
+            //     accessorKey: 'required_professors',
+            //     header: translations?.examen_req_profs_column_header || 'Req. Profs',
+            //     size: 80,
+            //     muiTableBodyCellProps: { align: 'center' },
+            //     muiTableHeadCellProps: { align: 'center' },
+            // },
             {
                 accessorKey: 'attributions_count',
                 header: translations?.examen_assigned_profs_column_header || 'Assigned',

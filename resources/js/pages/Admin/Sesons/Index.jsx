@@ -1,26 +1,31 @@
+import ConfirmationModal from '@/components/Common/ConfirmationModal';
+import { Button } from '@/components/ui/button';
+import { TranslationContext } from '@/context/TranslationProvider';
 import AppLayout from '@/layouts/app-layout';
 import { Icon } from '@iconify/react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { MaterialReactTable, useMaterialReactTable } from 'material-react-table';
-import React, { useEffect, useMemo, useState, useContext } from 'react';
-import { TranslationContext } from '@/context/TranslationProvider';
-import { Button } from '@/components/ui/button';
-import ConfirmationModal from '@/components/Common/ConfirmationModal';
+import { useContext, useEffect, useMemo, useState } from 'react';
+// Assuming PageProps is defined in your types for usePage().props for auth.abilities
+// import { type PageProps } from '@/types';
 
 const defaultPageSize = 15;
 const defaultPageIndex = 0;
 
 export default function Index({ sesons: sesonsPagination, filters }) {
-    const { translations } = useContext(TranslationContext);
-    const { auth } = usePage().props;
+    const { translations, language } = useContext(TranslationContext);
+    const { auth } = usePage().props; // If using PageProps: const { auth } = usePage<PageProps>().props;
 
-    const [isModalOpen, setIsModalOpen] = useState(false);
+    // State for Delete Modal
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [itemToDelete, setItemToDelete] = useState(null);
 
-    const breadcrumbs = useMemo(
-        () => [{ title: translations?.sesons_breadcrumb || 'Sessions', href: route('admin.sesons.index') }],
-        [translations],
-    );
+    // State for Batch Assign Modal & Processing
+    const [isBatchAssignModalOpen, setIsBatchAssignModalOpen] = useState(false);
+    const [itemToBatchAssign, setItemToBatchAssign] = useState(null); // Will store the seson object
+    const [processingBatchAssignment, setProcessingBatchAssignment] = useState(null); // Tracks seson.id
+
+    const breadcrumbs = useMemo(() => [{ title: translations?.sesons_breadcrumb || 'Sessions', href: route('admin.sesons.index') }], [translations]);
 
     const [pagination, setPagination] = useState({
         pageIndex: sesonsPagination.current_page - 1 ?? defaultPageIndex,
@@ -28,10 +33,7 @@ export default function Index({ sesons: sesonsPagination, filters }) {
     });
 
     useEffect(() => {
-        if (
-            pagination.pageIndex !== sesonsPagination.current_page - 1 ||
-            pagination.pageSize !== sesonsPagination.per_page
-        ) {
+        if (pagination.pageIndex !== sesonsPagination.current_page - 1 || pagination.pageSize !== sesonsPagination.per_page) {
             router.get(
                 route('admin.sesons.index'),
                 {
@@ -42,7 +44,7 @@ export default function Index({ sesons: sesonsPagination, filters }) {
                 { preserveState: true, replace: true, preserveScroll: true },
             );
         }
-    }, [pagination.pageIndex, pagination.pageSize, sesonsPagination, filters?.search]);
+    }, [pagination.pageIndex, pagination.pageSize, sesonsPagination, filters]);
 
     const columns = useMemo(
         () => [
@@ -52,24 +54,22 @@ export default function Index({ sesons: sesonsPagination, filters }) {
                 size: 250,
             },
             {
-                accessorKey: 'annee_uni.annee', // Access nested property
-                header: translations?.annee_uni_year_column_header || 'Academic Year', // Re-use existing translation
+                accessorKey: 'annee_uni.annee',
+                header: translations?.annee_uni_year_column_header || 'Academic Year',
                 size: 250,
             },
         ],
-        [translations],
+        [translations, language],
     );
 
     const openDeleteModal = (sesonItem) => {
         setItemToDelete(sesonItem);
-        setIsModalOpen(true);
+        setIsDeleteModalOpen(true);
     };
-
     const closeDeleteModal = () => {
-        setIsModalOpen(false);
+        setIsDeleteModalOpen(false);
         setItemToDelete(null);
     };
-
     const confirmDelete = () => {
         if (itemToDelete) {
             router.delete(route('admin.sesons.destroy', { seson: itemToDelete.id }), {
@@ -80,6 +80,41 @@ export default function Index({ sesons: sesonsPagination, filters }) {
         }
     };
 
+    const openBatchAssignModal = (seson) => {
+        setItemToBatchAssign(seson);
+        setIsBatchAssignModalOpen(true);
+    };
+
+    const closeBatchAssignModal = () => {
+        setIsBatchAssignModalOpen(false);
+        setItemToBatchAssign(null);
+    };
+
+    const confirmBatchAssign = () => {
+        if (!itemToBatchAssign) return;
+        setProcessingBatchAssignment(itemToBatchAssign.id);
+        // No need to close modal here, onFinish will handle clearing processing state
+        // onSuccess/onError will also close modal if preferred
+        router.post(
+            route('admin.sesons.batch-assign-exams', { seson: itemToBatchAssign.id }),
+            {},
+            {
+                preserveScroll: true,
+                onSuccess: (page) => {
+                    console.log('Batch assignment POST successful, flash:', page.props.flash);
+                    closeBatchAssignModal(); // Close modal on success
+                },
+                onError: (errors) => {
+                    console.error('Error triggering batch assignment:', errors);
+                    closeBatchAssignModal(); // Close modal on error too
+                },
+                onFinish: () => {
+                    setProcessingBatchAssignment(null);
+                },
+            },
+        );
+    };
+
     const table = useMaterialReactTable({
         columns,
         data: sesonsPagination.data || [],
@@ -87,8 +122,8 @@ export default function Index({ sesons: sesonsPagination, filters }) {
         state: { pagination },
         rowCount: sesonsPagination.total,
         onPaginationChange: setPagination,
-        enableEditing: auth.abilities?.is_admin,
-        enableRowActions: auth.abilities?.is_admin,
+        enableEditing: auth.abilities?.is_admin_or_rh,
+        enableRowActions: true,
 
         muiTablePaperProps: {
             elevation: 0,
@@ -151,42 +186,58 @@ export default function Index({ sesons: sesonsPagination, filters }) {
                 },
             },
         },
-        renderRowActions: ({ row }) => (
-            <div className="flex items-center gap-1">
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    asChild
-                    className="text-[var(--foreground)] hover:bg-[var(--accent)]"
-                >
-                    <Link
-                        href={route('admin.sesons.edit', { seson: row.original.id })}
-                        title={translations?.edit_button_title || 'Modifier'}
-                    >
-                        <Icon icon="mdi:pencil" className="h-5 w-5" />
-                    </Link>
+
+        renderRowActions: ({ row }) => {
+            const seson = row.original;
+            const canManage = auth.abilities?.is_admin || auth.abilities?.is_rh;
+
+            return (
+                <div className="flex items-center gap-1">
+                    {canManage && (
+                        <Button variant="ghost" size="icon" asChild className="text-[var(--foreground)] hover:bg-[var(--accent)]">
+                            <Link href={route('admin.sesons.edit', { seson: seson.id })} title={translations?.edit_button_title || 'Modifier'}>
+                                <Icon icon="mdi:pencil" className="h-5 w-5" />
+                            </Link>
+                        </Button>
+                    )}
+
+                    {canManage && (
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => openBatchAssignModal(seson)} // Changed from handleBatchAssign
+                            disabled={processingBatchAssignment === seson.id}
+                            className="text-green-500 hover:bg-[var(--accent)]"
+                            title={translations?.batch_assign_button_title || 'Assign All Pending Exams'}
+                        >
+                            {processingBatchAssignment === seson.id ? (
+                                <Icon icon="mdi:loading" className="h-5 w-5 animate-spin" />
+                            ) : (
+                                <Icon icon="mdi:robot-outline" className="h-5 w-5" />
+                            )}
+                        </Button>
+                    )}
+
+                    {auth.abilities?.is_admin && (
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => openDeleteModal(seson)}
+                            className="text-[var(--foreground)] hover:bg-[var(--accent)] hover:text-[var(--destructive)]"
+                            title={translations?.delete_button_title || 'Supprimer'}
+                        >
+                            <Icon icon="mdi:delete" className="h-5 w-5" />
+                        </Button>
+                    )}
+                </div>
+            );
+        },
+        renderTopToolbarCustomActions: () =>
+            (auth.abilities?.is_admin || auth.abilities?.is_rh) && (
+                <Button asChild variant="default" className="bg-[var(--primary)] text-[var(--primary-foreground)] hover:bg-[var(--primary)]/90">
+                    <Link href={route('admin.sesons.create')}>{translations?.add_seson_button || 'Add Session'}</Link>
                 </Button>
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => openDeleteModal(row.original)}
-                    className="text-[var(--foreground)] hover:bg-[var(--accent)] hover:text-[var(--destructive)]"
-                    title={translations?.delete_button_title || 'Supprimer'}
-                >
-                    <Icon icon="mdi:delete" className="h-5 w-5" />
-                </Button>
-            </div>
-        ),
-        renderTopToolbarCustomActions: () => (
-            <Button asChild variant="default" className="bg-[var(--primary)] text-[var(--primary-foreground)] hover:bg-[var(--primary)]/90">
-                <Link href={route('admin.sesons.create')}>{translations?.add_seson_button || 'Add Session'}</Link>
-            </Button>
-        ),
-        renderTopToolbarCustomActions: () => (
-            <Button asChild variant="default" className="bg-[var(--primary)] text-[var(--primary-foreground)] hover:bg-[var(--primary)]/90">
-                <Link href={route('admin.sesons.create')}>{translations?.add_seson_button || 'Add Session'}</Link>
-            </Button>
-        ),
+            ),
     });
 
     return (
@@ -195,17 +246,40 @@ export default function Index({ sesons: sesonsPagination, filters }) {
             <div className="bg-[var(--background)] p-4 text-[var(--foreground)] md:p-6">
                 <MaterialReactTable table={table} />
             </div>
+
             <ConfirmationModal
-                isOpen={isModalOpen}
+                isOpen={isDeleteModalOpen}
                 onClose={closeDeleteModal}
                 onConfirm={confirmDelete}
                 title={translations?.delete_seson_modal_title || 'Delete Session'}
                 message={
                     itemToDelete
-                        ? (translations?.seson_delete_confirmation || 'Are you sure you want to delete the session "{code}"?').replace('{code}', itemToDelete.code)
-                        : translations?.generic_delete_confirmation || 'Are you sure you want to delete this item?'
+                        ? (translations?.seson_delete_confirmation || 'Are you sure you want to delete the session "{code}"?').replace(
+                              '{code}',
+                              itemToDelete.code,
+                          )
+                        : translations?.generic_delete_confirmation
                 }
                 confirmText={translations?.delete_button_title || 'Delete'}
+            />
+
+            <ConfirmationModal
+                isOpen={isBatchAssignModalOpen}
+                onClose={closeBatchAssignModal}
+                onConfirm={confirmBatchAssign}
+                title={translations?.batch_assign_modal_title || 'Confirm Batch Assignment'}
+                message={
+                    itemToBatchAssign
+                        ? (
+                              translations?.batch_assign_confirmation_message ||
+                              'Are you sure you want to run automatic assignments for all pending exams in session "{code} ({year})"? This may take a moment and cannot be easily undone.'
+                          )
+                              .replace('{code}', itemToBatchAssign.code)
+                              .replace('{year}', itemToBatchAssign.annee_uni?.annee || '')
+                        : translations?.generic_action_confirmation || 'Are you sure you want to proceed?'
+                }
+                confirmText={translations?.batch_assign_confirm_button || 'Yes, Assign All'}
+                destructive={false} // Make confirm button not red for this action
             />
         </AppLayout>
     );

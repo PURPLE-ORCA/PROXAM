@@ -4,16 +4,14 @@ import { Head, useForm } from '@inertiajs/react';
 import { useContext } from 'react';
 import ExamenForm from './ExamenForm';
 
-export default function Create({ quadrimestres, modules, salles, types, filieres }) {
+export default function Create({ quadrimestres, filieres, allLevels, allModules, salles, types }) {
     const { translations } = useContext(TranslationContext);
     const { data, setData, post, processing, errors, reset } = useForm({
         nom: '',
         quadrimestre_id: '',
         module_id: '',
         type: '',
-        filiere: '',
         debut: '',
-        fin: '',
         required_professors: 1, // Default to at least 1
         salles_pivot: [], // Array of { salle_id, capacite }
     });
@@ -45,10 +43,11 @@ export default function Create({ quadrimestres, modules, salles, types, filieres
                     processing={processing}
                     onSubmit={handleSubmit}
                     quadrimestres={quadrimestres}
-                    modules={modules}
+                    allFilieres={filieres}
+                    allLevels={allLevels}
+                    allModules={allModules}
                     salles={salles}
                     types={types}
-                    filieres={filieres}
                     isEdit={false}
                 />
             </div>
