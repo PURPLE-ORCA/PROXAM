@@ -380,5 +380,8 @@
     "no_academic_year_selected_label": "No Year Selected",
     "select_academic_year_placeholder": "Switch Academic Year",
     "batch_assign_button_title": "Assign All Pending Exams for this Session",
-    "batch_assign_confirmation_message": "Are you sure you want to run automatic assignments for all pending exams in this session? This may take a moment and cannot be easily undone."
+    "batch_assign_confirmation_message": "Are you sure you want to run automatic assignments for all pending exams in this session? This may take a moment and cannot be easily undone.",
+    "batch_assign_modal_title": "Confirm Batch Assignment",
+    "batch_assign_confirm_button": "Yes, Assign All",
+    "generic_action_confirmation": "Are you sure you want to proceed?"
 }

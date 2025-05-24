@@ -9,6 +9,7 @@ use App\Models\Module;
 use App\Models\Seson;
 use App\Models\Quadrimestre;
 use App\Models\Unavailability;
+use App\Models\Salle; // Ensure Salle is imported
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Facades\DB;
@@ -16,6 +17,7 @@ use Illuminate\Support\Facades\Log;
 
 class ExamAssignmentService
 {
+    // --- Constants for Rules ---
     public const RANK_QUOTAS_PER_SESSION = [
         Professeur::RANG_PES => 2,
         Professeur::RANG_PAG => 4,
@@ -25,38 +27,45 @@ class ExamAssignmentService
     public const ASSIGNMENT_GAP_DAYS = 1;
     public const AM_PM_CUTOFF_HOUR = 13;
 
-    private array $profAssignmentsInCurrentBatch;
-    private array $profAssignmentsInSessionTotal;
-    private EloquentCollection $allActiveProfesseursForBatch;
+    private array $profAssignmentsInCurrentBatch; // [prof_id => count for current batch run]
+    private array $profAssignmentsInSessionTotal; // [prof_id => count for entire session (DB + batch)]
+    private EloquentCollection $allActiveProfesseursForBatch; // Cache of all active professors for the batch
+    private array $professorsAssignedToCurrentExamOverall; // Tracks [prof_id] assigned to any room of the current exam being processed
 
     /**
      * Assigns professors to all pending exams within a given Seson.
      */
     public function assignExamsForSeson(Seson $seson): array
     {
-        // Log::info("BATCH ASSIGNMENT: Starting for Seson ID {$seson->id} ('{$seson->code}') of AnneeUni ID {$seson->annee_uni_id}.");
+        Log::info("BATCH ASSIGNMENT: Starting for Seson ID {$seson->id} ('{$seson->code}') of AnneeUni ID {$seson->annee_uni_id}.");
         $this->initializeBatchState($seson);
 
         $overallResult = [
             'total_exams_processed' => 0,
             'total_assignments_made' => 0,
-            'exams_with_errors' => [], // [exam_id => [error_messages]]
-            'exams_with_warnings' => [], // [exam_id => [warning_messages]]
-            'success_messages' => [],    // [exam_id => success_message]
+            'exams_with_errors' => [],
+            'exams_with_warnings' => [],
+            'success_messages' => [],
             'final_summary_message' => '',
         ];
 
         $examsToAssign = Examen::whereHas('quadrimestre', fn($q) => $q->where('seson_id', $seson->id))
-            ->withCount('attributions')
-            ->with(['module', 'quadrimestre.seson.anneeUni', 'attributions.professeur.modules']) // Load all needed relations
+            ->withCount('attributions') // Counts existing total attributions for the exam
+            ->with([ // Eager load everything needed for individual exam processing
+                'module',
+                'quadrimestre.seson.anneeUni',
+                'salles', // Crucial: includes pivot data 'professeurs_assignes_salle'
+                'attributions.professeur.modules', // For existing attributions on exams
+            ])
             ->orderBy('debut', 'asc')
             ->get()
             ->filter(function ($examen) {
+                // total_required_professors is an accessor summing pivot data from 'salles'
                 return $examen->attributions_count < $examen->total_required_professors;
             });
 
         $overallResult['total_exams_processed'] = $examsToAssign->count();
-        // Log::info("BATCH ASSIGNMENT: Found {$examsToAssign->count()} exams needing assignments in Seson ID {$seson->id}.");
+        Log::info("BATCH ASSIGNMENT: Found {$examsToAssign->count()} exams needing assignments in Seson ID {$seson->id}.");
 
         if ($examsToAssign->isEmpty()) {
             $overallResult['final_summary_message'] = "No exams currently require assignment in this session.";
@@ -67,10 +76,10 @@ class ExamAssignmentService
             ->where('is_chef_service', false)
             ->with(['user', 'service', 'modules', 'unavailabilities', 'attributions.examen.quadrimestre.seson'])
             ->get();
-        // Log::info("BATCH ASSIGNMENT: Fetched " . $this->allActiveProfesseursForBatch->count() . " total active, non-chef professors.");
+        Log::info("BATCH ASSIGNMENT: Fetched " . $this->allActiveProfesseursForBatch->count() . " total active, non-chef professors for consideration.");
 
         foreach ($examsToAssign as $examen) {
-            $singleExamResult = $this->assignSingleExamInBatch($examen, $seson);
+            $singleExamResult = $this->assignSingleExamInBatch($examen, $seson); // Pass $seson for context
             $overallResult['total_assignments_made'] += $singleExamResult['attributions_made'];
 
             if (!empty($singleExamResult['errors'])) {
@@ -81,10 +90,9 @@ class ExamAssignmentService
             }
             if ($singleExamResult['success'] && $singleExamResult['attributions_made'] > 0) {
                  $overallResult['success_messages'][$examen->id] = $singleExamResult['message'];
-            } elseif (!$singleExamResult['success'] && empty($singleExamResult['errors'])) { // If success is false but no specific errors
+            } elseif (!$singleExamResult['success'] && empty($singleExamResult['errors'])) {
                 $overallResult['exams_with_errors'][$examen->id] = [$singleExamResult['message']];
             }
-
         }
 
         $finalMessage = "Batch assignment for Seson '{$seson->code}' completed. " .
@@ -92,257 +100,218 @@ class ExamAssignmentService
                         "Total new assignments made: {$overallResult['total_assignments_made']}.";
         if (!empty($overallResult['exams_with_errors'])) $finalMessage .= " Exams with errors: " . count($overallResult['exams_with_errors']) . ".";
         if (!empty($overallResult['exams_with_warnings'])) $finalMessage .= " Exams with warnings: " . count($overallResult['exams_with_warnings']) . ".";
-
         $overallResult['final_summary_message'] = $finalMessage;
-        // Log::info("BATCH ASSIGNMENT: {$finalMessage}");
+        Log::info("BATCH ASSIGNMENT: {$finalMessage}");
         return $overallResult;
     }
 
+
     private function initializeBatchState(Seson $seson): void
     {
-        $this->profAssignmentsInCurrentBatch = [];
-        $this->profAssignmentsInSessionTotal = [];
+        $this->profAssignmentsInCurrentBatch = []; // Tracks assignments made *in this specific batch run*
+        $this->profAssignmentsInSessionTotal = []; // Tracks *all* assignments for the session (DB + this batch)
 
         $existingSessionAttributions = Attribution::whereHas('examen.quadrimestre', fn($q) => $q->where('seson_id', $seson->id))
             ->select('professeur_id', DB::raw('count(*) as count'))
             ->groupBy('professeur_id')
             ->pluck('count', 'professeur_id')
-            ->all();
+            ->all(); // [prof_id => count]
         $this->profAssignmentsInSessionTotal = $existingSessionAttributions;
     }
 
     private function updateBatchAssignmentCounts(Professeur $professeur): void
     {
         $profId = $professeur->id;
-        // For current batch run (if needed for "fewest in batch" tie-breaker later, or just general tracking)
         $this->profAssignmentsInCurrentBatch[$profId] = ($this->profAssignmentsInCurrentBatch[$profId] ?? 0) + 1;
-        // For overall session quota tracking (including this new assignment)
         $this->profAssignmentsInSessionTotal[$profId] = ($this->profAssignmentsInSessionTotal[$profId] ?? 0) + 1;
-
         Log::debug("[BATCH_COUNTS_UPDATE] Prof ID {$profId}: Batch assignments = {$this->profAssignmentsInCurrentBatch[$profId]}, Total in session = {$this->profAssignmentsInSessionTotal[$profId]}");
     }
 
     /**
-     * Assigns professors to a single exam, using batch state.
+     * Internal worker for assigning professors to a single exam, using batch state.
      */
     private function assignSingleExamInBatch(Examen $examen, Seson $sessionContext): array
     {
-        // Log::info("------------------------------------------------------------------");
-        // Log::info("[ASSIGNMENT_SERVICE] Starting assignment process for Exam '{$examen->nom_or_id}' (ID: {$examen->id}).");
+        Log::info("--- Processing Exam '{$examen->nom_or_id}' (ID: {$examen->id}) ---");
+        $result = ['success' => true, 'attributions_made' => 0, 'message' => '', 'errors' => [], 'warnings' => []];
+        $this->professorsAssignedToCurrentExamOverall = $examen->attributions->pluck('professeur_id')->toArray(); // Init with existing
 
-        $result = [
-            'success' => true,
-            'attributions_made' => 0,
-            'message' => "Assignment process initiated for exam '{$examen->nom_or_id}'.",
-            'errors' => [],
-            'warnings' => [],
-        ];
+        // Iterate over each salle configured for this exam
+        foreach ($examen->salles as $salle) {
+            $profNeededInThisSalle = $salle->pivot->professeurs_assignes_salle;
+            $existingAttributionsInThisSalle = $examen->attributions->where('salle_id', $salle->id);
+            $slotsToFillInThisSalle = $profNeededInThisSalle - $existingAttributionsInThisSalle->count();
 
-        // Exam relations should already be loaded by the calling batch method
-        $existingAttributions = $examen->attributions;
-        $existingAttributionsCount = $existingAttributions->count();
-        $slotsToFill = $examen->total_required_professors - $existingAttributionsCount;
+            Log::info("[EXAM_SALLE] Salle '{$salle->nom}' (ID: {$salle->id}) for Exam '{$examen->nom_or_id}': ProfsNeeded={$profNeededInThisSalle}, ExistingInSalle={$existingAttributionsInThisSalle->count()}, SlotsToFillInSalle={$slotsToFillInThisSalle}");
 
-        // Log::info("[ASSIGNMENT_SERVICE] Exam '{$examen->nom_or_id}': TotalRequired={$examen->total_required_professors}, Existing={$existingAttributionsCount}, SlotsToFill={$slotsToFill}");
-
-        if ($slotsToFill <= 0) {
-            $result['message'] = "Exam '{$examen->nom_or_id}' already has sufficient professors assigned.";
-            // Log::info("[ASSIGNMENT_SERVICE] {$result['message']}");
-            return $result;
-        }
-
-        $responsableAlreadyAssigned = $existingAttributions->firstWhere('is_responsable', true);
-        $responsablesNeeded = $responsableAlreadyAssigned ? 0 : 1;
-
-        $isModuleTeacherAlreadyPresent = $existingAttributions->contains(function ($attribution) use ($examen) {
-            // Make sure modules relation is loaded on the professor if not already
-            $attribution->professeur->loadMissing('modules');
-            return $attribution->professeur && $attribution->professeur->modules->contains($examen->module_id);
-        });
-
-        $isPESAlreadyAssignedToThisExam = $existingAttributions->contains(function ($attribution) {
-            return $attribution->professeur && $attribution->professeur->rang === Professeur::RANG_PES;
-        });
-        // Log::info("[ASSIGNMENT_SERVICE] Initial state for Exam '{$examen->nom_or_id}': ResponsablesNeeded={$responsablesNeeded}, ModuleTeacherPresent=" . ($isModuleTeacherAlreadyPresent ? 'Yes' : 'No') . ", PESAlreadyAssigned=" . ($isPESAlreadyAssignedToThisExam ? 'Yes' : 'No'));
-
-        $profIdsAlreadyAssignedToThisExam = $existingAttributions->pluck('professeur_id')->toArray();
-        $candidatePoolForNewSlots = $this->allActiveProfesseursForBatch->whereNotIn('id', $profIdsAlreadyAssignedToThisExam);
-
-        $filteredCandidates = $this->filterCandidatesForExamInBatch($candidatePoolForNewSlots, $examen, $isPESAlreadyAssignedToThisExam, $sessionContext);
-        // Log::info("[ASSIGNMENT_SERVICE] After initial filtering for '{$examen->nom_or_id}', " . $filteredCandidates->count() . " candidates remain.");
-
-        if ($responsablesNeeded > 0 && $slotsToFill > 0 && $filteredCandidates->isNotEmpty()) {
-            $responsable = $this->selectResponsable($filteredCandidates, $examen, $isPESAlreadyAssignedToThisExam);
-            if ($responsable) {
-                // Log::info("[ASSIGNMENT_SERVICE] Selected Responsable for '{$examen->nom_or_id}': Prof ID {$responsable->id} ({$responsable->prenom} {$responsable->nom})");
-                $this->createAttribution($examen, $responsable, true);
-                $this->updateBatchAssignmentCounts($responsable);
-                $result['attributions_made']++; $slotsToFill--; $responsablesNeeded--;
-                if ($responsable->modules->contains($examen->module_id)) $isModuleTeacherAlreadyPresent = true;
-                if ($responsable->rang === Professeur::RANG_PES) {
-                    $isPESAlreadyAssignedToThisExam = true;
-                    $filteredCandidates = $filteredCandidates->except($responsable->id);
-                    $filteredCandidates = $this->filterCandidatesForExamInBatch($filteredCandidates, $examen, true, $sessionContext);
-                } else {
-                    $filteredCandidates = $filteredCandidates->except($responsable->id);
-                }
-            } else {
-                $warningMsg = "Could not assign a 'Responsable' for exam '{$examen->nom_or_id}'. No suitable candidate after filtering.";
-                $result['warnings'][] = $warningMsg;
-                Log::warning("[ASSIGNMENT_SERVICE] {$warningMsg}");
+            if ($slotsToFillInThisSalle <= 0) {
+                Log::info("[EXAM_SALLE] Salle '{$salle->nom}' already has sufficient staff for Exam '{$examen->nom_or_id}'.");
+                continue;
             }
-        }
 
-        while ($slotsToFill > 0 && $filteredCandidates->isNotEmpty()) {
-            // Log::info("[ASSIGNMENT_SERVICE] Attempting to fill {$slotsToFill} more slots for '{$examen->nom_or_id}'. Candidates left: {$filteredCandidates->count()}");
-            $poolToSelectFrom = $this->determineCandidatePool($filteredCandidates, $examen, $isModuleTeacherAlreadyPresent);
-            if ($poolToSelectFrom->isEmpty()) {
-                Log::warning("[ASSIGNMENT_SERVICE] No candidates left in the determined pool for '{$examen->nom_or_id}'.");
-                break;
+            $responsableAlreadyInThisSalle = $existingAttributionsInThisSalle->firstWhere('is_responsable', true);
+            $responsableNeededInThisSalle = $responsableAlreadyInThisSalle ? 0 : 1;
+
+            $isPESAlreadyInThisSalle = $existingAttributionsInThisSalle->contains(fn($att) => $att->professeur && $att->professeur->rang === Professeur::RANG_PES);
+
+            // Candidates are those active profs not yet assigned to ANY room of THIS exam
+            $candidatePoolForSalle = $this->allActiveProfesseursForBatch->whereNotIn('id', $this->professorsAssignedToCurrentExamOverall);
+            $filteredCandidatesForSalle = $this->filterCandidatesForExamInBatch($candidatePoolForSalle, $examen, $isPESAlreadyInThisSalle, $sessionContext);
+            Log::info("[EXAM_SALLE] Salle '{$salle->nom}': Filtered candidates before assignment = {$filteredCandidatesForSalle->count()}");
+
+            // Assign Responsable for this Salle
+            if ($responsableNeededInThisSalle > 0 && $slotsToFillInThisSalle > 0 && $filteredCandidatesForSalle->isNotEmpty()) {
+                $responsable = $this->selectResponsable($filteredCandidatesForSalle, $examen, $isPESAlreadyInThisSalle); // isPES for this salle
+                if ($responsable) {
+                    $this->createAttribution($examen, $responsable, true, $salle->id);
+                    $this->updateBatchAssignmentCounts($responsable);
+                    $this->professorsAssignedToCurrentExamOverall[] = $responsable->id;
+                    $result['attributions_made']++; $slotsToFillInThisSalle--;
+                    if ($responsable->rang === Professeur::RANG_PES) $isPESAlreadyInThisSalle = true;
+                    $filteredCandidatesForSalle = $filteredCandidatesForSalle->except($responsable->id);
+                    // Re-filter for this salle if a PES became responsable
+                    if ($isPESAlreadyInThisSalle) {
+                        $filteredCandidatesForSalle = $this->filterCandidatesForExamInBatch($filteredCandidatesForSalle, $examen, true, $sessionContext);
+                    }
+                } else { $result['warnings'][] = "No responsable for Salle '{$salle->nom}' in Exam '{$examen->nom_or_id}'."; }
             }
-            $invigilator = $this->selectInvigilator($poolToSelectFrom, $examen, $isPESAlreadyAssignedToThisExam);
-            if ($invigilator) {
-                // Log::info("[ASSIGNMENT_SERVICE] Selected Invigilator for '{$examen->nom_or_id}': Prof ID {$invigilator->id} ({$invigilator->prenom} {$invigilator->nom})");
-                $this->createAttribution($examen, $invigilator, false);
-                $this->updateBatchAssignmentCounts($invigilator);
-                $result['attributions_made']++; $slotsToFill--;
-                if (!$isModuleTeacherAlreadyPresent && $invigilator->modules->contains($examen->module_id)) $isModuleTeacherAlreadyPresent = true;
-                if ($invigilator->rang === Professeur::RANG_PES) {
-                    $isPESAlreadyAssignedToThisExam = true;
-                    $filteredCandidates = $filteredCandidates->except($invigilator->id);
-                    $filteredCandidates = $this->filterCandidatesForExamInBatch($filteredCandidates, $examen, true, $sessionContext);
-                } else {
-                    $filteredCandidates = $filteredCandidates->except($invigilator->id);
-                }
-            } else {
-                Log::warning("[ASSIGNMENT_SERVICE] No suitable invigilator found from the current pool for '{$examen->nom_or_id}'.");
-                break;
+
+            // Assign Remaining Invigilators for this Salle
+            while ($slotsToFillInThisSalle > 0 && $filteredCandidatesForSalle->isNotEmpty()) {
+                // Module teacher check is for the overall exam, not per salle.
+                // Reload current attributions for the whole exam to check for module teacher presence accurately.
+                $currentExamAttributionsForModuleCheck = Attribution::where('examen_id', $examen->id)->with('professeur.modules')->get();
+                $isModuleTeacherPresentForExam = $currentExamAttributionsForModuleCheck->contains(fn($att) => $att->professeur && $att->professeur->modules->contains($examen->module_id));
+
+                $poolToSelectFrom = $this->determineCandidatePool($filteredCandidatesForSalle, $examen, $isModuleTeacherPresentForExam);
+                if ($poolToSelectFrom->isEmpty()) break;
+
+                $invigilator = $this->selectInvigilator($poolToSelectFrom, $examen, $isPESAlreadyInThisSalle); // isPES for this salle
+                if ($invigilator) {
+                    $this->createAttribution($examen, $invigilator, false, $salle->id);
+                    $this->updateBatchAssignmentCounts($invigilator);
+                    $this->professorsAssignedToCurrentExamOverall[] = $invigilator->id;
+                    $result['attributions_made']++; $slotsToFillInThisSalle--;
+                    if ($invigilator->rang === Professeur::RANG_PES) {
+                        $isPESAlreadyInThisSalle = true;
+                        $filteredCandidatesForSalle = $filteredCandidatesForSalle->except($invigilator->id);
+                        $filteredCandidatesForSalle = $this->filterCandidatesForExamInBatch($filteredCandidatesForSalle, $examen, true, $sessionContext);
+                    } else {
+                        $filteredCandidatesForSalle = $filteredCandidatesForSalle->except($invigilator->id);
+                    }
+                } else { break; }
             }
+            if ($slotsToFillInThisSalle > 0) {
+                $result['errors'][] = "Could not fill {$slotsToFillInThisSalle} slots for Salle '{$salle->nom}' in Exam '{$examen->nom_or_id}'.";
+                // $result['success'] = false; // Only set overall success to false if any exam has errors at the end
+            }
+        } // End foreach salle
+
+        // Final overall checks for the exam
+        $finalAttributions = Attribution::where('examen_id', $examen->id)->with('professeur.modules')->get();
+        if ($finalAttributions->count() < $examen->total_required_professors) {
+            $result['success'] = false; // Mark overall as not fully successful for this exam
+            $slotsStillUnfilled = $examen->total_required_professors - $finalAttributions->count();
+            $result['errors'][] = "Exam '{$examen->nom_or_id}' still has {$slotsStillUnfilled} unassigned slots overall.";
+            Log::error("[ASSIGNMENT_SERVICE] Exam '{$examen->nom_or_id}' unfilled slots: {$slotsStillUnfilled}");
         }
 
-        if ($slotsToFill > 0) {
-            $errorMsg = "Could not fill all required slots for exam '{$examen->nom_or_id}'. {$slotsToFill} slots remain.";
-            $result['errors'][] = $errorMsg; $result['success'] = false;
-            // Log::error("[ASSIGNMENT_SERVICE] {$errorMsg}");
-        }
-        $examen->loadCount('attributions'); // Refresh count for final module teacher check
-        if ($examen->attributions_count > 0 && !$isModuleTeacherAlreadyPresent) {
-            $warningMsg = "Warning: No module teacher assigned for exam '{$examen->nom_or_id}'.";
-            $result['warnings'][] = $warningMsg;
-            Log::warning("[ASSIGNMENT_SERVICE] {$warningMsg}");
+        $finalIsModuleTeacherPresentForExam = $finalAttributions->contains(fn($att) => $att->professeur && $att->professeur->modules->contains($examen->module_id));
+        if ($finalAttributions->count() > 0 && !$finalIsModuleTeacherPresentForExam) {
+            $result['warnings'][] = "Warning: No module teacher assigned overall for exam '{$examen->nom_or_id}'.";
+            Log::warning("[ASSIGNMENT_SERVICE] {$result['warnings'][count($result['warnings'])-1]}");
         }
 
+        // Construct message for this single exam
         if (empty($result['errors']) && $result['attributions_made'] > 0) {
             $result['message'] = "Successfully made {$result['attributions_made']} new assignments for exam '{$examen->nom_or_id}'.";
         } elseif (empty($result['errors']) && $result['attributions_made'] === 0 && empty($result['warnings'])) {
-            if (($examen->total_required_professors - $existingAttributionsCount) > 0 && $this->allActiveProfesseursForBatch->isNotEmpty()) {
-                $initialCandidates = $this->allActiveProfesseursForBatch->whereNotIn('id', $profIdsAlreadyAssignedToThisExam);
-                if ($this->filterCandidatesForExamInBatch($initialCandidates, $examen, $isPESAlreadyAssignedToThisExam, $sessionContext)->isEmpty() && $initialCandidates->isNotEmpty()){
-                    $result['message'] = "No suitable candidates found for exam '{$examen->nom_or_id}'.";
-                } else {
-                     $result['message'] = "No new assignments made for exam '{$examen->nom_or_id}'. All slots might be filled or no candidates were available.";
-                }
-            } else {
-                 $result['message'] = "No new assignments needed or made for exam '{$examen->nom_or_id}'.";
-            }
+             $initialSlotsToFill = $examen->total_required_professors - $examen->attributions()->whereNotIn('professeur_id', $this->professorsAssignedToCurrentExamOverall)->count(); // Count before this run's assignments
+             if ($initialSlotsToFill > 0 ) {
+                 $result['message'] = "No suitable candidates found or no new assignments made for exam '{$examen->nom_or_id}'.";
+             } else {
+                 $result['message'] = "No new assignments needed for exam '{$examen->nom_or_id}'.";
+             }
         } elseif (!empty($result['errors'])) {
-            $result['message'] = "Assignment process for exam '{$examen->nom_or_id}' failed to fill all slots.";
+            $result['message'] = "Process for exam '{$examen->nom_or_id}' completed with errors.";
         } elseif(!empty($result['warnings'])) {
-            $result['message'] = "Assignment process for exam '{$examen->nom_or_id}' completed with warnings.";
+            $result['message'] = "Process for exam '{$examen->nom_or_id}' completed with warnings.";
         }
-
-        // Log::info("[ASSIGNMENT_SERVICE] Finished individual assignment for Exam '{$examen->nom_or_id}'. Made: {$result['attributions_made']}. Message: {$result['message']}");
+        Log::info("[ASSIGNMENT_SERVICE] Finished processing Exam '{$examen->nom_or_id}'. Results: ", $result);
         return $result;
     }
 
-
-    private function filterCandidatesForExamInBatch(EloquentCollection $professeurs, Examen $examen, bool $isPESAlreadyAssignedToThisExam, Seson $sessionContext): EloquentCollection
+    private function filterCandidatesForExamInBatch(EloquentCollection $professeurs, Examen $examen, bool $isPESAlreadyAssignedToThisSalle, Seson $sessionContext): EloquentCollection
     {
         $examStart = Carbon::parse($examen->debut);
         $examEnd = $examen->end_datetime;
         $examDateStr = $examStart->toDateString();
 
-        return $professeurs->filter(function (Professeur $prof) use ($examen, $examStart, $examEnd, $examDateStr, $sessionContext, $isPESAlreadyAssignedToThisExam) {
-            $profId = $prof->id;
+        if (!$sessionContext) {
+            Log::error("[Filter] Exam ID {$examen->id} ('{$examen->nom_or_id}') is missing session context for quota checks during batch. Quota filter might be inaccurate.");
+        }
 
-            if ($isPESAlreadyAssignedToThisExam && $prof->rang === Professeur::RANG_PES) {
-                // Log::debug("[Filter][Prof ID: {$profId}] FAILED: PES already assigned to this Exam ID {$examen->id}.");
-                return false;
-            }
+        return $professeurs->filter(function (Professeur $prof) use ($examen, $examStart, $examEnd, $examDateStr, $sessionContext, $isPESAlreadyAssignedToThisSalle) {
+            $profId = $prof->id;
+            if ($isPESAlreadyAssignedToThisSalle && $prof->rang === Professeur::RANG_PES) return false;
 
             foreach ($prof->unavailabilities as $unavailability) {
                 $unavStart = Carbon::parse($unavailability->start_datetime);
                 $unavEnd = Carbon::parse($unavailability->end_datetime);
-                if ($examStart->lt($unavEnd) && $examEnd->gt($unavStart)) {
-                    // Log::debug("[Filter][Prof ID: {$profId}] FAILED: Unavailability overlap with Exam ID {$examen->id}.");
-                    return false;
-                }
+                if ($examStart->lt($unavEnd) && $examEnd->gt($unavStart)) return false;
             }
 
-            $assignmentsOnExamDayCount = 0;
-            $assignedOnPreviousOrNextGapDay = false;
+            $assignmentsOnExamDayCount = 0; $assignedOnPreviousOrNextGapDay = false;
             foreach ($prof->attributions as $attribution) {
-                if ($attribution->examen_id === $examen->id) continue; // Already assigned to this exam, handled by initial pool filter
-
-                $assignedExam = $attribution->examen; // Relation should be loaded
-                if (!$assignedExam) continue; // Should not happen if eager loaded
-
-                $assignedExamStart = Carbon::parse($assignedExam->debut);
-                $assignedExamEnd = $assignedExam->end_datetime;
-
-                if ($examStart->lt($assignedExamEnd) && $examEnd->gt($assignedExamStart)) {
-                    // Log::debug("[Filter][Prof ID: {$profId}] FAILED: Overlapping with other Exam ID {$assignedExam->id}.");
-                    return false;
-                }
-                if ($assignedExamStart->isSameDay($examStart)) {
-                    $assignmentsOnExamDayCount++;
-                }
-
-                $daysDifference = $assignedExamStart->diffInDays($examStart, false);
-                if (abs($daysDifference) > 0 && abs($daysDifference) <= self::ASSIGNMENT_GAP_DAYS) {
-                    $assignedOnPreviousOrNextGapDay = true;
+                if ($attribution->examen_id === $examen->id && $attribution->salle_id) { // If already assigned to a room for this exam
+                    // This professor is already part of this exam's overall assignment,
+                    // the main loop manages not re-assigning them to new *slots*.
+                    // This filter ensures they are not seen as conflicting with *themselves*.
+                    // However, daily/gap day rules still apply based on *other* exams.
+                    if (Carbon::parse($attribution->examen->debut)->isSameDay($examStart)) {
+                         // This check is tricky here. If this attribution *is* for the current exam,
+                         // it shouldn't count towards the daily limit for *this* exam's assignment decision.
+                         // The daily limit is about *other* distinct exams on the same day.
+                         // This needs to be handled carefully to avoid self-conflict.
+                         // Let's assume daily limit check should exclude current exam ID.
+                    }
+                    // Continue to check for other conflicts.
+                } else if ($attribution->examen_id !== $examen->id) { // Check against *other* exams
+                    $assignedExam = $attribution->examen;
+                    if (!$assignedExam) continue;
+                    $assignedExamStart = Carbon::parse($assignedExam->debut);
+                    $assignedExamEnd = $assignedExam->end_datetime;
+                    if ($examStart->lt($assignedExamEnd) && $examEnd->gt($assignedExamStart)) return false; // Overlap
+                    if ($assignedExamStart->isSameDay($examStart)) $assignmentsOnExamDayCount++;
+                    $daysDifference = $assignedExamStart->diffInDays($examStart, false);
+                    if (abs($daysDifference) > 0 && abs($daysDifference) <= self::ASSIGNMENT_GAP_DAYS) $assignedOnPreviousOrNextGapDay = true;
                 }
             }
+            if ($assignmentsOnExamDayCount >= self::MAX_ASSIGNMENTS_PER_DAY) return false;
+            if ($assignedOnPreviousOrNextGapDay) return false;
 
-            if ($assignmentsOnExamDayCount >= self::MAX_ASSIGNMENTS_PER_DAY) {
-                // Log::debug("[Filter][Prof ID: {$profId}] FAILED: Daily limit violation for date {$examDateStr}.");
-                return false;
-            }
-            if ($assignedOnPreviousOrNextGapDay) {
-                // Log::debug("[Filter][Prof ID: {$profId}] FAILED: Gap day rule violation around {$examDateStr}.");
-                return false;
-            }
-
-            // Use the batch-aware total session assignment count for quota check
-            $assignmentsInSessionForThisProf = $this->profAssignmentsInSessionTotal[$profId] ?? 0;
-            $quotaForRank = self::RANK_QUOTAS_PER_SESSION[$prof->rang] ?? 999;
-            if ($assignmentsInSessionForThisProf >= $quotaForRank) {
-                // Log::debug("[Filter][Prof ID: {$profId}] FAILED: Rank quota ({$assignmentsInSessionForThisProf}/{$quotaForRank}) for rank {$prof->rang} in Session ID {$sessionContext->id}.");
-                return false;
+            if ($sessionContext) {
+                $assignmentsInSessionForThisProf = $this->profAssignmentsInSessionTotal[$profId] ?? 0;
+                $quotaForRank = self::RANK_QUOTAS_PER_SESSION[$prof->rang] ?? 999;
+                if ($assignmentsInSessionForThisProf >= $quotaForRank) return false;
             }
             return true;
         });
     }
 
-    // Original per-exam trigger method, now wraps batch logic for consistency
     public function assignProfessorsToExam(Examen $examen): array
     {
         if (!$examen->quadrimestre || !$examen->quadrimestre->seson) {
-            //  Log::error("[ASSIGNMENT_SERVICE] Exam ID {$examen->id} ('{$examen->nom_or_id}') is missing quadrimestre or session context. Cannot proceed.");
-             return ['success' => false, 'attributions_made' => 0, 'message' => 'Exam session context missing.', 'errors' => ["Exam '{$examen->nom_or_id}' is missing necessary session information."], 'warnings' => []];
+             Log::error("[ASSIGNMENT_SERVICE] Single Exam Assign: Exam ID {$examen->id} ('{$examen->nom_or_id}') is missing quadrimestre or session context.");
+             return ['success' => false, 'attributions_made' => 0, 'message' => 'Exam session context missing for assignment.', 'errors' => ["Exam '{$examen->nom_or_id}' is missing necessary session information."], 'warnings' => []];
         }
         $this->initializeBatchState($examen->quadrimestre->seson);
         $this->allActiveProfesseursForBatch = Professeur::where('statut', 'Active')
             ->where('is_chef_service', false)
             ->with(['user', 'service', 'modules', 'unavailabilities', 'attributions.examen.quadrimestre.seson'])
             ->get();
-
-        // Call the internal worker method
-        $result = $this->assignSingleExamInBatch($examen, $examen->quadrimestre->seson);
-        // Final message construction is now inside assignSingleExamInBatch
-        return $result;
+        return $this->assignSingleExamInBatch($examen, $examen->quadrimestre->seson);
     }
-
 
     private function determineCandidatePool(EloquentCollection $availableCandidates, Examen $examen, bool $isModuleTeacherAlreadyPresent): EloquentCollection
     {
@@ -357,29 +326,23 @@ class ExamAssignmentService
         return $availableCandidates;
     }
 
-    private function selectResponsable(EloquentCollection $candidates, Examen $examen, bool $isPESAlreadyAssignedToExam): ?Professeur
+    private function selectResponsable(EloquentCollection $candidates, Examen $examen, bool $isPESAlreadyAssignedToThisSalle): ?Professeur
     {
         if ($candidates->isEmpty()) return null;
-        $eligibleCandidates = $isPESAlreadyAssignedToExam
+        $eligibleCandidates = $isPESAlreadyAssignedToThisSalle
             ? $candidates->where('rang', '!=', Professeur::RANG_PES)
             : $candidates;
         if ($eligibleCandidates->isEmpty()) return null;
-
         return $eligibleCandidates->sortBy([
             fn($prof) => array_search($prof->rang, [Professeur::RANG_PES, Professeur::RANG_PAG, Professeur::RANG_PA]),
             ['date_recrutement', 'asc'],
         ])->first();
     }
 
-    private function selectInvigilator(EloquentCollection $candidates, Examen $examen, bool $isPESAlreadyAssignedToExam): ?Professeur
+    private function selectInvigilator(EloquentCollection $candidates, Examen $examen, bool $isPESAlreadyAssignedToThisSalle): ?Professeur
     {
         if ($candidates->isEmpty()) return null;
-        // If a PES is assigned, eligible candidates passed here should already be non-PES
-        // $eligibleCandidates = $isPESAlreadyAssignedToExam ? $candidates->where('rang', '!=', Professeur::RANG_PES) : $candidates;
-        // if ($eligibleCandidates->isEmpty()) return null;
-        // The above is now handled by the main loop's re-filtering after a PES is assigned.
-        // So, $candidates here is already the correct pool considering the PES rule for this exam.
-
+        // If a PES is assigned to this salle, $candidates passed here should already be non-PES due to re-filtering.
         $isExamAM = Carbon::parse($examen->debut)->hour < self::AM_PM_CUTOFF_HOUR;
         return $candidates->sortBy(function (Professeur $prof) use ($isExamAM) {
             $priorityScore = 0;
@@ -391,12 +354,13 @@ class ExamAssignmentService
         })->first();
     }
 
-    private function createAttribution(Examen $examen, Professeur $professeur, bool $isResponsable): Attribution
+    private function createAttribution(Examen $examen, Professeur $professeur, bool $isResponsable, int $salle_id): Attribution // Added $salle_id
     {
-        // Log::info("[ATTRIBUTION_CREATED] Exam ID {$examen->id} ('{$examen->nom_or_id}'), Prof ID {$professeur->id} ('{$professeur->prenom} {$professeur->nom}'), Responsable: " . ($isResponsable ? 'Yes' : 'No'));
+        Log::info("[ATTRIBUTION_CREATED] Exam ID {$examen->id} ('{$examen->nom_or_id}'), Prof ID {$professeur->id} ('{$professeur->prenom} {$professeur->nom}'), Salle ID {$salle_id}, Responsable: " . ($isResponsable ? 'Yes' : 'No'));
         return Attribution::create([
             'examen_id' => $examen->id,
             'professeur_id' => $professeur->id,
+            'salle_id' => $salle_id, // Store the salle_id
             'is_responsable' => $isResponsable,
         ]);
     }

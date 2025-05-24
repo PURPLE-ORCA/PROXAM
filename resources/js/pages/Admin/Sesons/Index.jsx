@@ -16,9 +16,14 @@ export default function Index({ sesons: sesonsPagination, filters }) {
     const { translations, language } = useContext(TranslationContext);
     const { auth } = usePage().props; // If using PageProps: const { auth } = usePage<PageProps>().props;
 
+    // State for Delete Modal
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [itemToDelete, setItemToDelete] = useState(null);
-    const [processingBatchAssignment, setProcessingBatchAssignment] = useState(null);
+
+    // State for Batch Assign Modal & Processing
+    const [isBatchAssignModalOpen, setIsBatchAssignModalOpen] = useState(false);
+    const [itemToBatchAssign, setItemToBatchAssign] = useState(null); // Will store the seson object
+    const [processingBatchAssignment, setProcessingBatchAssignment] = useState(null); // Tracks seson.id
 
     const breadcrumbs = useMemo(() => [{ title: translations?.sesons_breadcrumb || 'Sessions', href: route('admin.sesons.index') }], [translations]);
 
@@ -35,7 +40,6 @@ export default function Index({ sesons: sesonsPagination, filters }) {
                     page: pagination.pageIndex + 1,
                     per_page: pagination.pageSize,
                     search: filters?.search || '',
-                    // annee_uni_id: filters?.annee_uni_id || undefined, // If filtering by year on this page via query param
                 },
                 { preserveState: true, replace: true, preserveScroll: true },
             );
@@ -54,9 +58,8 @@ export default function Index({ sesons: sesonsPagination, filters }) {
                 header: translations?.annee_uni_year_column_header || 'Academic Year',
                 size: 250,
             },
-            // You could add a column showing "Pending Assignments" or similar stats for the session
         ],
-        [translations, language], // Added language in case any cell formatter depends on it
+        [translations, language],
     );
 
     const openDeleteModal = (sesonItem) => {
@@ -77,33 +80,39 @@ export default function Index({ sesons: sesonsPagination, filters }) {
         }
     };
 
-    const handleBatchAssign = (sesonId) => {
-        const confirmationMessage =
-            translations?.batch_assign_confirmation_message ||
-            'Are you sure you want to run automatic assignments for all pending exams in this session? This may take a moment and cannot be easily undone.';
+    const openBatchAssignModal = (seson) => {
+        setItemToBatchAssign(seson);
+        setIsBatchAssignModalOpen(true);
+    };
 
-        if (confirm(confirmationMessage)) {
-            // Using simple confirm for now
-            setProcessingBatchAssignment(sesonId);
-            router.post(
-                route('admin.sesons.batch-assign-exams', { seson: sesonId }),
-                {},
-                {
-                    preserveScroll: true,
-                    onSuccess: (page) => {
-                        console.log('Batch assignment POST successful, flash:', page.props.flash);
-                        // Toast is handled by SonnerToastProvider via flash messages from backend
-                    },
-                    onError: (errors) => {
-                        console.error('Error triggering batch assignment:', errors);
-                        // Optionally show a generic error toast here if backend flash isn't sufficient
-                    },
-                    onFinish: () => {
-                        setProcessingBatchAssignment(null);
-                    },
+    const closeBatchAssignModal = () => {
+        setIsBatchAssignModalOpen(false);
+        setItemToBatchAssign(null);
+    };
+
+    const confirmBatchAssign = () => {
+        if (!itemToBatchAssign) return;
+        setProcessingBatchAssignment(itemToBatchAssign.id);
+        // No need to close modal here, onFinish will handle clearing processing state
+        // onSuccess/onError will also close modal if preferred
+        router.post(
+            route('admin.sesons.batch-assign-exams', { seson: itemToBatchAssign.id }),
+            {},
+            {
+                preserveScroll: true,
+                onSuccess: (page) => {
+                    console.log('Batch assignment POST successful, flash:', page.props.flash);
+                    closeBatchAssignModal(); // Close modal on success
                 },
-            );
-        }
+                onError: (errors) => {
+                    console.error('Error triggering batch assignment:', errors);
+                    closeBatchAssignModal(); // Close modal on error too
+                },
+                onFinish: () => {
+                    setProcessingBatchAssignment(null);
+                },
+            },
+        );
     };
 
     const table = useMaterialReactTable({
@@ -113,8 +122,8 @@ export default function Index({ sesons: sesonsPagination, filters }) {
         state: { pagination },
         rowCount: sesonsPagination.total,
         onPaginationChange: setPagination,
-        enableEditing: auth.abilities?.is_admin_or_rh, // Or specific permission
-        enableRowActions: true, // To show the actions column
+        enableEditing: auth.abilities?.is_admin_or_rh,
+        enableRowActions: true,
 
         muiTablePaperProps: {
             elevation: 0,
@@ -180,7 +189,6 @@ export default function Index({ sesons: sesonsPagination, filters }) {
 
         renderRowActions: ({ row }) => {
             const seson = row.original;
-            // Assuming Admin or RH can perform these actions
             const canManage = auth.abilities?.is_admin || auth.abilities?.is_rh;
 
             return (
@@ -197,7 +205,7 @@ export default function Index({ sesons: sesonsPagination, filters }) {
                         <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => handleBatchAssign(seson.id)}
+                            onClick={() => openBatchAssignModal(seson)} // Changed from handleBatchAssign
                             disabled={processingBatchAssignment === seson.id}
                             className="text-green-500 hover:bg-[var(--accent)]"
                             title={translations?.batch_assign_button_title || 'Assign All Pending Exams'}
@@ -210,7 +218,7 @@ export default function Index({ sesons: sesonsPagination, filters }) {
                         </Button>
                     )}
 
-                    {auth.abilities?.is_admin && ( // Assuming only pure Admin can delete a session
+                    {auth.abilities?.is_admin && (
                         <Button
                             variant="ghost"
                             size="icon"
@@ -238,6 +246,7 @@ export default function Index({ sesons: sesonsPagination, filters }) {
             <div className="bg-[var(--background)] p-4 text-[var(--foreground)] md:p-6">
                 <MaterialReactTable table={table} />
             </div>
+
             <ConfirmationModal
                 isOpen={isDeleteModalOpen}
                 onClose={closeDeleteModal}
@@ -252,6 +261,25 @@ export default function Index({ sesons: sesonsPagination, filters }) {
                         : translations?.generic_delete_confirmation
                 }
                 confirmText={translations?.delete_button_title || 'Delete'}
+            />
+
+            <ConfirmationModal
+                isOpen={isBatchAssignModalOpen}
+                onClose={closeBatchAssignModal}
+                onConfirm={confirmBatchAssign}
+                title={translations?.batch_assign_modal_title || 'Confirm Batch Assignment'}
+                message={
+                    itemToBatchAssign
+                        ? (
+                              translations?.batch_assign_confirmation_message ||
+                              'Are you sure you want to run automatic assignments for all pending exams in session "{code} ({year})"? This may take a moment and cannot be easily undone.'
+                          )
+                              .replace('{code}', itemToBatchAssign.code)
+                              .replace('{year}', itemToBatchAssign.annee_uni?.annee || '')
+                        : translations?.generic_action_confirmation || 'Are you sure you want to proceed?'
+                }
+                confirmText={translations?.batch_assign_confirm_button || 'Yes, Assign All'}
+                destructive={false} // Make confirm button not red for this action
             />
         </AppLayout>
     );

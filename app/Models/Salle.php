@@ -20,4 +20,8 @@ class Salle extends Model
     {
         return $this->hasMany(ModuleExamRoomConfig::class);
     }
+    public function attributions()
+    {
+        return $this->hasMany(Attribution::class);
+    }
 }

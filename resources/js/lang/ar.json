@@ -381,5 +381,8 @@
     "no_academic_year_selected_label": "No Year Selected",
     "select_academic_year_placeholder": "Switch Academic Year",
     "batch_assign_button_title": "تعيين جميع الامتحانات المعلقة لهذه الدورة",
-    "batch_assign_confirmation_message": "هل أنت متأكد أنك تريد تشغيل التعيينات التلقائية لجميع الامتحانات المعلقة في هذه الدورة؟ قد يستغرق هذا بعض الوقت ولا يمكن التراجع عنه بسهولة."
+    "batch_assign_confirmation_message": "هل أنت متأكد أنك تريد تشغيل التعيينات التلقائية لجميع الامتحانات المعلقة في هذه الدورة؟ قد يستغرق هذا بعض الوقت ولا يمكن التراجع عنه بسهولة.",
+    "batch_assign_modal_title": "تأكيد التعيين الجماعي",
+    "batch_assign_confirm_button": "نعم، عين الكل",
+    "generic_action_confirmation": "هل أنت متأكد أنك تريد المتابعة؟"
 }
