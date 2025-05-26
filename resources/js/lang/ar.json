@@ -384,5 +384,8 @@
     "batch_assign_confirmation_message": "هل أنت متأكد أنك تريد تشغيل التعيينات التلقائية لجميع الامتحانات المعلقة في هذه الدورة؟ قد يستغرق هذا بعض الوقت ولا يمكن التراجع عنه بسهولة.",
     "batch_assign_modal_title": "تأكيد التعيين الجماعي",
     "batch_assign_confirm_button": "نعم، عين الكل",
-    "generic_action_confirmation": "هل أنت متأكد أنك تريد المتابعة؟"
+    "generic_action_confirmation": "هل أنت متأكد أنك تريد المتابعة؟",
+    "approveAndNotify": "الموافقة والإشعار",
+    "confirmApprovalTitle": "تأكيد الموافقة",
+    "confirmApprovalDescription": "هل أنت متأكد أنك تريد الموافقة على التعيينات للدورة \"{sesonName}\" وإشعار جميع الأساتذة المعينين؟ لا يمكن التراجع عن هذا الإجراء بسهولة."
 }

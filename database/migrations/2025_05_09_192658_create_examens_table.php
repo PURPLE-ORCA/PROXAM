@@ -18,6 +18,7 @@ return new class extends Migration
             $table->enum('type', ['QCM', 'theoreique','MIXED']);
             $table->dateTime('debut');
             $table->foreignId('module_id')->constrained('modules')->cascadeOnDelete();
+            $table->foreignId('seson_id')->constrained('sesons')->cascadeOnDelete(); // Added seson_id
             $table->timestamps();
         });
     }

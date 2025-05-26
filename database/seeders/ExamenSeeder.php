@@ -52,7 +52,7 @@ class ExamenSeeder extends Seeder
                 'type' => $types[array_rand($types)],
                 'debut' => $baseDate,
                 'module_id' => $module->id,
-                // 'required_professors' is REMOVED from here
+                'seson_id' => $quadrimestre->seson->id, // Added seson_id
             ]);
         }
         $this->command->info('ExamenSeeder: Exams seeded successfully.');

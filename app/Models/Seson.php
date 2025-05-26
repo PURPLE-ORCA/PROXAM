@@ -7,7 +7,18 @@ use Illuminate\Database\Eloquent\Model;
 
 class Seson extends Model
 {
-    protected $fillable = ['code', 'annee_uni_id'];
+    protected $fillable = [
+        'code',
+        'annee_uni_id',
+        'assignments_approved_at',
+        'notifications_sent_at',
+        'approval_user_id',
+    ];
+
+    protected $casts = [
+        'assignments_approved_at' => 'datetime',
+        'notifications_sent_at' => 'datetime',
+    ];
 
     public function anneeUni()
     {

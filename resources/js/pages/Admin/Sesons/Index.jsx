@@ -1,4 +1,5 @@
 import ConfirmationModal from '@/components/Common/ConfirmationModal';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { TranslationContext } from '@/context/TranslationProvider';
 import AppLayout from '@/layouts/app-layout';
@@ -24,6 +25,11 @@ export default function Index({ sesons: sesonsPagination, filters }) {
     const [isBatchAssignModalOpen, setIsBatchAssignModalOpen] = useState(false);
     const [itemToBatchAssign, setItemToBatchAssign] = useState(null); // Will store the seson object
     const [processingBatchAssignment, setProcessingBatchAssignment] = useState(null); // Tracks seson.id
+
+    // State for Approve & Notify Modal & Processing
+    const [showApprovalConfirmation, setShowApprovalConfirmation] = useState(false);
+    const [sesonToApprove, setSesonToApprove] = useState(null);
+    const [processingApprovalSesonId, setProcessingApprovalSesonId] = useState(null); // Tracks seson.id for approval
 
     const breadcrumbs = useMemo(() => [{ title: translations?.sesons_breadcrumb || 'Sessions', href: route('admin.sesons.index') }], [translations]);
 
@@ -93,8 +99,6 @@ export default function Index({ sesons: sesonsPagination, filters }) {
     const confirmBatchAssign = () => {
         if (!itemToBatchAssign) return;
         setProcessingBatchAssignment(itemToBatchAssign.id);
-        // No need to close modal here, onFinish will handle clearing processing state
-        // onSuccess/onError will also close modal if preferred
         router.post(
             route('admin.sesons.batch-assign-exams', { seson: itemToBatchAssign.id }),
             {},
@@ -102,15 +106,45 @@ export default function Index({ sesons: sesonsPagination, filters }) {
                 preserveScroll: true,
                 onSuccess: (page) => {
                     console.log('Batch assignment POST successful, flash:', page.props.flash);
-                    closeBatchAssignModal(); // Close modal on success
+                    closeBatchAssignModal();
                 },
                 onError: (errors) => {
                     console.error('Error triggering batch assignment:', errors);
-                    closeBatchAssignModal(); // Close modal on error too
+                    closeBatchAssignModal();
                 },
                 onFinish: () => {
                     setProcessingBatchAssignment(null);
                 },
+            },
+        );
+    };
+
+    const openApprovalConfirmationModal = (seson) => {
+        setSesonToApprove(seson);
+        setShowApprovalConfirmation(true);
+    };
+
+    const closeApprovalConfirmationModal = () => {
+        setShowApprovalConfirmation(false);
+        setSesonToApprove(null);
+    };
+
+    const handleApproveAndNotify = () => {
+        if (!sesonToApprove) return;
+        setProcessingApprovalSesonId(sesonToApprove.id);
+        router.post(
+            route('admin.sesons.approve-notifications', sesonToApprove.id),
+            {},
+            {
+                onSuccess: () => {
+                    closeApprovalConfirmationModal();
+                    // Toast notification is handled by Inertia flash messages
+                },
+                onError: (errors) => {
+                    console.error('Error approving and notifying:', errors);
+                    closeApprovalConfirmationModal();
+                },
+                onFinish: () => setProcessingApprovalSesonId(null),
             },
         );
     };
@@ -205,7 +239,7 @@ export default function Index({ sesons: sesonsPagination, filters }) {
                         <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => openBatchAssignModal(seson)} // Changed from handleBatchAssign
+                            onClick={() => openBatchAssignModal(seson)}
                             disabled={processingBatchAssignment === seson.id}
                             className="text-green-500 hover:bg-[var(--accent)]"
                             title={translations?.batch_assign_button_title || 'Assign All Pending Exams'}
@@ -216,6 +250,37 @@ export default function Index({ sesons: sesonsPagination, filters }) {
                                 <Icon icon="mdi:robot-outline" className="h-5 w-5" />
                             )}
                         </Button>
+                    )}
+
+                    {auth.abilities?.is_admin && !seson.assignments_approved_at && (
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openApprovalConfirmationModal(seson)}
+                            disabled={processingApprovalSesonId === seson.id}
+                            className="text-blue-500 hover:bg-[var(--accent)]"
+                            title={translations?.approveAndNotify || 'Approve & Notify'}
+                        >
+                            <Icon icon="mdi:check-decagram-outline" className="mr-2 h-4 w-4" />
+                            {processingApprovalSesonId === seson.id ? (
+                                <Icon icon="mdi:loading" className="h-4 w-4 animate-spin" />
+                            ) : (
+                                translations?.approveAndNotify || 'Approve & Notify'
+                            )}
+                        </Button>
+                    )}
+
+                    {auth.abilities?.is_admin && seson.assignments_approved_at && (
+                        <div className="flex flex-col text-xs">
+                            <Badge variant="success" className="mb-1">
+                                Approved: {new Date(seson.assignments_approved_at).toLocaleDateString()}
+                            </Badge>
+                            {seson.notifications_sent_at ? (
+                                <Badge variant="success">Notified: {new Date(seson.notifications_sent_at).toLocaleDateString()}</Badge>
+                            ) : (
+                                <Badge variant="outline">Notification Pending/Failed</Badge>
+                            )}
+                        </div>
                     )}
 
                     {auth.abilities?.is_admin && (
@@ -280,6 +345,21 @@ export default function Index({ sesons: sesonsPagination, filters }) {
                 }
                 confirmText={translations?.batch_assign_confirm_button || 'Yes, Assign All'}
                 destructive={false} // Make confirm button not red for this action
+            />
+
+            <ConfirmationModal
+                isOpen={showApprovalConfirmation}
+                onClose={closeApprovalConfirmationModal}
+                onConfirm={handleApproveAndNotify}
+                title={translations?.confirmApprovalTitle || "Confirm Approval"}
+                description={
+                    sesonToApprove
+                        ? (translations?.confirmApprovalDescription || `Are you sure you want to approve assignments for seson "${sesonToApprove?.nom}" and notify all assigned professors? This action cannot be undone easily.`)
+                            .replace('{sesonName}', sesonToApprove?.nom || '')
+                        : translations?.generic_action_confirmation || 'Are you sure you want to proceed?'
+                }
+                confirmText={translations?.approveAndNotify || 'Approve & Notify'}
+                destructive={false}
             />
         </AppLayout>
     );

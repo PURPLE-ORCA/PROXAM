@@ -43,8 +43,8 @@ export default function Index({ services: servicesPagination, filters }) {
     );
 
     const [pagination, setPagination] = useState({
-        pageIndex: servicesPagination.current_page - 1 ?? defaultPageIndex,
-        pageSize: servicesPagination.per_page ?? defaultPageSize,
+        pageIndex: servicesPagination.current_page - 1 || defaultPageIndex,
+        pageSize: servicesPagination.per_page || defaultPageSize,
     });
 
     useEffect(() => {

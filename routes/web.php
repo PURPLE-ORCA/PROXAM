@@ -107,6 +107,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/sesons/{seson}/batch-assign-exams', [SesonController::class, 'batchAssignExams']) // <<< ADD THIS
         ->name('sesons.batch-assign-exams');  
     
+        Route::post('/sesons/{seson}/approve-notifications', [App\Http\Controllers\Admin\SesonNotificationController::class, 'approveAndDispatchNotifications'])
+            ->name('sesons.approve-notifications');
     });
 }); 
 

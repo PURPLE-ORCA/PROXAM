@@ -23,8 +23,8 @@ export default function Index({ anneesUniversitaires: anneesPagination, filters 
     );
 
     const [pagination, setPagination] = useState({
-        pageIndex: anneesPagination.current_page - 1 ?? defaultPageIndex,
-        pageSize: anneesPagination.per_page ?? defaultPageSize,
+        pageIndex: anneesPagination.current_page - 1 || defaultPageIndex,
+        pageSize: anneesPagination.per_page || defaultPageSize,
     });
 
     useEffect(() => {

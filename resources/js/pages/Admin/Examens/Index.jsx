@@ -51,8 +51,8 @@ export default function Index({ examens: examensPagination, filters }) {
     );
 
     const [pagination, setPagination] = useState({
-        pageIndex: examensPagination.current_page - 1 ?? defaultPageIndex,
-        pageSize: examensPagination.per_page ?? defaultPageSize,
+        pageIndex: examensPagination.current_page - 1 || defaultPageIndex,
+        pageSize: examensPagination.per_page || defaultPageSize,
     });
 
     useEffect(() => {
