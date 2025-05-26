@@ -35,27 +35,19 @@ class SendProfessorScheduleNotifications implements ShouldQueue
         try {
             Log::info("Starting SendProfessorScheduleNotifications job for Seson ID: {$this->seson->id}");
 
-            // Retrieve unique professors with assignments for this Seson
+            $this->seson->loadMissing(['anneeUni', 'quadrimestres']); // Ensure relations are loaded
+
+            if (!$this->seson->anneeUni) { // Basic check
+                Log::error("AnneeUni relation missing for Seson ID: {$this->seson->id}. Cannot generate email details.");
+                throw new \Exception("Missing AnneeUni relation for email details.");
+            }
+
             $professorIds = Attribution::whereHas('examen', fn($q) => $q->where('seson_id', $this->seson->id))
                                        ->distinct()
                                        ->pluck('professeur_id');
 
-            /** @var \App\Models\Seson $seson */
-            // Load Seson with relations needed for PDF text
-            // Seson has a direct anneeUni relationship, and hasMany quadrimestres.
-            // The original eager load 'quadrimestre.anneeUni' was incorrect for Seson.
-            $seson = Seson::with('anneeUni')->find($this->seson->id);
-
-            // Check if seson or its direct anneeUni relation is null before proceeding
-            // Seson hasMany Quadrimestres, so $seson->quadrimestre (singular) is incorrect.
-            if (!$seson || !$seson->anneeUni) {
-                Log::error("Seson or AnneeUni relation missing for Seson ID: {$this->seson->id}. Cannot generate PDF.");
-                // Optionally, throw an exception to mark the job as failed
-                throw new \Exception("Missing Seson or AnneeUni relations for PDF generation.");
-            }
-
-            // Prepare logo base64
-            $logoBase64 = '';
+            // Optional: Keep PDF generation for archival or future use, but it's not sent
+            $logoBase64 = ''; // (your logo logic can remain if desired)
             $logoPath = public_path('images/pdf/faculty_logo.png');
             if (file_exists($logoPath)) {
                 $type = pathinfo($logoPath, PATHINFO_EXTENSION);
@@ -66,8 +58,8 @@ class SendProfessorScheduleNotifications implements ShouldQueue
             }
 
             foreach ($professorIds as $professeurId) {
+                $tempPdfPath = null; // Initialize for potential finally block
                 try {
-                    /** @var \App\Models\Professeur $professor */
                     $professor = Professeur::with('user')->find($professeurId);
 
                     if (!$professor || !$professor->user || !$professor->user->email) {
@@ -75,62 +67,62 @@ class SendProfessorScheduleNotifications implements ShouldQueue
                         continue;
                     }
 
-                    // Fetch assignments for this professor in this session
                     $assignments = Attribution::with(['examen.module', 'salle'])
                                               ->where('professeur_id', $professor->id)
                                               ->whereHas('examen', fn($q) => $q->where('seson_id', $this->seson->id))
                                               ->get();
 
+                    // --- START: Optional PDF Generation (kept for future) ---
                     $dataForPdfView = [
                         'professor' => $professor,
-                        'seson' => $seson,
-                        // Pass the first quadrimestre if available, as Seson hasMany Quadrimestres
-                        'quadrimestre' => $seson->quadrimestres->first(),
-                        'anneeUn' => $seson->anneeUni, // Direct access to AnneeUni from Seson
+                        'seson' => $this->seson,
+                        'quadrimestre' => $this->seson->quadrimestres->first(),
+                        'anneeUn' => $this->seson->anneeUni,
                         'assignments' => $assignments,
                         'generationDate' => now(),
                         'logoBase64' => $logoBase64,
                     ];
-
-                    // Generate PDF
                     $pdf = Pdf::loadView('pdfs.professor_session_schedule', $dataForPdfView);
-                    $pdfOutput = $pdf->output(); // Get raw PDF string from dompdf
-
-                    Log::info("DOMPDF Output - Type: " . gettype($pdfOutput));
-                    Log::info("DOMPDF Output - Length: " . strlen($pdfOutput));
-                    Log::info("DOMPDF Output - First 100 chars: " . substr($pdfOutput, 0, 100));
-                    Log::info("DOMPDF Output - Last 100 chars: " . substr($pdfOutput, -100));
-
-                    // Save it to a file FOR EVERY PROFESSOR to inspect individually
+                    $pdfOutput = $pdf->output();
+                    // Save temp PDF (as before)
                     $tempFilename = 'generated_schedule_prof_' . $professor->id . '_seson_' . $this->seson->id . '_' . time() . '.pdf';
-                    $tempPdfPath = storage_path('app/temp_pdfs/' . $tempFilename); // Create a 'temp_pdfs' directory in storage/app
-
-                    // Ensure the directory exists
+                    $tempPdfPath = storage_path('app/temp_pdfs/' . $tempFilename);
                     if (!is_dir(storage_path('app/temp_pdfs'))) {
                         mkdir(storage_path('app/temp_pdfs'), 0755, true);
                     }
+                    file_put_contents($tempPdfPath, $pdfOutput);
+                    Log::info("Temporarily saved PDF to: " . $tempPdfPath . " (NOT EMAILED)");
+                    // --- END: Optional PDF Generation ---
 
-                    $bytesWritten = file_put_contents($tempPdfPath, $pdfOutput);
-                    if ($bytesWritten === false) {
-                        Log::error("Failed to write temporary PDF to: " . $tempPdfPath);
+                    Log::info("Debugging Professor object before Mailable:");
+                    Log::info("professeurId: " . $professeurId);
+                    Log::info("Type of professor: " . gettype($professor));
+                    if ($professor instanceof \Illuminate\Database\Eloquent\Collection) {
+                        Log::info("Professor is a Collection. Count: " . $professor->count());
+                    } elseif ($professor instanceof \App\Models\Professeur) {
+                        Log::info("Professor is a Model. ID: " . $professor->id);
                     } else {
-                        Log::info("Successfully wrote temporary PDF ({$bytesWritten} bytes) to: " . $tempPdfPath);
+                        Log::info("Professor is neither Collection nor Model.");
                     }
 
-                    // CONTINUE with passing $pdfOutput to your Mailable and sending
+                    // Send the email with assignment details in the body
                     Mail::to($professor->user->email)->send(new ProfessorAssignmentScheduleMail(
-                        $professor, // Should be a model, not a collection
-                        $pdfOutput,
-                        $seson // Should be a model, not a collection
+                        $professor,
+                        $this->seson, // Pass the main Seson object
+                        $assignments  // Pass the collection of assignments
                     ));
 
-                    Log::info("Notification sent to {$professor->user->email} for Seson ID: {$this->seson->id}");
-
-                    // Add a small delay to avoid overwhelming mail server
-                    sleep(1);
+                    Log::info("Plain text/HTML notification sent to {$professor->user->email} for Seson ID: {$this->seson->id}");
+                    // sleep(1); // Temporarily removed for faster debugging
 
                 } catch (\Exception $e) {
                     Log::error("Failed to send notification for professor ID {$professeurId} in Seson ID {$this->seson->id}: " . $e->getMessage());
+                } finally {
+                    // Optional: Cleanup temporary PDF if you kept the generation step
+                    // if ($tempPdfPath && file_exists($tempPdfPath)) {
+                    //     unlink($tempPdfPath);
+                    //     Log::info("Deleted temporary PDF: " . $tempPdfPath);
+                    // }
                 }
             }
 
@@ -139,7 +131,6 @@ class SendProfessorScheduleNotifications implements ShouldQueue
 
         } catch (\Exception $e) {
             Log::error("SendProfessorScheduleNotifications job failed for Seson ID: {$this->seson->id}. Error: " . $e->getMessage());
-            // Re-throw the exception to mark the job as failed in the queue system
             throw $e;
         }
     }
