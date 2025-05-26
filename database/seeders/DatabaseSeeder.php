@@ -21,7 +21,7 @@ class DatabaseSeeder extends Seeder
             ModuleExamRoomConfigSeeder::class, 
             ExamenSeeder::class,               
             ExamensSallesSeeder::class,        
-            UnavailabilitySeeder::class,
+            // UnavailabilitySeeder::class,
             // AttributionSeeder::class,     // Should be OFF for assignment engine testing
             // EchangeSeeder::class,
         ]);

@@ -383,5 +383,8 @@
     "batch_assign_confirmation_message": "Are you sure you want to run automatic assignments for all pending exams in this session? This may take a moment and cannot be easily undone.",
     "batch_assign_modal_title": "Confirm Batch Assignment",
     "batch_assign_confirm_button": "Yes, Assign All",
-    "generic_action_confirmation": "Are you sure you want to proceed?"
+    "generic_action_confirmation": "Are you sure you want to proceed?",
+    "approveAndNotify": "Approve & Notify",
+    "confirmApprovalTitle": "Confirm Approval",
+    "confirmApprovalDescription": "Are you sure you want to approve assignments for seson \"{sesonName}\" and notify all assigned professors? This action cannot be undone easily."
 }

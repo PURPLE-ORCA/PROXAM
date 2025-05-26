@@ -23,8 +23,8 @@ export default function Index({ salles: sallesPagination, filters }) {
     );
 
     const [pagination, setPagination] = useState({
-        pageIndex: sallesPagination.current_page - 1 ?? defaultPageIndex,
-        pageSize: sallesPagination.per_page ?? defaultPageSize,
+        pageIndex: sallesPagination.current_page - 1 || defaultPageIndex,
+        pageSize: sallesPagination.per_page || defaultPageSize,
     });
 
     useEffect(() => {

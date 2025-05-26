@@ -22,3 +22,6 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+.clinerules
+projectrules.md
+/memory-bank

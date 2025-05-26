@@ -384,5 +384,8 @@
     "batch_assign_confirmation_message": "Êtes-vous sûr de vouloir lancer les affectations automatiques pour tous les examens en attente de cette session ? Cela peut prendre un moment et ne peut pas être facilement annulé.",
     "batch_assign_modal_title": "Confirmer l'Affectation par Lot",
     "batch_assign_confirm_button": "Oui, Tout Assigner",
-    "generic_action_confirmation": "Êtes-vous sûr de vouloir continuer ?"
+    "generic_action_confirmation": "Êtes-vous sûr de vouloir continuer ?",
+    "approveAndNotify": "Approuver & Notifier",
+    "confirmApprovalTitle": "Confirmer l'Approbation",
+    "confirmApprovalDescription": "Êtes-vous sûr de vouloir approuver les affectations pour la session \"{sesonName}\" et notifier tous les professeurs assignés ? Cette action ne peut pas être facilement annulée."
 }
