@@ -35,7 +35,26 @@ class SendProfessorScheduleNotifications implements ShouldQueue
         try {
             Log::info("Starting SendProfessorScheduleNotifications job for Seson ID: {$this->seson->id}");
 
-            $this->seson->loadMissing(['anneeUni', 'quadrimestres']); // Ensure relations are loaded
+            // --- START: Debugging Logs (Seson/AnneeUni/Quadrimestre) ---
+            // Log::info("Seson ID for email: {$this->seson->id}");
+            // Log::info("Seson Code for email: " . ($this->seson->code ?? 'SESON CODE IS NULL/EMPTY'));
+
+            // // Ensure relations are loaded for the current $this->seson instance
+            // $this->seson->loadMissing(['anneeUni', 'quadrimestres']);
+
+            // Log::info("AnneeUni (annee) for Seson {$this->seson->id}: " . ($this->seson->anneeUni ? $this->seson->anneeUni->annee : 'ANNEEUNI IS NULL or anneeUni->annee is null'));
+            // if ($this->seson->anneeUni) {
+            //     Log::info("AnneeUni ID: " . $this->seson->anneeUni->id);
+            // }
+
+            // Log::info("Quadrimestres count for Seson {$this->seson->id}: " . $this->seson->quadrimestres->count());
+            // if ($this->seson->quadrimestres->isNotEmpty()) {
+            //     Log::info("First Quadrimestre Code for Seson {$this->seson->id}: " . ($this->seson->quadrimestres->first()->code ?? 'FIRST QUADRIMESTRE CODE IS NULL/EMPTY'));
+            //     Log::info("First Quadrimestre ID: " . $this->seson->quadrimestres->first()->id);
+            // } else {
+            //     Log::info("No quadrimestres found for Seson {$this->seson->id}.");
+            // }
+            // --- END: Debugging Logs (Seson/AnneeUni/Quadrimestre) ---
 
             if (!$this->seson->anneeUni) { // Basic check
                 Log::error("AnneeUni relation missing for Seson ID: {$this->seson->id}. Cannot generate email details.");
@@ -60,7 +79,12 @@ class SendProfessorScheduleNotifications implements ShouldQueue
             foreach ($professorIds as $professeurId) {
                 $tempPdfPath = null; // Initialize for potential finally block
                 try {
+                    /** @var \App\Models\Professeur $professor */
+                    // Ensure a single model is returned, even if find() somehow returns a collection
                     $professor = Professeur::with('user')->find($professeurId);
+                    if ($professor instanceof \Illuminate\Database\Eloquent\Collection) {
+                        $professor = $professor->first();
+                    }
 
                     if (!$professor || !$professor->user || !$professor->user->email) {
                         Log::warning("Skipping notification for professor ID {$professeurId}: User or email not found.");
@@ -94,16 +118,18 @@ class SendProfessorScheduleNotifications implements ShouldQueue
                     Log::info("Temporarily saved PDF to: " . $tempPdfPath . " (NOT EMAILED)");
                     // --- END: Optional PDF Generation ---
 
-                    Log::info("Debugging Professor object before Mailable:");
-                    Log::info("professeurId: " . $professeurId);
-                    Log::info("Type of professor: " . gettype($professor));
-                    if ($professor instanceof \Illuminate\Database\Eloquent\Collection) {
-                        Log::info("Professor is a Collection. Count: " . $professor->count());
-                    } elseif ($professor instanceof \App\Models\Professeur) {
-                        Log::info("Professor is a Model. ID: " . $professor->id);
-                    } else {
-                        Log::info("Professor is neither Collection nor Model.");
-                    }
+                    // --- START: Debugging Logs (Professor object) ---
+                    // Log::info("Debugging Professor object before Mailable:");
+                    // Log::info("professeurId: " . $professeurId);
+                    // Log::info("Type of professor: " . gettype($professor));
+                    // if ($professor instanceof \Illuminate\Database\Eloquent\Collection) {
+                    //     Log::info("Professor is a Collection. Count: " . $professor->count());
+                    // } elseif ($professor instanceof Professeur) {
+                    //     Log::info("Professor is a Model. ID: " . $professor->id);
+                    // } else {
+                    //     Log::info("Professor is neither Collection nor Model.");
+                    // }
+                    // --- END: Debugging Logs (Professor object) ---
 
                     // Send the email with assignment details in the body
                     Mail::to($professor->user->email)->send(new ProfessorAssignmentScheduleMail(
@@ -113,7 +139,7 @@ class SendProfessorScheduleNotifications implements ShouldQueue
                     ));
 
                     Log::info("Plain text/HTML notification sent to {$professor->user->email} for Seson ID: {$this->seson->id}");
-                    // sleep(1); // Temporarily removed for faster debugging
+                    // sleep(1); // Re-enable if needed for rate limiting, but not for debugging
 
                 } catch (\Exception $e) {
                     Log::error("Failed to send notification for professor ID {$professeurId} in Seson ID {$this->seson->id}: " . $e->getMessage());

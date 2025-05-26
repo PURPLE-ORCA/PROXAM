@@ -40,12 +40,12 @@ class ProfessorAssignmentScheduleMail extends Mailable
         return new Content(
             markdown: 'emails.professor.assignment_schedule',
             with: [
-                'sesonName' => $this->seson->nom,
+                // Use the correct attribute names from your database tables
+                'sesonName' => $this->seson->code ?? '****', // Use 'code' for Seson
                 'professorName' => $this->professor->nom_complet,
-                'assignments' => $this->assignments, // Pass assignments to the view
-                // You might also want to pass Quadrimestre and AnneeUni names if they are used in the email body
-                'quadrimestreName' => $this->seson->quadrimestres->first()?->nom ?? 'N/A', // Example
-                'anneeUniName' => $this->seson->anneeUni?->nom ?? 'N/A', // Example
+                'assignments' => $this->assignments,
+                'quadrimestreName' => $this->seson->quadrimestres->first()?->code ?? 'N/A', // Use 'code' for Quadrimestre
+                'anneeUniName' => $this->seson->anneeUni?->annee ?? 'N/A', // Use 'annee' for AnneeUni
             ],
         );
     }
