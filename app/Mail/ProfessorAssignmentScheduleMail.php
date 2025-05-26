@@ -13,7 +13,7 @@ use Illuminate\Support\Collection; // Add this
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Log; // Keep this for now, might be removed later if no logging is needed
+// use Illuminate\Support\Facades\Log; // Removed after debugging
 
 class ProfessorAssignmentScheduleMail extends Mailable
 {
