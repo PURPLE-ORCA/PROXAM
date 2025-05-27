@@ -15,6 +15,7 @@ use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\SesonController;
 use App\Http\Controllers\UnavailabilityController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\Professor\ScheduleController as ProfessorScheduleController; // Add this
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -110,6 +111,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/sesons/{seson}/approve-notifications', [App\Http\Controllers\Admin\SesonNotificationController::class, 'approveAndDispatchNotifications'])
             ->name('sesons.approve-notifications');
     });
+
+    Route::middleware(['can:is_professeur']) 
+        ->prefix('professeur')
+        ->name('professeur.')
+        ->group(function () {
+            Route::get('/my-schedule', [ProfessorScheduleController::class, 'index'])->name('schedule.index');
+
+            // Route::get('/dashboard', [App\Http\Controllers\Professor\DashboardController::class, 'index'])->name('dashboard');
+            // Route::get('/my-unavailabilities', [App\Http\Controllers\Professor\UnavailabilityController::class, 'index'])->name('unavailabilities.index');
+        });
 }); 
 
 require __DIR__.'/settings.php';

@@ -386,5 +386,17 @@
     "generic_action_confirmation": "Are you sure you want to proceed?",
     "approveAndNotify": "Approve & Notify",
     "confirmApprovalTitle": "Confirm Approval",
-    "confirmApprovalDescription": "Are you sure you want to approve assignments for seson \"{sesonName}\" and notify all assigned professors? This action cannot be undone easily."
+    "confirmApprovalDescription": "Are you sure you want to approve assignments for seson \"{sesonName}\" and notify all assigned professors? This action cannot be undone easily.",
+    "my_schedule_nav_item": "My Schedule",
+    "myExamSchedulePageTitle": "My Exam Schedule",
+    "tableHeaderDate": "Date",
+    "tableHeaderTime": "Time",
+    "tableHeaderDuration": "Duration",
+    "tableHeaderModule": "Module",
+    "tableHeaderRoom": "Room",
+    "tableHeaderRole": "Role",
+    "tableHeaderSession": "Session",
+    "roleResponsable": "Responsable",
+    "roleInvigilator": "Invigilator",
+    "noAssignmentsForYear": "No assignments found for the selected academic year."
 }

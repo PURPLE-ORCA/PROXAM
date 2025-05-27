@@ -387,5 +387,17 @@
     "generic_action_confirmation": "Êtes-vous sûr de vouloir continuer ?",
     "approveAndNotify": "Approuver & Notifier",
     "confirmApprovalTitle": "Confirmer l'Approbation",
-    "confirmApprovalDescription": "Êtes-vous sûr de vouloir approuver les affectations pour la session \"{sesonName}\" et notifier tous les professeurs assignés ? Cette action ne peut pas être facilement annulée."
+    "confirmApprovalDescription": "Êtes-vous sûr de vouloir approuver les affectations pour la session \"{sesonName}\" et notifier tous les professeurs assignés ? Cette action ne peut pas être facilement annulée.",
+    "my_schedule_nav_item": "Mon Emploi du Temps",
+    "myExamSchedulePageTitle": "Mon Emploi du Temps d'Examen",
+    "tableHeaderDate": "Date",
+    "tableHeaderTime": "Heure",
+    "tableHeaderDuration": "Durée",
+    "tableHeaderModule": "Module",
+    "tableHeaderRoom": "Salle",
+    "tableHeaderRole": "Rôle",
+    "tableHeaderSession": "Session",
+    "roleResponsable": "Responsable",
+    "roleInvigilator": "Surveillant",
+    "noAssignmentsForYear": "Aucune affectation trouvée pour l'année universitaire sélectionnée."
 }

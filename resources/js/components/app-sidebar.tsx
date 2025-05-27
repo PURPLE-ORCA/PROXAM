@@ -98,7 +98,7 @@ export function AppSidebar() {
             title: translations?.attributions_nav_item || 'Assignments',
             href: route('admin.attributions.index'), 
             icon: ListChecks, 
-            active: route().current('admin.attributions.index'), // Only one route for now
+            active: route().current('admin.attributions.index'), 
         });
         mainNavItems.push({
             title: translations?.filieres_nav_item || 'Study Fields',
@@ -107,6 +107,15 @@ export function AppSidebar() {
             active: route().current('admin.filieres.*'),
         });
 
+    }
+    if (auth.user && auth.abilities?.is_professeur) {
+        mainNavItems.push({
+            title: translations?.my_schedule_nav_item || 'My Schedule',
+            href: route('professeur.schedule.index'),
+            icon: CalendarDays, // Or another suitable icon
+            active: route().current('professeur.schedule.index'),
+        });
+        // Add professor dashboard and unavailabilities link placeholders later or commented out
     }
     if (auth.user && auth.abilities?.is_admin_or_rh) {
         mainNavItems.push({

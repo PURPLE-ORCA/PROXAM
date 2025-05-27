@@ -36,6 +36,11 @@ class Examen extends Model
         return $this->belongsTo(Module::class);
     }
 
+    public function seson()
+    {
+        return $this->belongsTo(Seson::class);
+    }
+
     public function salles() {
         return $this->belongsToMany(Salle::class, 'examens_salles')
                     ->withPivot('capacite', 'professeurs_assignes_salle')

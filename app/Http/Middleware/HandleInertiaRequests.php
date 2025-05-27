@@ -31,9 +31,33 @@ class HandleInertiaRequests extends Middleware
                   $latestAnneeUni = AnneeUni::orderBy('annee', 'desc')->first();
                 //   $sessionIdInSession = session('selected_annee_uni_id');
                 //   $defaultId = $latestAnneeUni?->id;
-                  $selectedIdInSession = session('selected_annee_uni_id', $currentAnneeUni?->id);
-                  $selectedAnneeObject = $selectedIdInSession ? $allAnneesUniversitaires->firstWhere('id', $selectedIdInSession) : null;
-                  $selectedAnneeString = $selectedAnneeObject?->annee;
+    // Get selected_id from session, default to currentAnneeUni's ID
+    $selectedIdInSession = session('selected_annee_uni_id');
+
+    if (!$selectedIdInSession && $currentAnneeUni) {
+        $selectedIdInSession = $currentAnneeUni->id;
+        // *** CRITICAL: Write the default to the session ***
+        session(['selected_annee_uni_id' => $selectedIdInSession]);
+        Log::info("Default selected_annee_uni_id ({$selectedIdInSession}) was NOT in session, NOW SET.");
+    } elseif (!$selectedIdInSession && !$currentAnneeUni) {
+        // Edge case: No academic years in DB, and nothing in session
+        $selectedIdInSession = null; // Or handle as an error/specific state
+        Log::warning("No academic years in DB and no selected_annee_uni_id in session.");
+    }
+
+
+    $selectedAnneeObject = $selectedIdInSession ? $allAnneesUniversitaires->firstWhere('id', $selectedIdInSession) : null;
+    $selectedAnneeString = $selectedAnneeObject?->annee;
+
+    // ... (your existing logging) ...
+    Log::info("--- HandleInertiaRequests ---");
+    Log::info("User ID: " . ($request->user()?->id ?? 'Guest'));
+    Log::info("Session 'selected_annee_uni_id' value AT START of share(): " . (session()->has('selected_annee_uni_id') && $request->session()->get('selected_annee_uni_id') !== $selectedIdInSession ? $request->session()->get('selected_annee_uni_id') : $selectedIdInSession)); // Log what it was vs what it is now
+    Log::info("Current (latest) AnneeUni ID from DB: " . ($currentAnneeUni?->id ?? 'None found'));
+    Log::info("Effective selected_id_in_session being used for props: " . ($selectedIdInSession ?? 'NULL'));
+    Log::info("Selected AnneeUni Object found: " . ($selectedAnneeObject ? 'Yes, ID: '.$selectedAnneeObject->id . ' (Annee: ' . $selectedAnneeObject->annee . ')' : 'No'));
+    Log::info("Selected Annee String for prop: " . ($selectedAnneeString ?? 'NULL => N/A'));
+    Log::info("--- End HandleInertiaRequests ---");
               
                 //   Log::info("INERTIA_SHARE: Current Route: " . ($request->route()?->getName() ?? 'N/A') .
                 //   ". Reading 'selected_annee_uni_id' from session: " . (session('selected_annee_uni_id') ?: 'null') . // Log raw session value
@@ -41,11 +65,9 @@ class HandleInertiaRequests extends Middleware
                 //   ". Defaulting latestAnneeUni ID: " . ($currentAnneeUni?->id ?: 'null') .
                 //   ". Session ID: " . session()->getId());
 
-        // [$message, $author] = str(Inspiring::quotes()->random())->explode('-'); // Removed if not used
 
         return array_merge(parent::share($request), [
             'name' => config('app.name'),
-            // 'quote' => ['message' => trim($message), 'author' => trim($author)], // Removed if not used
             'auth' => [
                 'user' => $request->user(),
                 'abilities' => $this->get_abilities($request->user()), 

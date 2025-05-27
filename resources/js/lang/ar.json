@@ -387,5 +387,17 @@
     "generic_action_confirmation": "هل أنت متأكد أنك تريد المتابعة؟",
     "approveAndNotify": "الموافقة والإشعار",
     "confirmApprovalTitle": "تأكيد الموافقة",
-    "confirmApprovalDescription": "هل أنت متأكد أنك تريد الموافقة على التعيينات للدورة \"{sesonName}\" وإشعار جميع الأساتذة المعينين؟ لا يمكن التراجع عن هذا الإجراء بسهولة."
+    "confirmApprovalDescription": "هل أنت متأكد أنك تريد الموافقة على التعيينات للدورة \"{sesonName}\" وإشعار جميع الأساتذة المعينين؟ لا يمكن التراجع عن هذا الإجراء بسهولة.",
+    "my_schedule_nav_item": "جدولي",
+    "myExamSchedulePageTitle": "جدول امتحاناتي",
+    "tableHeaderDate": "التاريخ",
+    "tableHeaderTime": "الوقت",
+    "tableHeaderDuration": "المدة",
+    "tableHeaderModule": "الوحدة",
+    "tableHeaderRoom": "القاعة",
+    "tableHeaderRole": "الدور",
+    "tableHeaderSession": "الدورة",
+    "roleResponsable": "مسؤول",
+    "roleInvigilator": "مراقب",
+    "noAssignmentsForYear": "لم يتم العثور على تعيينات للسنة الجامعية المحددة."
 }
