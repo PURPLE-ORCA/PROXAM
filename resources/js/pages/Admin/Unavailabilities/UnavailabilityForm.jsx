@@ -14,6 +14,7 @@ export default function UnavailabilityForm({
     processing,
     onSubmit,
     professeurs,
+    anneeUnis, // Add anneeUnis to props
     isEdit = false,
 }) {
     const { translations } = useContext(TranslationContext);
@@ -27,7 +28,7 @@ export default function UnavailabilityForm({
                 <Select
                     value={data.professeur_id?.toString() || ''}
                     onValueChange={(value) => setData('professeur_id', value ? parseInt(value, 10) : '')}
-                    disabled={processing || isEdit} // Disable if editing, as changing professor for existing unavailability might be complex
+                    disabled={processing || isEdit}
                     required
                 >
                     <SelectTrigger className="mt-1 w-full border-[var(--border)] bg-[var(--background)] text-[var(--foreground)] focus:ring-[var(--ring)]">
@@ -42,6 +43,31 @@ export default function UnavailabilityForm({
                     </SelectContent>
                 </Select>
                 {errors.professeur_id && <p className="mt-1 text-sm text-[var(--destructive)]">{errors.professeur_id}</p>}
+            </div>
+
+            {/* New Academic Year Select Field */}
+            <div>
+                <Label htmlFor="annee_uni_id" className="text-[var(--foreground)]">
+                    {translations?.unavailability_form_academic_year_label || 'Academic Year'} *
+                </Label>
+                <Select
+                    value={data.annee_uni_id?.toString() || ''}
+                    onValueChange={(value) => setData('annee_uni_id', value ? parseInt(value, 10) : '')}
+                    disabled={processing}
+                    required
+                >
+                    <SelectTrigger className="mt-1 w-full border-[var(--border)] bg-[var(--background)] text-[var(--foreground)] focus:ring-[var(--ring)]">
+                        <SelectValue placeholder={translations?.unavailability_form_select_academic_year_placeholder || 'Select Academic Year'} />
+                    </SelectTrigger>
+                    <SelectContent className="border-[var(--border)] bg-[var(--popover)] text-[var(--popover-foreground)]">
+                        {(anneeUnis || []).map((annee) => (
+                            <SelectItem key={annee.id} value={annee.id.toString()}>
+                                {annee.annee}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+                {errors.annee_uni_id && <p className="mt-1 text-sm text-[var(--destructive)]">{errors.annee_uni_id}</p>}
             </div>
 
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">

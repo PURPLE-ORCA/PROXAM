@@ -4,10 +4,11 @@ import { Head, useForm } from '@inertiajs/react';
 import { useContext } from 'react';
 import UnavailabilityForm from './UnavailabilityForm';
 
-export default function Create({ professeurs }) {
+export default function Create({ professeurs, anneeUnis }) { // Add anneeUnis to props
     const { translations } = useContext(TranslationContext);
     const { data, setData, post, processing, errors, reset } = useForm({
         professeur_id: '',
+        annee_uni_id: '', // Add annee_uni_id to form state
         start_datetime: '',
         end_datetime: '',
         reason: '',
@@ -40,6 +41,7 @@ export default function Create({ professeurs }) {
                     processing={processing}
                     onSubmit={handleSubmit}
                     professeurs={professeurs}
+                    anneeUnis={anneeUnis} // Pass anneeUnis to the form
                     isEdit={false}
                 />
             </div>

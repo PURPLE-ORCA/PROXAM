@@ -36,22 +36,38 @@ export function AppSidebar() {
     const { translations } = useContext(TranslationContext);
     const { auth } = usePage<PageProps>().props;
 
-    const mainNavItems: NavItem[] = [
-        {
-            title: translations?.dashboard_nav_item || 'Dashboard',
-            href: route('dashboard'), // Use Ziggy for route names
-            icon: Settings2,
-        },
-    ];
+    const mainNavItems: NavItem[] = []; // Start with an empty array
 
-    // Conditionally add admin links
-    if (auth.user && auth.abilities?.is_admin) {
+    // Determine the correct dashboard link based on role
+    let dashboardHref = route('dashboard'); // Default (e.g., for admin)
+    let dashboardTitle = translations?.dashboard_nav_item || 'Dashboard';
+    let dashboardIcon = Settings2; // Default icon
+
+    if (auth.user && auth.abilities?.is_professeur) {
+        dashboardHref = route('professeur.dashboard');
+        dashboardTitle = translations?.professor_dashboard_nav_item || 'My Dashboard'; // Use a distinct title if possible
+        dashboardIcon = LayoutGrid; // Or a different icon for prof dashboard
+    }
+    // Add other roles here if they have specific dashboards (e.g., RH, Chef de Service)
+    // else if (auth.user && auth.abilities?.is_rh) { ... }
+
+    mainNavItems.push({
+        title: dashboardTitle,
+        href: dashboardHref,
+        icon: dashboardIcon,
+        active: route().current(dashboardHref.substring(dashboardHref.lastIndexOf('/') + 1) + '*') || route().current('dashboard') || route().current('professeur.dashboard'), // More robust active check
+    });
+
+
+    // Conditionally add admin links (ONLY if not a professor, or if admin can also be professor but has a distinct admin section)
+    // Assuming admin view is distinct from professor view:
+    if (auth.user && auth.abilities?.is_admin /* && !auth.abilities?.is_professeur */) { // Add !auth.abilities?.is_professeur if an admin should NOT see prof links
         mainNavItems.push({
             title: translations?.services_nav_item || 'Services',
             href: route('admin.services.index'),
             icon: LayoutGrid,
             active: route().current('admin.services.*'),
-        }); 
+        });
         mainNavItems.push({
             title: translations?.salles_nav_item || 'Salles',
             href: route('admin.salles.index'),
@@ -98,7 +114,7 @@ export function AppSidebar() {
             title: translations?.attributions_nav_item || 'Assignments',
             href: route('admin.attributions.index'), 
             icon: ListChecks, 
-            active: route().current('admin.attributions.index'), // Only one route for now
+            active: route().current('admin.attributions.index'), 
         });
         mainNavItems.push({
             title: translations?.filieres_nav_item || 'Study Fields',
@@ -106,17 +122,45 @@ export function AppSidebar() {
             icon: Network,
             active: route().current('admin.filieres.*'),
         });
-
     }
-    if (auth.user && auth.abilities?.is_admin_or_rh) {
+
+    // Professor-specific links (excluding their dashboard which is now the primary one)
+    if (auth.user && auth.abilities?.is_professeur) {
         mainNavItems.push({
-            title: translations?.unavailabilities_nav_item || 'Prof. Unavailabilities',
-            href: route('admin.unavailabilities.index'), 
-            icon: UserMinus, 
-            active: route().current('admin.unavailabilities.*'),
+            title: translations?.my_schedule_nav_item || 'My Schedule',
+            href: route('professeur.schedule.index'),
+            icon: CalendarDays,
+            active: route().current('professeur.schedule.index'),
+        });
+        mainNavItems.push({
+            title: translations?.my_unavailabilities_nav_item || 'My Unavailabilities',
+            href: route('professeur.unavailabilities.index'),
+            icon: UserMinus,
+            active: route().current('professeur.unavailabilities.index'),
         });
     }
-    
+
+    // Admin or RH specific links (like Admin Unavailabilities Management)
+    if (auth.user && auth.abilities?.is_admin_or_rh) {
+        // Avoid adding if it's a professor and they already have "My Unavailabilities"
+        // Or ensure the title/route is distinct (e.g., "Manage Unavailabilities")
+        if (!mainNavItems.some(item => item.href === route('admin.unavailabilities.index'))) { // Avoid duplicate if admin is also RH
+             mainNavItems.push({
+                title: translations?.unavailabilities_nav_item || 'Prof. Unavailabilities', // This is the ADMIN management link
+                href: route('admin.unavailabilities.index'),
+                icon: UserMinus,
+                active: route().current('admin.unavailabilities.*'),
+            });
+        }
+    }
+
+    // Filter out duplicates just in case (based on href, more robust)
+    const uniqueMainNavItems = mainNavItems.filter((item, index, self) =>
+        index === self.findIndex((t) => (
+            t.href === item.href && t.title === item.title // Could also just use href if titles are guaranteed unique per href
+        ))
+    );
+
     return (
         <Sidebar collapsible="icon" variant="floating">
             <SidebarHeader>
@@ -132,7 +176,7 @@ export function AppSidebar() {
             </SidebarHeader>
 
             <SidebarContent>
-                <NavMain items={mainNavItems} />
+                <NavMain items={uniqueMainNavItems} /> {/* Use unique items */}
             </SidebarContent>
 
             <SidebarFooter>

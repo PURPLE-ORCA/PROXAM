@@ -15,6 +15,9 @@ use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\SesonController;
 use App\Http\Controllers\UnavailabilityController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\Professor\ScheduleController as ProfessorScheduleController;
+use App\Http\Controllers\Professor\DashboardController as ProfessorDashboardController; // Add this
+use App\Http\Controllers\Professor\UnavailabilityController as ProfessorUnavailabilityController; // Add this
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -42,9 +45,18 @@ Route::get('/', function () {
 })->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('dashboard', function () {
-        return Inertia::render('dashboard');
-    })->name('dashboard');
+Route::get('dashboard', function (Request $request) {
+    $user = $request->user();
+    if ($user->hasRole('professeur')) {
+        return redirect()->route('professeur.dashboard');
+    }
+    // Add other role checks and redirects if necessary:
+    // elseif ($user->hasRole('rh')) {
+    //     return redirect()->route('rh.dashboard'); // Example
+    // }
+    // Default dashboard for admin or other roles not explicitly redirected
+    return Inertia::render('dashboard'); // This should be your existing Admin/General Dashboard component
+})->name('dashboard');
 
     Route::prefix('admin')->name('admin.')->middleware('can:is_admin')->group(function () {
         Route::resource('services', ServiceController::class)->except(['show']);
@@ -109,6 +121,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     
         Route::post('/sesons/{seson}/approve-notifications', [App\Http\Controllers\Admin\SesonNotificationController::class, 'approveAndDispatchNotifications'])
             ->name('sesons.approve-notifications');
+    });
+
+    Route::middleware(['can:is_professeur']) 
+        ->prefix('professeur')
+        ->name('professeur.')
+        ->group(function () {
+            Route::get('/my-schedule', [ProfessorScheduleController::class, 'index'])->name('schedule.index');
+            Route::get('/dashboard', [ProfessorDashboardController::class, 'index'])->name('dashboard');
+            Route::get('/my-unavailabilities', [ProfessorUnavailabilityController::class, 'index'])->name('unavailabilities.index');
     });
 }); 
 

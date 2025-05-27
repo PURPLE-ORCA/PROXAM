@@ -40,7 +40,11 @@ export default function Welcome() {
                 </header>
                 <div className="flex w-full items-center justify-center opacity-100 transition-opacity duration-750 lg:grow starting:opacity-0">
                     <main className="flex w-full max-w-[335px] flex-col-reverse lg:max-w-4xl lg:flex-row">
-                        WELCOME TO THE APP
+                        <div className="flex flex-col items-center justify-center gap-4 p-6 lg:p-8">
+                            <p className="text-2xl font-bold text-black dark:text-white">
+                                Under Development by El Moussaoui Mohammed & Mimri Amira
+                            </p>
+                        </div>
                     </main>
                 </div>
                 <div className="hidden h-14.5 lg:block"></div>
