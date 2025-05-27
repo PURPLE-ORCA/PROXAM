@@ -33,8 +33,4 @@ class User extends Authenticatable
         return $this->hasOne(Professeur::class, 'user_id');
     }
 
-    // public function sendPasswordResetNotification($token)
-    // {
-    //     $this->notify(new ProfessorAccountActivation($token, $this->getEmailForPasswordReset()));
-    // }
 }

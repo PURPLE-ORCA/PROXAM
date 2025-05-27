@@ -18,6 +18,8 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\Professor\ScheduleController as ProfessorScheduleController;
 use App\Http\Controllers\Professor\DashboardController as ProfessorDashboardController; // Add this
 use App\Http\Controllers\Professor\UnavailabilityController as ProfessorUnavailabilityController; // Add this
+use App\Http\Controllers\Professor\ExchangeController as ProfessorExchangeController;
+use App\Http\Controllers\NotificationController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -123,6 +125,10 @@ Route::get('dashboard', function (Request $request) {
             ->name('sesons.approve-notifications');
     });
 
+    Route::get('/notifications/pending-count', [NotificationController::class, 'getPendingCount'])->name('notifications.pendingCount');
+    Route::get('/notifications/latest', [NotificationController::class, 'getLatest'])->name('notifications.latest');
+    Route::post('/notifications/mark-read/{notification?}', [NotificationController::class, 'markAsRead'])->name('notifications.markRead');
+
     Route::middleware(['can:is_professeur']) 
         ->prefix('professeur')
         ->name('professeur.')
@@ -130,6 +136,15 @@ Route::get('dashboard', function (Request $request) {
             Route::get('/my-schedule', [ProfessorScheduleController::class, 'index'])->name('schedule.index');
             Route::get('/dashboard', [ProfessorDashboardController::class, 'index'])->name('dashboard');
             Route::get('/my-unavailabilities', [ProfessorUnavailabilityController::class, 'index'])->name('unavailabilities.index');
+            Route::get('/exchanges', [ProfessorExchangeController::class, 'index'])->name('exchanges.index');
+            Route::post('/exchanges/request', [ProfessorExchangeController::class, 'storeRequest'])->name('exchanges.storeRequest');
+            Route::get('/exchanges/swappable-assignments/{echange}', [ProfessorExchangeController::class, 'getSwappableAssignments'])->name('exchanges.swappableAssignments');
+            Route::post('/exchanges/{echange}/propose', [ProfessorExchangeController::class, 'proposeSwap'])->name('exchanges.propose');
+            Route::post('/exchanges/{echange}/cancel-request', [ProfessorExchangeController::class, 'cancelRequest'])->name('exchanges.cancelRequest');
+            Route::post('/exchanges/{echange}/withdraw-proposal', [ProfessorExchangeController::class, 'withdrawProposal'])->name('exchanges.withdrawProposal');
+            Route::post('/exchanges/{echange}/accept', [ProfessorExchangeController::class, 'acceptSwap'])->name('exchanges.accept');
+            Route::post('/exchanges/{echange}/refuse', [ProfessorExchangeController::class, 'refuseSwap'])->name('exchanges.refuse');
+            Route::get('/exchanges/updates-summary', [ProfessorExchangeController::class, 'getUpdatesSummary'])->name('exchanges.updatesSummary');
     });
 }); 
 

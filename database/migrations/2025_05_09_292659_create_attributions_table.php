@@ -17,6 +17,7 @@ return new class extends Migration
             $table->foreignId('professeur_id')->constrained('professeurs')->cascadeOnDelete();
             $table->foreignId('salle_id')->nullable()->constrained('salles')->cascadeOnDelete();
             $table->boolean('is_responsable')->default(false);
+            $table->boolean('is_involved_in_exchange')->default(false);
             $table->timestamps();
         });
     }

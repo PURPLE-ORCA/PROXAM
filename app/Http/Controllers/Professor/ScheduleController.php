@@ -24,10 +24,10 @@ class ScheduleController extends Controller
     public function index(Request $request)
     {
 
-Log::info("--- Professor ScheduleController ---");
+// Log::info("--- Professor ScheduleController ---");
 $selectedAnneeUniId = session('selected_annee_uni_id');
-Log::info("User ID: " . ($request->user()?->id));
-Log::info("Selected AnneeUni ID from session in Controller: " . ($selectedAnneeUniId ?? 'NULL'));
+// Log::info("User ID: " . ($request->user()?->id));
+// Log::info("Selected AnneeUni ID from session in Controller: " . ($selectedAnneeUniId ?? 'NULL'));
         /** @var \App\Models\User $user */
         $user = $request->user();
         
