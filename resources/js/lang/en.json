@@ -407,5 +407,17 @@
     "tableHeaderEndDateTime": "End Date & Time",
     "tableHeaderReason": "Reason",
     "infoUnavailabilitiesManagedByAdmin": "These unavailabilities are managed by the administration. Please contact them for any changes.",
-    "noUnavailabilitiesForYear": "No unavailabilities recorded for you in the selected academic year."
+    "noUnavailabilitiesForYear": "No unavailabilities recorded for you in the selected academic year.",
+    "professor_dashboard_nav_item": "Dashboard",
+    "professorDashboardPageTitle": "Professor Dashboard",
+    "widgetWelcomeProfessor": "Welcome, {name}!",
+    "widgetAcademicYearContext": "Displaying data for: {academicYear}",
+    "widgetUpcomingAssignmentsTitle": "Upcoming Assignments",
+    "linkViewFullSchedule": "View Full Schedule",
+    "infoNoUpcomingAssignmentsDashboard": "No upcoming assignments.",
+    "widgetActivitySummaryTitle": "Activity Summary",
+    "labelTotalAssignmentsForYear": "Total Assignments for {academicYear}:",
+    "widgetQuickLinksTitle": "Resources & Information",
+    "linkMyUnavailabilitiesDashboard": "My Unavailabilities",
+    "labelFacultyContactInfo": "Faculty Exam Office:"
 }

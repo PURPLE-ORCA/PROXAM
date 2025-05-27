@@ -408,5 +408,17 @@
     "tableHeaderEndDateTime": "Date & Heure de Fin",
     "tableHeaderReason": "Motif",
     "infoUnavailabilitiesManagedByAdmin": "Ces indisponibilités sont gérées par l'administration. Veuillez les contacter pour toute modification.",
-    "noUnavailabilitiesForYear": "Aucune indisponibilité enregistrée pour vous durant l'année universitaire sélectionnée."
+    "noUnavailabilitiesForYear": "Aucune indisponibilité enregistrée pour vous durant l'année universitaire sélectionnée.",
+    "professor_dashboard_nav_item": "Tableau de bord",
+    "professorDashboardPageTitle": "Tableau de bord du professeur",
+    "widgetWelcomeProfessor": "Bienvenue, {name} !",
+    "widgetAcademicYearContext": "Affichage des données pour : {academicYear}",
+    "widgetUpcomingAssignmentsTitle": "Affectations à venir",
+    "linkViewFullSchedule": "Voir l'emploi du temps complet",
+    "infoNoUpcomingAssignmentsDashboard": "Aucune affectation à venir.",
+    "widgetActivitySummaryTitle": "Résumé de l'activité",
+    "labelTotalAssignmentsForYear": "Total des affectations pour {academicYear} :",
+    "widgetQuickLinksTitle": "Ressources et informations",
+    "linkMyUnavailabilitiesDashboard": "Mes indisponibilités",
+    "labelFacultyContactInfo": "Bureau des examens de la faculté :"
 }

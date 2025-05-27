@@ -2,11 +2,15 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Seson extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'code',
         'annee_uni_id',
@@ -20,22 +24,21 @@ class Seson extends Model
         'notifications_sent_at' => 'datetime',
     ];
 
-    public function anneeUni()
+    // Relationship to AnneeUni (Seson belongs to AnneeUni)
+    public function anneeUni(): BelongsTo
     {
-        return $this->belongsTo(AnneeUni::class);
+        return $this->belongsTo(AnneeUni::class, 'annee_uni_id');
     }
 
-    public function quadrimestres()
+    // Relationship to Examen (Seson has many Examens)
+    public function examens(): HasMany
+    {
+        return $this->hasMany(Examen::class);
+    }
+
+    // No quadrimestre() relationship needed here based on your sesons table schema
+    public function quadrimestres(): HasMany
     {
         return $this->hasMany(Quadrimestre::class);
-    }
-
-
-    public function scopeOrderByAnneeUniThenCode(Builder $query): Builder
-    {
-        return $query->select('sesons.*') // Ensure we select from sesons table
-            ->join('annee_unis', 'annee_unis.id', '=', 'sesons.annee_uni_id')
-            ->orderBy('annee_unis.annee', 'desc')
-            ->orderBy('sesons.code', 'asc');
     }
 }

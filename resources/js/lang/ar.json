@@ -408,5 +408,17 @@
     "tableHeaderEndDateTime": "تاريخ ووقت الانتهاء",
     "tableHeaderReason": "السبب",
     "infoUnavailabilitiesManagedByAdmin": "تتم إدارة فترات عدم التوفر هذه من قبل الإدارة. يرجى الاتصال بهم لإجراء أي تغييرات.",
-    "noUnavailabilitiesForYear": "لم يتم تسجيل أي فترات عدم توفر لك في السنة الجامعية المحددة."
+    "noUnavailabilitiesForYear": "لم يتم تسجيل أي فترات عدم توفر لك في السنة الجامعية المحددة.",
+    "professor_dashboard_nav_item": "لوحة القيادة",
+    "professorDashboardPageTitle": "لوحة قيادة الأستاذ",
+    "widgetWelcomeProfessor": "مرحباً، {name}!",
+    "widgetAcademicYearContext": "عرض البيانات للسنة الأكاديمية: {academicYear}",
+    "widgetUpcomingAssignmentsTitle": "المهام القادمة",
+    "linkViewFullSchedule": "عرض الجدول الزمني الكامل",
+    "infoNoUpcomingAssignmentsDashboard": "لا توجد مهام قادمة.",
+    "widgetActivitySummaryTitle": "ملخص النشاط",
+    "labelTotalAssignmentsForYear": "إجمالي المهام للسنة {academicYear}:",
+    "widgetQuickLinksTitle": "الموارد والمعلومات",
+    "linkMyUnavailabilitiesDashboard": "عدم توفري",
+    "labelFacultyContactInfo": "مكتب امتحانات الكلية:"
 }

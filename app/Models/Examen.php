@@ -5,13 +5,15 @@ namespace App\Models;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo; // Add this import
 
 class Examen extends Model
 {
     use HasFactory;
     protected $fillable = [
         'nom', 'quadrimestre_id', 'type', 'debut', 
-        'module_id'
+        'module_id',
+        'seson_id' // Assuming seson_id is also fillable if it's a direct FK
     ];
 
     protected $casts = [
@@ -26,19 +28,19 @@ class Examen extends Model
     // Append it so it's included in toArray() / JSON
     protected $appends = ['end_datetime', 'total_required_professors'];
     
-    public function quadrimestre()
+    public function quadrimestre(): BelongsTo
     {
         return $this->belongsTo(Quadrimestre::class);
     }
 
-    public function module()
+    public function module(): BelongsTo
     {
         return $this->belongsTo(Module::class);
     }
 
-    public function seson()
+    public function seson(): BelongsTo
     {
-        return $this->belongsTo(Seson::class);
+        return $this->belongsTo(Seson::class, 'seson_id'); // Assuming 'seson_id' FK on examens table
     }
 
     public function salles() {
