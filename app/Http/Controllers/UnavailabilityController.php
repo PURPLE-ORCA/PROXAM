@@ -88,8 +88,11 @@ class UnavailabilityController extends Controller
             'id' => $p->id,
             'display_name' => "{$p->prenom} {$p->nom}",
         ]);
+        $anneeUnis = AnneeUni::orderBy('annee', 'desc')->get(['id', 'annee']);
+
         return Inertia::render($this->baseInertiaPath() . 'Create', [
             'professeurs' => $professeurs,
+            'anneeUnis' => $anneeUnis,
         ]);
     }
 
@@ -97,35 +100,39 @@ class UnavailabilityController extends Controller
     {
         $validated = $request->validate([
             'professeur_id' => 'required|exists:professeurs,id',
+            'annee_uni_id' => 'required|exists:annee_unis,id',
             'start_datetime' => 'required|date',
             'end_datetime' => 'required|date|after_or_equal:start_datetime',
             'reason' => 'nullable|string|max:255',
         ]);
 
-        Unavailability::create($validated); // <<< CORRECTED
+        Unavailability::create($validated);
 
-        return redirect()->route('admin.unavailabilities.index') // <<< CORRECTED
+        return redirect()->route('admin.unavailabilities.index')
             ->with('success', 'toasts.unavailability_created_successfully');
     }
 
-    public function edit(Unavailability $unavailability) // <<< CORRECTED type-hint and variable
+    public function edit(Unavailability $unavailability)
     {
         $professeurs = Professeur::orderBy('nom')->orderBy('prenom')->get()->map(fn($p) => [
             'id' => $p->id,
             'display_name' => "{$p->prenom} {$p->nom}",
         ]);
+        $anneeUnis = AnneeUni::orderBy('annee', 'desc')->get(['id', 'annee']);
         $unavailability->load('professeur');
 
         return Inertia::render($this->baseInertiaPath() . 'Edit', [
-            'unavailabilityToEdit' => $unavailability, // <<< CORRECTED
+            'unavailabilityToEdit' => $unavailability,
             'professeurs' => $professeurs,
+            'anneeUnis' => $anneeUnis,
         ]);
     }
 
-    public function update(Request $request, Unavailability $unavailability) // <<< CORRECTED
+    public function update(Request $request, Unavailability $unavailability)
     {
         $validated = $request->validate([
             'professeur_id' => 'required|exists:professeurs,id',
+            'annee_uni_id' => 'required|exists:annee_unis,id',
             'start_datetime' => 'required|date',
             'end_datetime' => 'required|date|after_or_equal:start_datetime',
             'reason' => 'nullable|string|max:255',
@@ -133,7 +140,7 @@ class UnavailabilityController extends Controller
 
         $unavailability->update($validated);
 
-        return redirect()->route('admin.unavailabilities.index') // <<< CORRECTED
+        return redirect()->route('admin.unavailabilities.index')
             ->with('success', 'toasts.unavailability_updated_successfully');
     }
 

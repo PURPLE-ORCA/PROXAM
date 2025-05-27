@@ -255,6 +255,8 @@
     "unavailabilities_nav_item": "Prof. Unavailabilities",
     "unavailability_form_professeur_label": "Professor",
     "unavailability_form_select_professeur_placeholder": "Select Professor",
+    "unavailability_form_academic_year_label": "Academic Year",
+    "unavailability_form_select_academic_year_placeholder": "Select Academic Year",
     "unavailability_form_start_datetime_label": "Start Date & Time",
     "unavailability_form_end_datetime_label": "End Date & Time",
     "unavailability_form_reason_label": "Reason (Optional)",
@@ -398,5 +400,12 @@
     "tableHeaderSession": "Session",
     "roleResponsable": "Responsable",
     "roleInvigilator": "Invigilator",
-    "noAssignmentsForYear": "No assignments found for the selected academic year."
+    "noAssignmentsForYear": "No assignments found for the selected academic year.",
+    "my_unavailabilities_nav_item": "My Unavailabilities",
+    "myUnavailabilitiesPageTitle": "My Unavailabilities",
+    "tableHeaderStartDateTime": "Start Date & Time",
+    "tableHeaderEndDateTime": "End Date & Time",
+    "tableHeaderReason": "Reason",
+    "infoUnavailabilitiesManagedByAdmin": "These unavailabilities are managed by the administration. Please contact them for any changes.",
+    "noUnavailabilitiesForYear": "No unavailabilities recorded for you in the selected academic year."
 }

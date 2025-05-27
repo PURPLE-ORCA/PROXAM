@@ -13,13 +13,24 @@ class Unavailability extends Model
 
     protected $fillable = [
         'professeur_id',
+        'annee_uni_id',
         'start_datetime',
         'end_datetime',
         'reason'
     ];
 
+    protected $casts = [
+        'start_datetime' => 'datetime',
+        'end_datetime' => 'datetime',
+    ];
+
     public function professeur()
     {
         return $this->belongsTo(Professeur::class);
+    }
+
+    public function anneeUni()
+    {
+        return $this->belongsTo(AnneeUni::class);
     }
 }

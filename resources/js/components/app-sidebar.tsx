@@ -115,7 +115,13 @@ export function AppSidebar() {
             icon: CalendarDays, // Or another suitable icon
             active: route().current('professeur.schedule.index'),
         });
-        // Add professor dashboard and unavailabilities link placeholders later or commented out
+        mainNavItems.push({
+            title: translations?.my_unavailabilities_nav_item || 'My Unavailabilities',
+            href: route('professeur.unavailabilities.index'),
+            icon: UserMinus, // Consistent with admin view's icon
+            active: route().current('professeur.unavailabilities.index'),
+        });
+        // Add professor dashboard link placeholder later or commented out
     }
     if (auth.user && auth.abilities?.is_admin_or_rh) {
         mainNavItems.push({

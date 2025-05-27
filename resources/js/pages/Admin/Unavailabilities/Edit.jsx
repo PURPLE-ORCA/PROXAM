@@ -16,10 +16,11 @@ const formatDatetimeForInput = (datetimeString) => {
     }
 };
 
-export default function Edit({ unavailabilityToEdit, professeurs }) {
+export default function Edit({ unavailabilityToEdit, professeurs, anneeUnis }) { // Add anneeUnis to props
     const { translations } = useContext(TranslationContext);
     const { data, setData, put, processing, errors, reset } = useForm({
         professeur_id: unavailabilityToEdit?.professeur_id || '',
+        annee_uni_id: unavailabilityToEdit?.annee_uni_id || '', // Add annee_uni_id to form state
         start_datetime: formatDatetimeForInput(unavailabilityToEdit?.start_datetime),
         end_datetime: formatDatetimeForInput(unavailabilityToEdit?.end_datetime),
         reason: unavailabilityToEdit?.reason || '',
@@ -29,8 +30,9 @@ export default function Edit({ unavailabilityToEdit, professeurs }) {
         if (unavailabilityToEdit) {
             setData({
                 professeur_id: unavailabilityToEdit.professeur_id || '',
-                start_datetime: formatDatetimeForInput(unavailabilityToEdit.start_datetime),
-                end_datetime: formatDatetimeForInput(unavailabilityToEdit.end_datetime),
+                annee_uni_id: unavailabilityToEdit.annee_uni_id || '', // Set annee_uni_id in useEffect
+                start_datetime: formatDatetimeForInput(unavailabilitiesToEdit.start_datetime),
+                end_datetime: formatDatetimeForInput(unavailabilitiesToEdit.end_datetime),
                 reason: unavailabilityToEdit.reason || '',
             });
         } else {
@@ -71,6 +73,7 @@ export default function Edit({ unavailabilityToEdit, professeurs }) {
                     processing={processing}
                     onSubmit={handleSubmit}
                     professeurs={professeurs}
+                    anneeUnis={anneeUnis} // Pass anneeUnis to the form
                     isEdit={true}
                 />
             </div>

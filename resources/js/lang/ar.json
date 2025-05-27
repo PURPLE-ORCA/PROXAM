@@ -255,6 +255,8 @@
     "unavailabilities_nav_item": "عدم توفر الأساتذة",
     "unavailability_form_professeur_label": "الأستاذ",
     "unavailability_form_select_professeur_placeholder": "اختر الأستاذ",
+    "unavailability_form_academic_year_label": "السنة الأكاديمية",
+    "unavailability_form_select_academic_year_placeholder": "اختر السنة الأكاديمية",
     "unavailability_form_start_datetime_label": "تاريخ ووقت البدء",
     "unavailability_form_end_datetime_label": "تاريخ ووقت الانتهاء",
     "unavailability_form_reason_label": "السبب (اختياري)",
@@ -377,9 +379,9 @@
     "delete_module_exam_config_modal_title": "حذف إعداد القاعة",
 
     "module_exam_config_delete_confirmation": "Are you sure you want to remove room {salleName} from this module's default exam configuration?",
-    "current_academic_year_label": "Academic Year",
-    "no_academic_year_selected_label": "No Year Selected",
-    "select_academic_year_placeholder": "Switch Academic Year",
+    "current_academic_year_label": "السنة الأكاديمية",
+    "no_academic_year_selected_label": "لم يتم اختيار سنة",
+    "select_academic_year_placeholder": "تغيير السنة الأكاديمية",
     "batch_assign_button_title": "تعيين جميع الامتحانات المعلقة لهذه الدورة",
     "batch_assign_confirmation_message": "هل أنت متأكد أنك تريد تشغيل التعيينات التلقائية لجميع الامتحانات المعلقة في هذه الدورة؟ قد يستغرق هذا بعض الوقت ولا يمكن التراجع عنه بسهولة.",
     "batch_assign_modal_title": "تأكيد التعيين الجماعي",
@@ -399,5 +401,12 @@
     "tableHeaderSession": "الدورة",
     "roleResponsable": "مسؤول",
     "roleInvigilator": "مراقب",
-    "noAssignmentsForYear": "لم يتم العثور على تعيينات للسنة الجامعية المحددة."
+    "noAssignmentsForYear": "لم يتم العثور على تعيينات للسنة الجامعية المحددة.",
+    "my_unavailabilities_nav_item": "عدم توفري",
+    "myUnavailabilitiesPageTitle": "عدم توفري",
+    "tableHeaderStartDateTime": "تاريخ ووقت البدء",
+    "tableHeaderEndDateTime": "تاريخ ووقت الانتهاء",
+    "tableHeaderReason": "السبب",
+    "infoUnavailabilitiesManagedByAdmin": "تتم إدارة فترات عدم التوفر هذه من قبل الإدارة. يرجى الاتصال بهم لإجراء أي تغييرات.",
+    "noUnavailabilitiesForYear": "لم يتم تسجيل أي فترات عدم توفر لك في السنة الجامعية المحددة."
 }
