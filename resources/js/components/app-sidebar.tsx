@@ -19,6 +19,7 @@ import {
     UserMinus,
     ListChecks,
     Network,
+    RefreshCw, // Added for Exchanges
 } from 'lucide-react';
 import AppLogo from './app-logo';
 import React, { useContext } from 'react'; // Added useContext
@@ -137,6 +138,12 @@ export function AppSidebar() {
             href: route('professeur.unavailabilities.index'),
             icon: UserMinus,
             active: route().current('professeur.unavailabilities.index'),
+        });
+        mainNavItems.push({
+            title: translations?.exchanges_nav_item || 'Exchanges',
+            href: route('professeur.exchanges.index'),
+            icon: RefreshCw,
+            active: route().current('professeur.exchanges.*'),
         });
     }
 

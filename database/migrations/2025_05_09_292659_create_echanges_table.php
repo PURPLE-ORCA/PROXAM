@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('attribution_offered_id')->constrained('attributions')->cascadeOnDelete();
             $table->foreignId('professeur_requester_id')->constrained('professeurs')->cascadeOnDelete();
             $table->string('motif')->nullable();
-            $table->enum('status', ['Open', 'Pending_Approval', 'Approved', 'Cancelled']);
+            $table->enum('status', ['Open', 'Pending_Requester_Decision', 'Approved', 'Refused_By_Requester', 'Withdrawn_By_Proposer', 'Cancelled_By_Admin', 'Cancelled_Auto_Expired']);
             $table->foreignId('professeur_accepter_id')->nullable()->constrained('professeurs')->nullOnDelete();
             $table->foreignId('attribution_accepted_id')->nullable()->constrained('attributions')->nullOnDelete();
             $table->timestamps();

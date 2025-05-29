@@ -419,5 +419,15 @@
     "labelTotalAssignmentsForYear": "Total Assignments for {academicYear}:",
     "widgetQuickLinksTitle": "Resources & Information",
     "linkMyUnavailabilitiesDashboard": "My Unavailabilities",
-    "labelFacultyContactInfo": "Faculty Exam Office:"
+    "labelFacultyContactInfo": "Faculty Exam Office:",
+    "widgetPendingExchangeReviewsTitle": "Pending Exchange Reviews",
+    "infoExchangeProposalsToReview": "You have {count} exchange proposals to review.",
+    "infoNoExchangeProposalsToReview": "No exchange proposals awaiting your review.",
+    "linkReviewProposal": "Review Proposal",
+    "infoProposalFrom": "Proposal from",
+    "infoForYour": "for your",
+    "infoExam": "exam.",
+    "widgetRecentNotificationsTitle": "Recent Notifications",
+    "infoNoNewUnreadNotifications": "No new unread notifications.",
+    "linkViewAllNotifications": "View All Notifications"
 }

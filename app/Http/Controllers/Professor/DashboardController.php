@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Models\Attribution;
+use App\Models\Echange;
+use App\Models\Notification;
 // Remove unused models if Examen, Module, Salle are only accessed via relations
 // use App\Models\Examen;
 // use App\Models\Module;
@@ -49,9 +51,33 @@ class DashboardController extends Controller
             })
             ->count();
 
+        // Fetch Data for "Pending Exchange Actions" Widget
+        $pendingReviewRequests = Echange::where('professeur_requester_id', $professeur->id)
+            ->where('status', 'Pending_Requester_Decision')
+            ->whereHas('offeredAttribution.examen.seson', fn($q) => $q->where('annee_uni_id', $selectedAnneeUniId))
+            ->with(['offeredAttribution.examen.module', 'accepter.user'])
+            ->orderBy('updated_at', 'desc')
+            ->take(3)
+            ->get();
+
+        $pendingReviewRequestsCount = Echange::where('professeur_requester_id', $professeur->id)
+            ->where('status', 'Pending_Requester_Decision')
+            ->whereHas('offeredAttribution.examen.seson', fn($q) => $q->where('annee_uni_id', $selectedAnneeUniId))
+            ->count();
+
+        // Fetch Data for "Recent Notifications" Widget
+        $latestUnreadNotifications = Notification::where('user_id', $request->user()->id)
+                            ->whereNull('read_at')
+                            ->orderBy('created_at', 'desc')
+                            ->take(3)
+                            ->get();
+
         return Inertia::render('Professor/Dashboard', [
             'upcomingAssignments' => $upcomingAssignments,
             'totalAssignmentsThisYear' => $totalAssignmentsThisYear,
+            'pendingReviewRequests' => $pendingReviewRequests,
+            'pendingReviewRequestsCount' => $pendingReviewRequestsCount,
+            'latestUnreadNotifications' => $latestUnreadNotifications,
         ]);
     }
 }

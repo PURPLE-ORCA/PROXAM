@@ -136,6 +136,11 @@ class ExamenController extends Controller
         ]);
     
         return DB::transaction(function () use ($validated) {
+            $quadrimestre = Quadrimestre::find($validated['quadrimestre_id']);
+            if (!$quadrimestre || !$quadrimestre->seson_id) {
+                throw new \Exception("Selected quadrimestre is invalid or missing its session link.");
+            }
+
             // Calculate total required professors from salles_pivot
             $totalRequiredProfessors = array_sum(array_column($validated['salles_pivot'], 'professeurs_assignes_salle'));
             
@@ -145,6 +150,7 @@ class ExamenController extends Controller
                 'module_id' => $validated['module_id'],
                 'type' => $validated['type'],
                 'debut' => $validated['debut'],
+                'seson_id' => $quadrimestre->seson_id, // DERIVE AND ADD THIS
                 'required_professors' => $totalRequiredProfessors, // Use calculated value
             ]);
     
@@ -165,10 +171,15 @@ class ExamenController extends Controller
 
     public function edit(Examen $examen)
     {
-        $examen->load(['quadrimestre.seson.anneeUni', 'module', 'salles']); // Ensure relations are loaded
+        $examen->load([
+            'quadrimestre.seson.anneeUni',
+            'module.level.filiere', // ENSURE THIS IS LOADED
+            'salles'
+        ]);
         $formData = array_merge($this->getFormData(), [
             'examenToEdit' => $examen,
-            'allModules' => Module::all(), 
+            // 'allModules' => Module::all(), // This is already in getFormData, potentially causing override.
+                                             // getFormData already loads allModules with level.filiere.
         ]);
         return Inertia::render($this->baseInertiaPath() . 'Edit', $formData);
     }
@@ -190,6 +201,11 @@ class ExamenController extends Controller
         ]);
     
         return DB::transaction(function () use ($examen, $validated) {
+            $quadrimestre = Quadrimestre::find($validated['quadrimestre_id']);
+            if (!$quadrimestre || !$quadrimestre->seson_id) {
+                throw new \Exception("Selected quadrimestre is invalid or missing its session link for update.");
+            }
+
             // Calculate total required professors from salles_pivot
             $totalRequiredProfessors = array_sum(array_column($validated['salles_pivot'], 'professeurs_assignes_salle'));
             
@@ -199,6 +215,7 @@ class ExamenController extends Controller
                 'module_id' => $validated['module_id'],
                 'type' => $validated['type'],
                 'debut' => $validated['debut'],
+                'seson_id' => $quadrimestre->seson_id, // DERIVE AND ADD THIS
                 'required_professors' => $totalRequiredProfessors, // Use calculated value
             ]);
     
