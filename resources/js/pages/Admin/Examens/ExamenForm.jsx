@@ -6,7 +6,7 @@ import { TranslationContext } from '@/context/TranslationProvider';
 import { Icon } from '@iconify/react';
 import { Link } from '@inertiajs/react';
 import axios from 'axios';
-import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'; // Added useLayoutEffect, useRef
 
 export default function ExamenForm({
     data,
@@ -30,17 +30,31 @@ export default function ExamenForm({
     const [selectedLevelId, setSelectedLevelId] = useState('');
     const [availableModulesForSelect, setAvailableModulesForSelect] = useState([]);
     const [isLoadingModuleConfig, setIsLoadingModuleConfig] = useState(false);
-    const [isInitialized, setIsInitialized] = useState(false);
+    const isInitializedRef = useRef(false); // Use useRef for initialization flag
+
+    // // At the top of ExamenForm
+    // console.log("ExamenForm mounted/rendered. isEdit:", isEdit);
+    // console.log("examenToEdit:", examenToEdit);
+    // console.log("allFilieres:", allFilieres);
+    // console.log("allLevels:", allLevels);
+    // console.log("allModules:", allModules);
 
     // Helper function to initialize cascading selects based on module_id
     const initializeCascadingSelects = useCallback(
         (moduleId) => {
-            if (!moduleId || !allModules || !allLevels || !allFilieres) return;
+            console.log("initializeCascadingSelects called with moduleId:", moduleId);
+            if (!moduleId || !allModules || allModules.length === 0 || !allLevels || allLevels.length === 0 || !allFilieres || allFilieres.length === 0) {
+                // console.log("initializeCascadingSelects: missing data or empty arrays, returning.");
+                return;
+            }
 
             const currentModule = allModules.find((m) => m.id.toString() === moduleId.toString());
+            // console.log("currentModule:", currentModule);
             if (currentModule && currentModule.level_id) {
-                const currentLevel = allLevels.find((l) => l.id === currentModule.level_id);
+                const currentLevel = allLevels.find((l) => l.id.toString() === currentModule.level_id.toString());
+                // console.log("currentLevel:", currentLevel);
                 if (currentLevel && currentLevel.filiere_id) {
+                    // console.log("Setting selectedFiliereId to:", currentLevel.filiere_id.toString());
                     setSelectedFiliereId(currentLevel.filiere_id.toString());
                     setSelectedLevelId(currentLevel.id.toString());
 
@@ -55,81 +69,85 @@ export default function ExamenForm({
         [allModules, allLevels, allFilieres],
     );
 
-    // Effect to initialize form state when in EDIT mode
-    useEffect(() => {
-        if (isEdit && examenToEdit && !isInitialized) {
-            setData({
-                nom: examenToEdit.nom || '',
-                quadrimestre_id: examenToEdit.quadrimestre_id?.toString() || '',
-                module_id: examenToEdit.module_id?.toString() || '',
-                type: examenToEdit.type || '',
-                debut: examenToEdit.debut
-                    ? new Date(new Date(examenToEdit.debut).getTime() - new Date(examenToEdit.debut).getTimezoneOffset() * 60000)
-                          .toISOString()
-                          .slice(0, 16)
-                    : '',
-                salles_pivot: (examenToEdit.salles || []).map((s) => ({
-                    salle_id: s.id.toString(),
-                    capacite: s.pivot.capacite.toString(),
-                    professeurs_assignes_salle: s.pivot.professeurs_assignes_salle.toString(),
-                })),
-            });
+    // Use useLayoutEffect for synchronous initialization
+    useLayoutEffect(() => {
+        // console.log("Initialization useLayoutEffect - isEdit:", isEdit, "examenToEdit:", examenToEdit, "isInitializedRef.current:", isInitializedRef.current);
 
-            // Initialize cascading selects
-            if (examenToEdit.module_id) {
-                initializeCascadingSelects(examenToEdit.module_id.toString());
+        // Only run once and if all necessary data props are available
+        if (!isInitializedRef.current && allFilieres.length > 0 && allLevels.length > 0 && allModules.length > 0) {
+            if (isEdit && examenToEdit) {
+                // Set form data for EDIT mode
+                setData({
+                    nom: examenToEdit.nom || '',
+                    quadrimestre_id: examenToEdit.quadrimestre_id?.toString() || '',
+                    module_id: examenToEdit.module_id?.toString() || '',
+                    type: examenToEdit.type || '',
+                    debut: examenToEdit.debut
+                        ? new Date(new Date(examenToEdit.debut).getTime() - new Date(examenToEdit.debut).getTimezoneOffset() * 60000)
+                              .toISOString()
+                              .slice(0, 16)
+                        : '',
+                    salles_pivot: (examenToEdit.salles || []).map((s) => ({
+                        salle_id: s.id.toString(),
+                        capacite: s.pivot.capacite.toString(),
+                        professeurs_assignes_salle: s.pivot.professeurs_assignes_salle.toString(),
+                    })),
+                });
+
+                // Initialize cascading selects AFTER data is set and all props are available
+            if (examenToEdit.module_id && examenToEdit.module && examenToEdit.module.level && examenToEdit.module.level.filiere) {
+                // console.log("Initializing cascading selects with module data from examenToEdit");
+                const currentLevel = examenToEdit.module.level;
+                setSelectedFiliereId(currentLevel.filiere.id.toString());
+                setSelectedLevelId(currentLevel.id.toString());
+                setAvailableModulesForSelect(allModules.filter(m => m.level_id.toString() === currentLevel.id.toString()));
             }
-
-            setIsInitialized(true);
-        } else if (!isEdit && !isInitialized) {
-            // Reset for CREATE mode
-            setData({
-                nom: '',
-                quadrimestre_id: '',
-                module_id: '',
-                type: '',
-                debut: '',
-                salles_pivot: [],
-            });
-            setSelectedFiliereId('');
-            setSelectedLevelId('');
-            setAvailableLevels([]);
-            setAvailableModulesForSelect([]);
-            setIsInitialized(true);
+            } else if (!isEdit) { // Only for CREATE mode
+                // Reset for CREATE mode
+                setData({
+                    nom: '',
+                    quadrimestre_id: '',
+                    module_id: '',
+                    type: '',
+                    debut: '',
+                    salles_pivot: [],
+                });
+                setSelectedFiliereId('');
+                setSelectedLevelId('');
+                setAvailableLevels([]);
+                setAvailableModulesForSelect([]);
+            }
+            isInitializedRef.current = true; // Mark as initialized
         }
-    }, [isEdit, examenToEdit, setData, initializeCascadingSelects, isInitialized]);
+    }, [isEdit, examenToEdit, allModules, allLevels, allFilieres, initializeCascadingSelects]); // Removed setData from dependencies
 
     // Update available levels when selectedFiliereId changes (user interaction)
     useEffect(() => {
-        if (!isInitialized) return; // Don't run during initialization
-
-        if (selectedFiliereId && allLevels) {
+        // Only run if initialized and selectedFiliereId is explicitly set (not during initial load if it's empty)
+        if (isInitializedRef.current && selectedFiliereId) {
             const newAvailableLevels = allLevels.filter((l) => l.filiere_id.toString() === selectedFiliereId);
             setAvailableLevels(newAvailableLevels);
 
             // If current level doesn't belong to new filiere, reset it
             if (data.module_id && allModules && allLevels) {
                 const currentModule = allModules.find((m) => m.id.toString() === data.module_id);
-                const currentLevel = currentModule ? allLevels.find((l) => l.id === currentModule.level_id) : null;
+                const currentLevel = currentModule ? allLevels.find((l) => l.id.toString() === currentModule.level_id.toString()) : null;
                 if (!currentLevel || currentLevel.filiere_id.toString() !== selectedFiliereId) {
                     setSelectedLevelId('');
                     setData('module_id', '');
                 }
             }
-        } else {
+        } else if (isInitializedRef.current && !selectedFiliereId) { // Reset if filiere is cleared by user
             setAvailableLevels([]);
-            if (!selectedFiliereId) {
-                setSelectedLevelId('');
-                setData('module_id', '');
-            }
+            setSelectedLevelId('');
+            setData('module_id', '');
         }
-    }, [selectedFiliereId, allLevels, allModules, data.module_id, setData, isInitialized]);
+    }, [selectedFiliereId, allLevels, allModules, data.module_id, setData]); // Removed isInitialized from dependencies
 
     // Update available modules when selectedLevelId changes (user interaction)
     useEffect(() => {
-        if (!isInitialized) return; // Don't run during initialization
-
-        if (selectedLevelId && allModules) {
+        // Only run if initialized and selectedLevelId is explicitly set (not during initial load if it's empty)
+        if (isInitializedRef.current && selectedLevelId) {
             const newAvailableModules = allModules.filter((m) => m.level_id.toString() === selectedLevelId);
             setAvailableModulesForSelect(newAvailableModules);
 
@@ -140,13 +158,11 @@ export default function ExamenForm({
                     setData('module_id', '');
                 }
             }
-        } else {
+        } else if (isInitializedRef.current && !selectedLevelId) { // Reset if level is cleared by user
             setAvailableModulesForSelect([]);
-            if (!selectedLevelId) {
-                setData('module_id', '');
-            }
+            setData('module_id', '');
         }
-    }, [selectedLevelId, allModules, data.module_id, setData, isInitialized]);
+    }, [selectedLevelId, allModules, data.module_id, setData]); // Removed isInitialized from dependencies
 
     const fetchAndApplyModuleConfig = useCallback(
         async (moduleId) => {
@@ -184,14 +200,14 @@ export default function ExamenForm({
 
     // Effect to fetch module config when module_id changes
     useEffect(() => {
-        if (!isInitialized) return; // Don't run during initialization
+        if (!isInitializedRef.current) return; // Don't run during initialization
 
         if (data.module_id) {
             fetchAndApplyModuleConfig(data.module_id);
         } else if (!isEdit) {
             setData('salles_pivot', []);
         }
-    }, [data.module_id, fetchAndApplyModuleConfig, isEdit, setData, isInitialized]);
+    }, [data.module_id, fetchAndApplyModuleConfig, isEdit, setData]); // Removed isInitialized from dependencies
 
     const handleSalleChange = (index, field, value) => {
         const updatedSalles = JSON.parse(JSON.stringify(data.salles_pivot || []));

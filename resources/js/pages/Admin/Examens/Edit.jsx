@@ -28,7 +28,7 @@ export default function Edit({
     const { translations } = useContext(TranslationContext);
 
     const { data, setData, put, processing, errors } = useForm({
-        // Removed reset as not explicitly used
+        // Removed reset as not explicitly usedp
         nom: examenToEdit?.nom || '',
         quadrimestre_id: examenToEdit?.quadrimestre_id?.toString() || '',
         module_id: examenToEdit?.module_id?.toString() || '',
@@ -44,24 +44,6 @@ export default function Edit({
             })) || [],
     });
 
-    // This useEffect might be redundant if useForm's initial values are sufficient
-    // and correctly handle examenToEdit changes, but can be kept for explicit re-sync.
-    useEffect(() => {
-        if (examenToEdit) {
-            setData({
-                nom: examenToEdit.nom || '',
-                quadrimestre_id: examenToEdit.quadrimestre_id?.toString() || '',
-                module_id: examenToEdit.module_id?.toString() || '',
-                type: examenToEdit.type || '',
-                debut: formatDatetimeForInput(examenToEdit.debut),
-                salles_pivot: (examenToEdit.salles || []).map((s) => ({
-                    salle_id: s.id.toString(),
-                    capacite: s.pivot.capacite.toString(),
-                    professeurs_assignes_salle: s.pivot.professeurs_assignes_salle.toString(),
-                })),
-            });
-        }
-    }, [examenToEdit, setData]); // setData should ideally not be in deps if function is stable
 
     const handleSubmit = (e) => {
         e.preventDefault();
