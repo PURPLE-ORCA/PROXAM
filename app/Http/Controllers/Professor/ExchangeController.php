@@ -52,7 +52,6 @@ class ExchangeController extends Controller
             // Handle case where no academic year is selected
             // (e.g. from your HandleInertiaRequests, there should always be a default)
             // For now, assume it's always set. Add logging if it can be null.
-            Log::warning("ExchangeController@index: selectedAnneeUniId is not set in session.");
         }
 
 
@@ -164,9 +163,6 @@ class ExchangeController extends Controller
 
     public function getSwappableAssignments(Echange $echange)
     {
-        Log::info("--- getSwappableAssignments ---");
-        Log::info("Echange ID: " . $echange->id);
-
         $user = Auth::user();
         $professeur = $user->professeur;
 
@@ -174,62 +170,43 @@ class ExchangeController extends Controller
             Log::error("Professor profile not found for user ID: " . $user->id);
             return response()->json(['error' => 'Professor profile not found.'], 404);
         }
-        Log::info("Current Professor ID: " . $professeur->id);
 
-        $offeredAttribution = $echange->loadMissing('offeredAttribution.examen')->offeredAttribution; // Eager load
+        $offeredAttribution = $echange->loadMissing('offeredAttribution.examen')->offeredAttribution;
 
         if (!$offeredAttribution) {
             Log::error("OfferedAttribution not found for Echange ID: {$echange->id}");
             return response()->json(['error' => 'Details of the offered assignment are missing.'], 500);
         }
-        Log::info("Offered Attribution ID: " . $offeredAttribution->id);
 
         $offeredExamen = $offeredAttribution->examen;
-        if (!$offeredExamen || !$offeredExamen->debut) { // Check debut specifically
+        if (!$offeredExamen || !$offeredExamen->debut) {
             Log::error("Exam details or debut time missing for Offered Attribution ID: {$offeredAttribution->id}");
             return response()->json(['error' => 'Exam details for the offered assignment are incomplete.'], 500);
         }
-        Log::info("Offered Examen ID: " . $offeredExamen->id . ", Debut: " . $offeredExamen->debut->toString());
 
-        $offeredExamStart = $offeredExamen->debut; // Should be a Carbon instance
-        $offeredExamEnd = (clone $offeredExamStart)->addHours(2); // Calculate end assuming 2hr duration
-
-        Log::info("Calculated Offered Exam Slot: " . $offeredExamStart->toString() . " to " . $offeredExamEnd->toString());
+        $offeredExamStart = $offeredExamen->debut;
+        $offeredExamEnd = (clone $offeredExamStart)->addHours(2);
 
         $swappableAttributions = $professeur->attributions()
             ->where('is_involved_in_exchange', false)
             ->whereHas('examen', function ($query) use ($offeredExamStart, $offeredExamEnd) {
-                // Ensure the exam being considered (from $professeur->attributions) does not overlap
-                // This means its 2-hour slot must end before the offered exam starts,
-                // OR its 2-hour slot must start after the offered exam ends.
                 $query->where(function ($q) use ($offeredExamStart, $offeredExamEnd) {
-                    // Case 1: Swappable exam ends before offered exam starts
-                    // DB::raw('debut + INTERVAL \'2 hours\'') <= $offeredExamStart
-                    // For simplicity if direct interval arithmetic is complex across DBs via Eloquent:
-                    // swappable_exam_start <= offered_exam_start - 2 hours
                      $q->where('debut', '<=', (clone $offeredExamStart)->subHours(2));
                 })->orWhere(function ($q) use ($offeredExamStart, $offeredExamEnd) {
-                    // Case 2: Swappable exam starts after offered exam ends
                     $q->where('debut', '>=', $offeredExamEnd);
                 });
-                // The 'fin' column was removed from examens table, so do not query it.
             })
             ->with('examen.module')
-            ->get(); // Make sure to get() or paginate()
+            ->get();
 
-        Log::info("Found " . $swappableAttributions->count() . " swappable attributions.");
         return response()->json($swappableAttributions);
     }
 
     public function proposeSwap(Request $request, Echange $echange)
     {
-        Log::info("--- proposeSwap START ---");
-        Log::info("Echange ID: {$echange->id}, Status: {$echange->status}");
-
         $request->validate([
             'attribution_accepted_id' => 'required|exists:attributions,id',
         ]);
-        Log::info("Validation passed.");
 
         $user = Auth::user();
         $proposerProfesseur = $user->professeur;
@@ -238,19 +215,18 @@ class ExchangeController extends Controller
             Log::error("proposeSwap: Professor profile not found for user ID: " . $user->id);
             return back()->with('error', 'Professor profile not found.');
         }
-        Log::info("Proposer Professor ID: " . $proposerProfesseur->id);
 
-
-        Log::info("Checking echange status. Current status: " . $echange->status);
         if ($echange->status !== 'Open') {
             Log::warning("proposeSwap: Echange status is not 'Open'. Actual: " . $echange->status);
             return back()->with('error', 'This exchange is not open for proposals.');
         }
 
-        $offeredAttribution = $echange->loadMissing('offeredAttribution.examen', 'requester.user')->offeredAttribution;
-        $acceptedAttribution = Attribution::with('examen')->find($request->attribution_accepted_id); // Load examen for logging/use
+        // Load relationships needed for checks and notifications
+        $echange->loadMissing(['requester.user', 'offeredAttribution.examen.module', 'accepter.user']);
+        $offeredAttribution = $echange->offeredAttribution;
+        $acceptedAttribution = Attribution::with('examen')->find($request->attribution_accepted_id);
 
-        // Defensive checks (already present, but ensure they are after eager loading)
+        // Defensive checks
         if ($offeredAttribution instanceof \Illuminate\Database\Eloquent\Collection) {
             $offeredAttribution = $offeredAttribution->first();
         }
@@ -258,29 +234,21 @@ class ExchangeController extends Controller
             $acceptedAttribution = $acceptedAttribution->first();
         }
 
-        Log::info("Offered Attribution ID: " . ($offeredAttribution->id ?? 'NULL') . ", Examen ID: " . ($offeredAttribution->examen->id ?? 'NULL'));
-        Log::info("Accepted (Proposed by Prof B) Attribution ID: " . ($acceptedAttribution->id ?? 'NULL') . ", Examen ID: " . ($acceptedAttribution->examen->id ?? 'NULL'));
-
-
         if (!$offeredAttribution || !$acceptedAttribution) {
             Log::warning("proposeSwap: One of the attributions involved in the swap was not found or resolved correctly.");
             return back()->with('error', 'One of the attributions involved in the swap was not found or resolved correctly.');
         }
 
-        Log::info("Checking if accepted attribution belongs to proposer. Accepted Attribution Prof ID: {$acceptedAttribution->professeur_id}, Proposer Prof ID: {$proposerProfesseur->id}");
         if ($acceptedAttribution->professeur_id !== $proposerProfesseur->id) {
             Log::warning("proposeSwap: The proposed assignment does not belong to the proposer.");
             return back()->with('error', 'The proposed assignment is invalid or does not belong to you.');
         }
 
-        Log::info("Checking if accepted attribution is already involved in an exchange. is_involved_in_exchange: " . ($acceptedAttribution->is_involved_in_exchange ? 'true' : 'false'));
-        // Prevent proposing an attribution already involved in an open exchange
         if ($acceptedAttribution->is_involved_in_exchange) {
             Log::warning("proposeSwap: The proposed assignment is already involved in an active exchange process.");
             return back()->with('error', 'The proposed assignment is already involved in an active exchange process.');
         }
 
-        Log::info("Calling constraintCheckingService->canSwap");
         // Constraint checking
         if (!$this->constraintCheckingService->canSwap(
             $echange->requester,
@@ -288,10 +256,9 @@ class ExchangeController extends Controller
             $offeredAttribution,
             $acceptedAttribution
         )) {
-            Log::warning("proposeSwap: constraintCheckingService->canSwap returned false."); // THIS IS KEY
+            Log::warning("proposeSwap: constraintCheckingService->canSwap returned false.");
             return back()->with('error', 'The proposed swap violates exchange constraints.');
         }
-        Log::info("proposeSwap: constraintCheckingService->canSwap returned true.");
 
         DB::transaction(function () use ($echange, $proposerProfesseur, $acceptedAttribution, $offeredAttribution) {
             $echange->update([
@@ -304,18 +271,26 @@ class ExchangeController extends Controller
             $offeredAttribution->update(['is_involved_in_exchange' => true]);
             $acceptedAttribution->update(['is_involved_in_exchange' => true]);
 
-            // Notify Requester (Prof A)
+            // Refresh the echange model to get the newly set accepter relationship
+            $echange->refresh();
+            // Ensure accepter.user is loaded for the email
+            $echange->loadMissing('accepter.user');
+
+            // Use this for message construction
+            $examNameForMessage = $echange->offeredAttribution->examen->module->nom ?? // Try module name first
+                                   ($echange->offeredAttribution->examen->name ?? // Fallback to a direct 'name' attribute if it exists
+                                   'an unspecified exam'); // Final fallback
+
             Notification::create([
                 'user_id' => $echange->requester->user->id,
                 'type' => 'exchange_proposal',
-                'message' => 'You have a new exchange proposal for ' . $offeredAttribution->examen->name . ' from ' . $proposerProfesseur->user->name . '.',
+                'message' => 'You have a new exchange proposal for ' . $examNameForMessage . ' from ' . $proposerProfesseur->user->name . '.',
                 'link' => route('professeur.exchanges.index', ['tab' => 'my-open-requests']),
                 'data' => ['echange_id' => $echange->id],
             ]);
-            Mail::to($echange->requester->user->email)->send(new ExchangeProposalReceivedMail($echange));
+            Mail::to($echange->requester->user->email)->send(new ExchangeProposalReceivedMail($echange, $examNameForMessage));
         });
 
-        Log::info("proposeSwap END: Proposal sent successfully.");
         return back()->with('success', 'Your proposal has been sent.');
     }
 

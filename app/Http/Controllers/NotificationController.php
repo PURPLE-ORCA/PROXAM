@@ -14,7 +14,7 @@ class NotificationController extends Controller
         if (!$user) {
             return response()->json(['count' => 0]);
         }
-        $count = $user->notifications()->whereNull('read_at')->count();
+        $count = $user->customNotifications()->whereNull('read_at')->count();
         return response()->json(['count' => $count]);
     }
 
@@ -24,14 +24,14 @@ class NotificationController extends Controller
         if (!$user) {
             return response()->json(['notifications' => []]);
         }
-        $notifications = $user->notifications()
+        $notifications = $user->customNotifications()
                             ->orderBy('created_at', 'desc')
                             ->limit(5)
                             ->get();
         return response()->json(['notifications' => $notifications]);
     }
 
-    public function markAsRead(Request $request, ?Notification $notification = null)
+    public function markAsRead(Request $request, ?Notification $notification = null) // Typehint your model
     {
         $user = Auth::user();
         if (!$user) {
@@ -47,7 +47,7 @@ class NotificationController extends Controller
             return response()->json(['message' => 'Unauthorized to mark this notification as read.'], 403);
         } else {
             // Mark all unread notifications as read
-            $user->notifications()->whereNull('read_at')->update(['read_at' => now()]);
+            $user->customNotifications()->whereNull('read_at')->update(['read_at' => now()]);
             return response()->json(['message' => 'All notifications marked as read.']);
         }
     }

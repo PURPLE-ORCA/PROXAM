@@ -33,4 +33,8 @@ class User extends Authenticatable
         return $this->hasOne(Professeur::class, 'user_id');
     }
 
+    public function customNotifications() // Give it a distinct name
+    {
+        return $this->hasMany(\App\Models\Notification::class, 'user_id'); // Using your App\Models\Notification
+    }
 }

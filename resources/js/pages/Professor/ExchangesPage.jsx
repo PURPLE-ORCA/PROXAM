@@ -428,7 +428,7 @@ export default function ExchangesPage({
 
             <div className="py-12">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                    <div className="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
+                    <div className="bg-white dark:bg-transparent overflow-hidden shadow-sm sm:rounded-lg p-6">
                         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
                             <TabsList className="grid w-full grid-cols-4">
                                 <TabsTrigger value="exchange-market">

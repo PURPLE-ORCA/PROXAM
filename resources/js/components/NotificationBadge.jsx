@@ -8,15 +8,14 @@ import {
     DropdownMenuLabel,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { useToast } from '@/components/ui/use-toast';
+} from './ui/dropdown-menu';
+import { Button } from './ui/button';
 import { formatDistanceToNow } from 'date-fns';
 import axios from 'axios';
+import { Badge } from './ui/badge';
+import { toast } from 'sonner'; // Import toast from sonner
 
 export default function NotificationBadge() {
-    const { toast } = useToast();
     const [pendingCount, setPendingCount] = useState(0);
     const [latestNotifications, setLatestNotifications] = useState([]);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -29,16 +28,16 @@ export default function NotificationBadge() {
             const latestResponse = await axios.get(route('notifications.latest'));
             setLatestNotifications(latestResponse.data.notifications);
         } catch (error) {
-            console.error('Error fetching notifications:', error);
-            // Optionally show a toast error, but might be too noisy for polling
         }
     };
 
     useEffect(() => {
         fetchNotifications(); // Initial fetch
-        const interval = setInterval(fetchNotifications, 30000); // Poll every 15 seconds
+        const interval = setInterval(fetchNotifications, 3000);
 
-        return () => clearInterval(interval);
+        return () => {
+            clearInterval(interval);
+        };
     }, []);
 
     const markAsRead = async (notificationId = null) => {
@@ -47,11 +46,10 @@ export default function NotificationBadge() {
                 ? route('notifications.markRead', notificationId)
                 : route('notifications.markRead');
             await axios.post(url);
-            toast({ title: 'Success', description: 'Notification(s) marked as read.' });
+            toast.success('Notification(s) marked as read.'); // Use sonner's toast.success
             fetchNotifications(); // Refresh counts and list
         } catch (error) {
-            console.error('Error marking notification as read:', error);
-            toast({ title: 'Error', description: 'Failed to mark notification as read.', variant: 'destructive' });
+            toast.error('Failed to mark notification as read.'); // Use sonner's toast.error
         }
     };
 

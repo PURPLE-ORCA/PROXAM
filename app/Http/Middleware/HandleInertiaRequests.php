@@ -38,32 +38,14 @@ class HandleInertiaRequests extends Middleware
         $selectedIdInSession = $currentAnneeUni->id;
         // *** CRITICAL: Write the default to the session ***
         session(['selected_annee_uni_id' => $selectedIdInSession]);
-        // Log::info("Default selected_annee_uni_id ({$selectedIdInSession}) was NOT in session, NOW SET.");
     } elseif (!$selectedIdInSession && !$currentAnneeUni) {
         // Edge case: No academic years in DB, and nothing in session
         $selectedIdInSession = null; // Or handle as an error/specific state
-        // Log::warning("No academic years in DB and no selected_annee_uni_id in session.");
     }
 
 
     $selectedAnneeObject = $selectedIdInSession ? $allAnneesUniversitaires->firstWhere('id', $selectedIdInSession) : null;
     $selectedAnneeString = $selectedAnneeObject?->annee;
-
-    // ... (your existing logging) ...
-    // Log::info("--- HandleInertiaRequests ---");
-    // Log::info("User ID: " . ($request->user()?->id ?? 'Guest'));
-    // Log::info("Session 'selected_annee_uni_id' value AT START of share(): " . (session()->has('selected_annee_uni_id') && $request->session()->get('selected_annee_uni_id') !== $selectedIdInSession ? $request->session()->get('selected_annee_uni_id') : $selectedIdInSession)); // Log what it was vs what it is now
-    // Log::info("Current (latest) AnneeUni ID from DB: " . ($currentAnneeUni?->id ?? 'None found'));
-    // Log::info("Effective selected_id_in_session being used for props: " . ($selectedIdInSession ?? 'NULL'));
-    // Log::info("Selected AnneeUni Object found: " . ($selectedAnneeObject ? 'Yes, ID: '.$selectedAnneeObject->id . ' (Annee: ' . $selectedAnneeObject->annee . ')' : 'No'));
-    // Log::info("Selected Annee String for prop: " . ($selectedAnneeString ?? 'NULL => N/A'));
-    // Log::info("--- End HandleInertiaRequests ---");
-              
-                //   Log::info("INERTIA_SHARE: Current Route: " . ($request->route()?->getName() ?? 'N/A') .
-                //   ". Reading 'selected_annee_uni_id' from session: " . (session('selected_annee_uni_id') ?: 'null') . // Log raw session value
-                //   ". Effective selected_id being used: " . ($selectedIdInSession ?: 'null') .
-                //   ". Defaulting latestAnneeUni ID: " . ($currentAnneeUni?->id ?: 'null') .
-                //   ". Session ID: " . session()->getId());
 
 
         return array_merge(parent::share($request), [

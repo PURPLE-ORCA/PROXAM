@@ -17,6 +17,7 @@ import { type AnneeUniType, type PageProps } from '@/types'; // Ensure AnneeUniT
 import { Icon } from '@iconify/react';
 import { Link, router, usePage } from '@inertiajs/react'; // router is needed
 import { useContext } from 'react';
+import NotificationBadge from './NotificationBadge';
 
 export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: BreadcrumbItemType[] }) {
     const { auth, academicYear, ziggy } = usePage<PageProps>().props;
@@ -135,10 +136,7 @@ export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: Breadcrum
                     </DropdownMenuContent>
                 </DropdownMenu>
 
-                <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full">
-                    <Icon icon="mdi:bell-outline" className="h-5 w-5" />
-                    <span className="sr-only">{translations?.notifications_sr || 'Notifications'}</span>
-                </Button>
+                <NotificationBadge />
 
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>

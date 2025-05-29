@@ -15,13 +15,15 @@ class ExchangeProposalReceivedMail extends Mailable
     use Queueable, SerializesModels;
 
     public $echange;
+    public $examNameForMessage; // Add this
 
     /**
      * Create a new message instance.
      */
-    public function __construct(Echange $echange)
+    public function __construct(Echange $echange, string $examNameForMessage) // Add $examNameForMessage
     {
         $this->echange = $echange;
+        $this->examNameForMessage = $examNameForMessage; // Assign it
     }
 
     /**
@@ -30,7 +32,7 @@ class ExchangeProposalReceivedMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'New Exchange Proposal for Your Exam Duty',
+            subject: 'New Exchange Proposal for Your Exam Duty: ' . $this->examNameForMessage, // Use it in the subject
         );
     }
 
@@ -43,6 +45,7 @@ class ExchangeProposalReceivedMail extends Mailable
             markdown: 'emails.exchange_proposal_received',
             with: [
                 'echange' => $this->echange,
+                'examNameForMessage' => $this->examNameForMessage, // Pass it to the view
             ],
         );
     }
