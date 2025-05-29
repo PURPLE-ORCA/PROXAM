@@ -420,5 +420,15 @@
     "labelTotalAssignmentsForYear": "إجمالي المهام للسنة {academicYear}:",
     "widgetQuickLinksTitle": "الموارد والمعلومات",
     "linkMyUnavailabilitiesDashboard": "عدم توفري",
-    "labelFacultyContactInfo": "مكتب امتحانات الكلية:"
+    "labelFacultyContactInfo": "مكتب امتحانات الكلية:",
+    "widgetPendingExchangeReviewsTitle": "مراجعات التبادل المعلقة",
+    "infoExchangeProposalsToReview": "لديك {count} مقترحات تبادل للمراجعة.",
+    "infoNoExchangeProposalsToReview": "لا توجد مقترحات تبادل في انتظار مراجعتك.",
+    "linkReviewProposal": "مراجعة المقترح",
+    "infoProposalFrom": "مقترح من",
+    "infoForYour": "لامتحانك",
+    "infoExam": "الخاص بـ",
+    "widgetRecentNotificationsTitle": "الإشعارات الأخيرة",
+    "infoNoNewUnreadNotifications": "لا توجد إشعارات جديدة غير مقروءة.",
+    "linkViewAllNotifications": "عرض جميع الإشعارات"
 }

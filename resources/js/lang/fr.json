@@ -420,5 +420,15 @@
     "labelTotalAssignmentsForYear": "Total des affectations pour {academicYear} :",
     "widgetQuickLinksTitle": "Ressources et informations",
     "linkMyUnavailabilitiesDashboard": "Mes indisponibilités",
-    "labelFacultyContactInfo": "Bureau des examens de la faculté :"
+    "labelFacultyContactInfo": "Bureau des examens de la faculté :",
+    "widgetPendingExchangeReviewsTitle": "Demandes d'échange en attente de révision",
+    "infoExchangeProposalsToReview": "Vous avez {count} propositions d'échange à réviser.",
+    "infoNoExchangeProposalsToReview": "Aucune proposition d'échange en attente de votre révision.",
+    "linkReviewProposal": "Réviser la proposition",
+    "infoProposalFrom": "Proposition de",
+    "infoForYour": "pour votre",
+    "infoExam": "examen.",
+    "widgetRecentNotificationsTitle": "Notifications récentes",
+    "infoNoNewUnreadNotifications": "Aucune nouvelle notification non lue.",
+    "linkViewAllNotifications": "Voir toutes les notifications"
 }
