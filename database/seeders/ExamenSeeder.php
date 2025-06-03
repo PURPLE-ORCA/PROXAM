@@ -12,25 +12,49 @@ class ExamenSeeder extends Seeder
 {
     public function run()
     {
-        $quadrimestres = Quadrimestre::pluck('id')->toArray();
-        $modules = Module::pluck('id')->toArray();
-        $types = ['QCM', 'theoreique'];
-        $filieres = ['Medicale', 'Pharmacie'];
-        
-        for ($i = 0; $i < 30; $i++) {
-            $start = Carbon::now()->addDays(rand(1, 60))->addHours(rand(9, 15));
-            $end = $start->copy()->addHours(rand(1, 3));
+        $quadrimestres = Quadrimestre::with('seson.anneeUni')->get(); // Get full object for date context
+        $modules = Module::all();
+        $types = array_keys(Examen::getTypes()); // Use keys from model method
+
+        if ($quadrimestres->isEmpty() || $modules->isEmpty()) {
+            $this->command->warn('ExamenSeeder: No quadrimestres or modules found. Skipping.');
+            return;
+        }
+
+        $examNames = [
+            "Examen Final", "Examen Partiel", "Contrôle Continu", "Rattrapage", "Examen Blanc",
+            "Évaluation Clinique", "QCM Théorique", "Analyse de Cas", "Projet Pratique", "Soutenance Orale"
+        ];
+
+        for ($i = 0; $i < 60; $i++) { // Create more exams
+            $quadrimestre = $quadrimestres->random();
+            $module = $modules->random();
+
+            $yearForExam = (int)substr($quadrimestre->seson->anneeUni->annee, 0, 4);
+            $monthOffset = rand(1,12);
             
+            $isAM = rand(0, 1) === 0;
+            $startHour = $isAM ? rand(8, 10) : rand(14, 16);
+            $startMinute = rand(0,1) === 0 ? 0 : 30;
+
+            $baseDate = Carbon::create($yearForExam, $monthOffset, rand(1, 28), $startHour, $startMinute, 0);
+            $now = Carbon::now();
+            if ($baseDate->lt($now->copy()->subMonths(2)) || $baseDate->gt($now->copy()->addMonths(6))) {
+                $baseDate = $now->copy()->addDays(rand(10, 70))->hour($startHour)->minute($startMinute)->second(0);
+            }
+
+            $examName = $examNames[array_rand($examNames)] . " - " . $module->nom;
+            $uniqueExamName = Examen::where('nom', $examName)->exists() ? $examName . " #" . ($i+1) : $examName;
+
             Examen::create([
-                'nom' => 'Examen ' . ($i + 1),
-                'quadrimestre_id' => $quadrimestres[array_rand($quadrimestres)],
+                'nom' => $uniqueExamName,
+                'quadrimestre_id' => $quadrimestre->id,
                 'type' => $types[array_rand($types)],
-                'debut' => $start,
-                'fin' => $end,
-                'module_id' => $modules[array_rand($modules)],
-                'filiere' => $filieres[array_rand($filieres)],
-                'required_professors' => rand(2, 5),
+                'debut' => $baseDate,
+                'module_id' => $module->id,
+                'seson_id' => $quadrimestre->seson->id, // Added seson_id
             ]);
         }
+        $this->command->info('ExamenSeeder: Exams seeded successfully.');
     }
 }

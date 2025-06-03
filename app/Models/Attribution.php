@@ -6,10 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class Attribution extends Model
 {
-    protected $fillable = ['examen_id', 'professeur_id', 'is_responsable'];
+    protected $fillable = ['examen_id', 'professeur_id', 'is_responsable', 'salle_id', 'is_involved_in_exchange'];
 
     protected $casts = [
         'is_responsable' => 'boolean',
+        'is_involved_in_exchange' => 'boolean',
     ];
 
     public function examen()
@@ -30,5 +31,9 @@ class Attribution extends Model
     public function acceptedExchanges()
     {
         return $this->hasMany(Echange::class, 'attribution_accepted_id');
+    }
+    
+    public function salle() { 
+        return $this->belongsTo(Salle::class); 
     }
 }

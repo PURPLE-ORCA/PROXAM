@@ -16,6 +16,7 @@ return new class extends Migration
             $table->foreignId('examen_id')->constrained('examens')->cascadeOnDelete();
             $table->foreignId('salle_id')->constrained('salles')->cascadeOnDelete();
             $table->unsignedInteger('capacite');
+            $table->unsignedInteger('professeurs_assignes_salle')->default(1);
             $table->timestamps();
         });
     }

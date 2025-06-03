@@ -1,7 +1,5 @@
-<?php
-
+<?php // Database\Seeders\DatabaseSeeder.php
 namespace Database\Seeders;
-
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -11,18 +9,21 @@ class DatabaseSeeder extends Seeder
         $this->call([
             ServiceSeeder::class,
             UserSeeder::class,
+            FiliereSeeder::class,
+            LevelSeeder::class,
+            ModuleSeeder::class,      
             ProfesseurSeeder::class,
-            ModuleSeeder::class,
-            SalleSeeder::class,
             ProfesseurModuleSeeder::class,
             AnneeUniSeeder::class,
             SesonSeeder::class,
             QuadrimestreSeeder::class,
-            ExamenSeeder::class,
-            ExamensSallesSeeder::class,
-            AttributionSeeder::class,
-            EchangeSeeder::class,
-            ProfessorUnivabilitiesSeeder::class,
+            SalleSeeder::class,
+            ModuleExamRoomConfigSeeder::class, 
+            ExamenSeeder::class,               
+            ExamensSallesSeeder::class,        
+            UnavailabilitySeeder::class,
+            // AttributionSeeder::class,     // Should be OFF for assignment engine testing
+            // EchangeSeeder::class,
         ]);
     }
 }

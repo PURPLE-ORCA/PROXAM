@@ -28,7 +28,7 @@ class Professeur extends Model
 
     public function modules()
     {
-        return $this->belongsToMany(Module::class, 'professeur_module');
+        return $this->belongsToMany(Module::class, 'professeur_modules');
     }
 
     public function attributions()
@@ -38,7 +38,7 @@ class Professeur extends Model
 
     public function unavailabilities()
     {
-        return $this->hasMany(ProfessorUnivability::class);
+        return $this->hasMany(Unavailability::class);
     }
 
     public function exchangeRequests()
@@ -49,5 +49,29 @@ class Professeur extends Model
     public function exchangeAcceptances()
     {
         return $this->hasMany(Echange::class, 'professeur_accepter_id');
+    }
+    public static function getRangs($rawKeys = false) {
+        $rangs = ['PA' => 'Professeur Assistant (PA)', 'PAG' => 'Professeur Agrégé (PAG)', 'PES' => 'Professeur Enseignement Supérieur (PES)'];
+        return $rawKeys ? array_keys($rangs) : $rangs;
+    }
+
+    public static function getStatuts($rawKeys = false) {
+        $statuts = ['Active' => 'Active', 'On_Leave' => 'On Leave', 'Sick_Leave' => 'Sick Leave', 'Vacation' => 'Vacation', 'Inactive' => 'Inactive'];
+        return $rawKeys ? array_keys($statuts) : $statuts;
+    }
+
+    public const RANG_PA  = 'PA';
+    public const RANG_PAG = 'PAG';
+    public const RANG_PES = 'PES';
+
+    public const SPECIALITE_MEDICAL = 'medical';
+    public const SPECIALITE_SURGICAL = 'surgical'; 
+
+    public static function getSpecialties($displayTranslations = false, $translations = null) {
+        $specialties = [
+            self::SPECIALITE_MEDICAL => $displayTranslations && $translations ? ($translations['professeur_specialty_medical'] ?? 'Medical') : 'Medical',
+            self::SPECIALITE_SURGICAL => $displayTranslations && $translations ? ($translations['professeur_specialty_surgical'] ?? 'Surgical') : 'Surgical',
+        ];
+        return $specialties;
     }
 }
