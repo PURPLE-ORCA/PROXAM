@@ -79,7 +79,7 @@ export default function Welcome() {
                         <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8, duration: 0.6 }}>
                             <h2 className="text-2xl font-semibold mb-3 text-gray-800 dark:text-gray-100">Developed By</h2>
                             <p className="text-gray-700 dark:text-gray-400">
-                                El Moussaoui Mohammed & Mimri Amira
+                                El Moussaoui Mohammed & Amimri Amira
                             </p>
                             <p className="text-sm text-gray-500 dark:text-gray-500">Faculty of Medicine and Pharmacy, Oujda</p>
                         </motion.section>
