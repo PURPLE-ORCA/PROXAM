@@ -49,12 +49,19 @@ class ModuleController extends Controller
                             'filiere_id' => $l->filiere_id
                         ]);
 
+        // Fetch all distinct module names
+        $allDistinctModuleNames = Module::select('nom')
+                                        ->distinct()
+                                        ->orderBy('nom')
+                                        ->pluck('nom')
+                                        ->all();
 
         return Inertia::render($this->baseInertiaPath() . 'Create', [
             'filieres' => $filieres,  // For the Filiere part of the cascaded select in ModuleForm
             'allLevels' => $allLevels, // For the Level part of the cascaded select in ModuleForm
             'currentLevel' => $level, // Pass the specific level context
             'selectedLevelId' => $level->id, // Pre-fill and potentially disable level selection in the form
+            'allDistinctModuleNames' => $allDistinctModuleNames,
         ]);
     }  
     
@@ -105,10 +112,18 @@ class ModuleController extends Controller
                             'id' => $l->id, 'nom' => $l->nom, 'filiere_nom' => $l->filiere->nom, 'filiere_id' => $l->filiere_id
                          ]);
 
+        // Fetch all distinct module names
+        $allDistinctModuleNames = Module::select('nom')
+                                        ->distinct()
+                                        ->orderBy('nom')
+                                        ->pluck('nom') // Get an array of names
+                                        ->all();
+
         return Inertia::render($this->baseInertiaPath() . 'Edit', [
             'moduleToEdit' => $module, // Renamed prop for clarity
             'filieres' => $filieres,
             'allLevels' => $allLevels,
+            'allDistinctModuleNames' => $allDistinctModuleNames, // <<<< ADD THIS
         ]);
     }
 

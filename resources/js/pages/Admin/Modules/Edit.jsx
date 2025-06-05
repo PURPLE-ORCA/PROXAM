@@ -4,7 +4,7 @@ import { Head, useForm } from '@inertiajs/react';
 import { useContext, useEffect } from 'react';
 import ModuleForm from './ModuleForm';
 
-export default function Edit({ moduleToEdit, filieres, allLevels }) {
+export default function Edit({ moduleToEdit, filieres, allLevels, allDistinctModuleNames }) {
     const { translations } = useContext(TranslationContext);
     const { data, setData, put, processing, errors } = useForm({
         nom: moduleToEdit?.nom || '',
@@ -63,6 +63,7 @@ export default function Edit({ moduleToEdit, filieres, allLevels }) {
                     allLevels={allLevels}
                     currentLevelIdForCancel={moduleToEdit?.level_id}
                     isEdit={true}
+                    allDistinctModuleNames={allDistinctModuleNames}
                 />
             </div>
         </AppLayout>

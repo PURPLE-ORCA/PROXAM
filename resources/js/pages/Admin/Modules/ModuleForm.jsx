@@ -5,6 +5,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { TranslationContext } from '@/context/TranslationProvider';
 import { Link } from '@inertiajs/react';
 import { useContext, useEffect, useState } from 'react';
+import { Combobox } from '@headlessui/react';
+import { Icon } from '@iconify/react';
 
 export default function ModuleForm({
     data,
@@ -19,6 +21,7 @@ export default function ModuleForm({
     // If editing, the module's current level_id is the context.
     // If creating from a specific level's page, that level_id is the context.
     currentContextLevelId = null,
+    allDistinctModuleNames = [], 
 }) {
     const { translations } = useContext(TranslationContext);
 
@@ -33,6 +36,7 @@ export default function ModuleForm({
     });
 
     const [availableLevelsForSelectedFiliere, setAvailableLevelsForSelectedFiliere] = useState([]);
+    const [moduleNameQuery, setModuleNameQuery] = useState('');
 
     // Effect to populate filiere filter if data.level_id is set (e.g. on edit)
     useEffect(() => {
@@ -79,6 +83,13 @@ export default function ModuleForm({
         : data.level_id && isEdit // If editing, and level_id is set, try to go to that level's modules
           ? route('admin.modules.index', { level: data.level_id })
           : route('admin.filieres.index'); // Fallback to filieres index
+
+    const filteredModuleNames =
+        moduleNameQuery === ''
+            ? allDistinctModuleNames
+            : allDistinctModuleNames.filter((name) =>
+                  name.toLowerCase().includes(moduleNameQuery.toLowerCase())
+              );
 
     return (
         <form onSubmit={onSubmit} className="space-y-6">
@@ -140,22 +151,75 @@ export default function ModuleForm({
                 </div>
             </div>
 
-            {/* Module Name Input */}
+            {/* Module Name Input (now Combobox) */}
             <div className="mt-6">
-                {' '}
-                {/* Ensure spacing from selects */}
-                <Label htmlFor="nom" className="text-[var(--foreground)]">
+                <Label htmlFor="nom_combobox" className="text-[var(--foreground)]">
                     {translations?.module_form_name_label || 'Module Name'} *
                 </Label>
-                <Input
-                    id="nom"
-                    type="text"
-                    value={data.nom}
-                    onChange={(e) => setData('nom', e.target.value)}
-                    required
-                    className="mt-1 block w-full border-[var(--border)] bg-[var(--background)] text-[var(--foreground)] focus:ring-[var(--ring)]"
-                    isInvalid={errors.nom}
-                />
+                <Combobox
+                    value={data.nom} // Controlled by useForm's data.nom
+                    onChange={(value) => setData('nom', value)} // Updates useForm's data.nom
+                    as="div"
+                    className="relative mt-1"
+                >
+                    <div className="relative">
+                        <Combobox.Input
+                            id="nom_combobox"
+                            className="mt-1 block w-full border-[var(--border)] bg-[var(--background)] text-[var(--foreground)] focus:ring-[var(--ring)] rounded-md shadow-sm py-2 px-3 focus:outline-none sm:text-sm" // Style like your Input
+                            onChange={(event) => {
+                                setModuleNameQuery(event.target.value); // Update query for filtering
+                                setData('nom', event.target.value);    // Also update form data directly as user types
+                            }}
+                            displayValue={(moduleName) => moduleName} // How the selected value is displayed in input
+                            autoComplete="off"
+                            required={true} // Add your validation attributes
+                        />
+                        <Combobox.Button className="absolute inset-y-0 right-0 flex items-center pr-2">
+                            <Icon icon="mdi:chevron-up-down" className="h-5 w-5 text-gray-400" aria-hidden="true" />
+                        </Combobox.Button>
+                    </div>
+                    {filteredModuleNames.length > 0 && (
+                        <Combobox.Options className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-[var(--popover)] py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
+                            {filteredModuleNames.map((name, index) => ( // Using index as key if names can repeat, ideally names are unique for key
+                                <Combobox.Option
+                                    key={name + '-' + index} // Or generate a more stable key if possible
+                                    className={({ active }) =>
+                                        `relative cursor-default select-none py-2 pl-10 pr-4 ${
+                                            active ? 'bg-[var(--accent)] text-[var(--accent-foreground)]' : 'text-[var(--popover-foreground)]'
+                                        }`
+                                    }
+                                    value={name}
+                                >
+                                    {({ selected, active }) => (
+                                        <>
+                                            <span className={`block truncate ${selected ? 'font-medium' : 'font-normal'}`}>
+                                                {name}
+                                            </span>
+                                            {selected ? (
+                                                <span className={`absolute inset-y-0 left-0 flex items-center pl-3 ${active ? 'text-[var(--accent-foreground)]' : 'text-[var(--primary)]'}`}>
+                                                    <Icon icon="mdi:check" className="h-5 w-5" aria-hidden="true" />
+                                                </span>
+                                            ) : null}
+                                        </>
+                                    )}
+                                </Combobox.Option>
+                            ))}
+                            {/* Option to create new if query doesn't match any existing */}
+                            {moduleNameQuery !== '' && !allDistinctModuleNames.includes(moduleNameQuery) && (
+                                 <Combobox.Option
+                                    value={moduleNameQuery} // The value is what the user typed
+                                    className={({ active }) =>
+                                        `relative cursor-default select-none py-2 pl-10 pr-4 ${
+                                            active ? 'bg-[var(--accent)] text-[var(--accent-foreground)]' : 'text-[var(--popover-foreground)]'
+                                        }`
+                                    }
+                                >
+                                    Create "{moduleNameQuery}"
+                                </Combobox.Option>
+                            )}
+                        </Combobox.Options>
+                    )}
+                </Combobox>
                 {errors.nom && <p className="mt-1 text-sm text-[var(--destructive)]">{errors.nom}</p>}
             </div>
 

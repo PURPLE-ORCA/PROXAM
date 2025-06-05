@@ -4,7 +4,7 @@ import { Head, useForm } from '@inertiajs/react';
 import { useContext } from 'react';
 import ModuleForm from './ModuleForm';
 
-export default function Create({ filieres, allLevels, selectedLevelId: initialLevelId }) {
+export default function Create({ filieres, allLevels, selectedLevelId: initialLevelId, allDistinctModuleNames }) {
     const { translations } = useContext(TranslationContext);
     const { data, setData, post, processing, errors, reset } = useForm({
         nom: '',
@@ -58,6 +58,7 @@ export default function Create({ filieres, allLevels, selectedLevelId: initialLe
                     allLevels={allLevels}
                     currentLevelIdForCancel={initialLevelId}
                     isEdit={false}
+                    allDistinctModuleNames={allDistinctModuleNames}
                 />
             </div>
         </AppLayout>
