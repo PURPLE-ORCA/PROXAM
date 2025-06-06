@@ -21,6 +21,7 @@ use App\Http\Controllers\Professor\UnavailabilityController as ProfessorUnavaila
 use App\Http\Controllers\Professor\ExchangeController as ProfessorExchangeController;
 use App\Http\Controllers\RH\DashboardController as RHDashboardController; // New controller
 use App\Http\Controllers\ChefService\ProfessorScheduleController as ChefServiceProfessorScheduleController; // New controller
+use App\Http\Controllers\Admin\ProfesseurImportController;
 use App\Http\Controllers\NotificationController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -69,6 +70,7 @@ Route::get('dashboard', function (Request $request) {
         Route::resource('quadrimestres', QuadrimestresController::class)->parameters(['quadrimestres' => 'quadrimestre']) ->except(['show']);
         Route::resource('users', UserController::class)->parameters(['users' => 'user'])->except(['show']);
         Route::resource('professeurs', ProfesseurController::class)->parameters(['professeurs' => 'professeur'])->except(['show']);
+        Route::post('/professeurs/import', [ProfesseurImportController::class, 'store'])->name('professeurs.import');
         Route::resource('examens', ExamenController::class)->parameters(['examens' => 'examen'])->except(['show']);
         // Route::resource('unavailabilities', UnavailabilityController::class)->parameters(['unavailabilities' => 'unavailability'])->except(['show']);   
         

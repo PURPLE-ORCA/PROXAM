@@ -452,5 +452,13 @@
     "widget_recent_activity_title": "Recently Added Unavailabilities",
     "welcome_rh_description": "Manage professor unavailabilities and view related activities.",
     "no_recent_unavailabilities": "No recent unavailabilities found.",
-    "view_all_unavailabilities": "View All Unavailabilities"
+    "view_all_unavailabilities": "View All Unavailabilities",
+    "import_professors_button": "Import from File",
+    "import_professors_modal_title": "Import Professors",
+    "import_professors_modal_description": "Upload an Excel or CSV file to bulk-create professor profiles.",
+    "import_professors_modal_instructions": "Please ensure your file has the following headers:",
+    "download_template_link": "Download Template File",
+    "select_file_label": "Select File",
+    "upload_and_import_button": "Upload and Import",
+    "uploading_button": "Uploading..."
 }

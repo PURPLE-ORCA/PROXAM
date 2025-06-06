@@ -1,4 +1,5 @@
 import ConfirmationModal from '@/components/Common/ConfirmationModal';
+import ImportModal from '@/components/ImportModal';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { TranslationContext } from '@/context/TranslationProvider';
@@ -26,6 +27,7 @@ export default function Index({ professeurs: professeursPagination, filters, ser
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [itemToDelete, setItemToDelete] = useState(null);
+    const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
     const getStatutTranslation = (statutKey) => {
         if (!statutKey) return translations?.statut_undefined || 'N/A';
@@ -228,9 +230,19 @@ export default function Index({ professeurs: professeursPagination, filters, ser
             </div>
         ),
         renderTopToolbarCustomActions: () => (
-            <Button asChild variant="default" className="bg-[var(--primary)] text-[var(--primary-foreground)] hover:bg-[var(--primary)]/90">
-                <Link href={route('admin.professeurs.create')}>{translations?.add_professeur_button || 'Add Professor'}</Link>
-            </Button>
+            <div className="flex gap-2">
+                <Button asChild variant="default" className="bg-[var(--primary)] text-[var(--primary-foreground)] hover:bg-[var(--primary)]/90">
+                    <Link href={route('admin.professeurs.create')}>{translations?.add_professeur_button || 'Add Professor'}</Link>
+                </Button>
+                <Button
+                    variant="outline"
+                    onClick={() => setIsImportModalOpen(true)}
+                    className="border-[var(--primary)] text-[var(--primary)] hover:bg-[var(--primary)] hover:text-[var(--primary-foreground)]"
+                >
+                    <Icon icon="mdi:upload" className="mr-2 h-5 w-5" />
+                    {translations?.import_professors_button || 'Import from File'}
+                </Button>
+            </div>
         ),
     });
 
@@ -254,6 +266,10 @@ export default function Index({ professeurs: professeursPagination, filters, ser
                         : translations?.generic_delete_confirmation || 'Are you sure you want to delete this item?'
                 }
                 confirmText={translations?.delete_button_title || 'Delete'}
+            />
+            <ImportModal
+                isOpen={isImportModalOpen}
+                onClose={() => setIsImportModalOpen(false)}
             />
         </AppLayout>
     );

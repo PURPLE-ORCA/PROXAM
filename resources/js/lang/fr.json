@@ -453,5 +453,13 @@
     "widget_recent_activity_title": "Indisponibilités Récemment Ajoutées",
     "welcome_rh_description": "Gérer les indisponibilités des professeurs et consulter les activités associées.",
     "no_recent_unavailabilities": "Aucune indisponibilité récente trouvée.",
-    "view_all_unavailabilities": "Voir toutes les indisponibilités"
+    "view_all_unavailabilities": "Voir toutes les indisponibilités",
+    "import_professors_button": "Importer depuis un fichier",
+    "import_professors_modal_title": "Importer des Professeurs",
+    "import_professors_modal_description": "Téléchargez un fichier Excel ou CSV pour créer en masse des profils de professeurs.",
+    "import_professors_modal_instructions": "Veuillez vous assurer que votre fichier contient les en-têtes suivants :",
+    "download_template_link": "Télécharger le fichier modèle",
+    "select_file_label": "Sélectionner un fichier",
+    "upload_and_import_button": "Télécharger et Importer",
+    "uploading_button": "Téléchargement..."
 }
