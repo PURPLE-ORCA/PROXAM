@@ -430,5 +430,14 @@
     "infoExam": "الخاص بـ",
     "widgetRecentNotificationsTitle": "الإشعارات الأخيرة",
     "infoNoNewUnreadNotifications": "لا توجد إشعارات جديدة غير مقروءة.",
-    "linkViewAllNotifications": "عرض جميع الإشعارات"
+    "linkViewAllNotifications": "عرض جميع الإشعارات",
+    "rh_dashboard_page_title": "لوحة تحكم الموارد البشرية",
+    "widget_quick_actions_title": "إجراءات سريعة",
+    "button_add_unavailability": "إضافة فترة عدم توفر جديدة",
+    "widget_activity_overview_title": "نظرة عامة على النشاط",
+    "label_unavailabilities_this_month": "فترات عدم التوفر هذا الشهر:",
+    "widget_recent_activity_title": "فترات عدم التوفر المضافة مؤخرًا",
+    "welcome_rh_description": "إدارة فترات عدم توفر الأساتذة وعرض الأنشطة ذات الصلة.",
+    "no_recent_unavailabilities": "لم يتم العثور على فترات عدم توفر حديثة.",
+    "view_all_unavailabilities": "عرض جميع فترات عدم التوفر"
 }

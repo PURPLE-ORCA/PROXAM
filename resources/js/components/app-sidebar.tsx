@@ -22,7 +22,7 @@ import {
     RefreshCw, // Added for Exchanges
 } from 'lucide-react';
 import AppLogo from './app-logo';
-import React, { useContext } from 'react'; // Added useContext
+import React, { useContext } from 'react'; 
 import { TranslationContext } from '@/context/TranslationProvider';
 
 const footerNavItems: NavItem[] = [
@@ -48,15 +48,17 @@ export function AppSidebar() {
         dashboardHref = route('professeur.dashboard');
         dashboardTitle = translations?.professor_dashboard_nav_item || 'My Dashboard'; // Use a distinct title if possible
         dashboardIcon = LayoutGrid; // Or a different icon for prof dashboard
-    }
-    // Add other roles here if they have specific dashboards (e.g., RH, Chef de Service)
-    // else if (auth.user && auth.abilities?.is_rh) { ... }
+    } else if (auth.user && auth.abilities?.is_rh && !auth.abilities?.is_admin) { // For a pure RH role
+        dashboardHref = route('rh.dashboard');
+        dashboardTitle = translations?.rh_dashboard_page_title || 'RH Dashboard'; // Use RH specific title
+        dashboardIcon = LayoutGrid; // Or a different icon for RH dashboard
+    } // Admin will fall back to route('dashboard') which renders their main dashboard
 
     mainNavItems.push({
         title: dashboardTitle,
         href: dashboardHref,
         icon: dashboardIcon,
-        active: route().current(dashboardHref.substring(dashboardHref.lastIndexOf('/') + 1) + '*') || route().current('dashboard') || route().current('professeur.dashboard'), // More robust active check
+        active: route().current(dashboardHref.substring(dashboardHref.lastIndexOf('/') + 1) + '*') || route().current('dashboard') || route().current('professeur.dashboard') || route().current('rh.dashboard'), // More robust active check
     });
 
 

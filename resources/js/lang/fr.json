@@ -444,5 +444,14 @@
     "session": "Session",
     "minutes": "minutes",
     "responsible": "Responsable",
-    "supervisor": "Surveillant"
+    "supervisor": "Surveillant",
+    "rh_dashboard_page_title": "Tableau de bord des Ressources Humaines",
+    "widget_quick_actions_title": "Actions Rapides",
+    "button_add_unavailability": "Ajouter une Nouvelle Indisponibilité",
+    "widget_activity_overview_title": "Aperçu de l'Activité",
+    "label_unavailabilities_this_month": "Indisponibilités ce mois-ci :",
+    "widget_recent_activity_title": "Indisponibilités Récemment Ajoutées",
+    "welcome_rh_description": "Gérer les indisponibilités des professeurs et consulter les activités associées.",
+    "no_recent_unavailabilities": "Aucune indisponibilité récente trouvée.",
+    "view_all_unavailabilities": "Voir toutes les indisponibilités"
 }

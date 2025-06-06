@@ -19,6 +19,7 @@ use App\Http\Controllers\Professor\ScheduleController as ProfessorScheduleContro
 use App\Http\Controllers\Professor\DashboardController as ProfessorDashboardController; // Add this
 use App\Http\Controllers\Professor\UnavailabilityController as ProfessorUnavailabilityController; // Add this
 use App\Http\Controllers\Professor\ExchangeController as ProfessorExchangeController;
+use App\Http\Controllers\RH\DashboardController as RHDashboardController; // New controller
 use App\Http\Controllers\ChefService\ProfessorScheduleController as ChefServiceProfessorScheduleController; // New controller
 use App\Http\Controllers\NotificationController;
 use Illuminate\Http\Request;
@@ -53,12 +54,10 @@ Route::get('dashboard', function (Request $request) {
     if ($user->hasRole('professeur')) {
         return redirect()->route('professeur.dashboard');
     }
-    // Add other role checks and redirects if necessary:
-    // elseif ($user->hasRole('rh')) {
-    //     return redirect()->route('rh.dashboard'); // Example
-    // }
-    // Default dashboard for admin or other roles not explicitly redirected
-    return Inertia::render('dashboard'); // This should be your existing Admin/General Dashboard component
+    if ($user->hasRole('rh')) { // <<<< ADD THIS BLOCK
+        return redirect()->route('rh.dashboard');
+    }
+    return Inertia::render('dashboard'); // Default for admin
 })->name('dashboard');
 
     Route::prefix('admin')->name('admin.')->middleware('can:is_admin')->group(function () {
@@ -71,7 +70,7 @@ Route::get('dashboard', function (Request $request) {
         Route::resource('users', UserController::class)->parameters(['users' => 'user'])->except(['show']);
         Route::resource('professeurs', ProfesseurController::class)->parameters(['professeurs' => 'professeur'])->except(['show']);
         Route::resource('examens', ExamenController::class)->parameters(['examens' => 'examen'])->except(['show']);
-        Route::resource('unavailabilities', UnavailabilityController::class)->parameters(['unavailabilities' => 'unavailability'])->except(['show']);   
+        // Route::resource('unavailabilities', UnavailabilityController::class)->parameters(['unavailabilities' => 'unavailability'])->except(['show']);   
         
         Route::post('/examens/{examen}/assign-professors', [ExamenController::class, 'triggerAssignment'])->name('examens.trigger-assignment');
         Route::get('attributions', [AttributionController::class, 'index'])->name('attributions.index');   
@@ -126,6 +125,18 @@ Route::get('dashboard', function (Request $request) {
             ->name('sesons.approve-notifications');
     });
 
+    // Group for routes accessible by Admin OR RH
+    Route::prefix('admin')->name('admin.')->middleware('can:is_admin_or_rh')->group(function() {
+        Route::resource('unavailabilities', UnavailabilityController::class)->parameters(['unavailabilities' => 'unavailability'])->except(['show']);
+        // Any other routes shared between Admin and RH go here
+    });
+
+    // Group for routes accessible ONLY by Admin
+    Route::prefix('admin')->name('admin.')->middleware('can:is_admin')->group(function() {
+        Route::resource('users', UserController::class)->except(['show']);
+        // ... all other admin-only resources
+    });
+
     Route::get('/notifications/pending-count', [NotificationController::class, 'getPendingCount'])->name('notifications.pendingCount');
     Route::get('/notifications/latest', [NotificationController::class, 'getLatest'])->name('notifications.latest');
     Route::post('/notifications/mark-read/{notification?}', [NotificationController::class, 'markAsRead'])->name('notifications.markRead');
@@ -156,6 +167,14 @@ Route::get('dashboard', function (Request $request) {
             Route::get('/professor-schedules', [ChefServiceProfessorScheduleController::class, 'index'])->name('professor_schedules.index');
             // Potentially a dashboard for Chef de Service later
             // Route::get('/dashboard', [ChefServiceDashboardController::class, 'index'])->name('dashboard');
+        });
+
+    // In routes/web.php, within the main authenticated group
+    Route::middleware(['can:is_rh']) // Use your existing Gate for RH
+        ->prefix('rh')
+        ->name('rh.')
+        ->group(function () {
+            Route::get('/dashboard', [RHDashboardController::class, 'index'])->name('dashboard');
         });
 }); 
 

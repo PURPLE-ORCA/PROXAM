@@ -443,5 +443,14 @@
     "session": "Session",
     "minutes": "minutes",
     "responsible": "Responsible",
-    "supervisor": "Supervisor"
+    "supervisor": "Supervisor",
+    "rh_dashboard_page_title": "Human Resources Dashboard",
+    "widget_quick_actions_title": "Quick Actions",
+    "button_add_unavailability": "Add New Unavailability",
+    "widget_activity_overview_title": "Activity Overview",
+    "label_unavailabilities_this_month": "Unavailabilities this month:",
+    "widget_recent_activity_title": "Recently Added Unavailabilities",
+    "welcome_rh_description": "Manage professor unavailabilities and view related activities.",
+    "no_recent_unavailabilities": "No recent unavailabilities found.",
+    "view_all_unavailabilities": "View All Unavailabilities"
 }
