@@ -430,5 +430,19 @@
     "infoExam": "examen.",
     "widgetRecentNotificationsTitle": "Notifications récentes",
     "infoNoNewUnreadNotifications": "Aucune nouvelle notification non lue.",
-    "linkViewAllNotifications": "Voir toutes les notifications"
+    "linkViewAllNotifications": "Voir toutes les notifications",
+    "chef_service_professor_schedules_nav_item": "Voir les Emplois du Temps des Professeurs",
+    "chef_service_professor_schedules_page_title": "Emplois du Temps des Professeurs - Service {serviceName}",
+    "no_professors_in_service": "Aucun professeur trouvé dans ce service.",
+    "no_assignments_for_professor": "Aucune affectation pour ce professeur dans l'année universitaire sélectionnée.",
+    "date": "Date",
+    "time": "Heure",
+    "duration": "Durée",
+    "module": "Module",
+    "room": "Salle",
+    "role": "Rôle",
+    "session": "Session",
+    "minutes": "minutes",
+    "responsible": "Responsable",
+    "supervisor": "Surveillant"
 }

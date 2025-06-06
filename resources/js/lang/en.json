@@ -429,5 +429,19 @@
     "infoExam": "exam.",
     "widgetRecentNotificationsTitle": "Recent Notifications",
     "infoNoNewUnreadNotifications": "No new unread notifications.",
-    "linkViewAllNotifications": "View All Notifications"
+    "linkViewAllNotifications": "View All Notifications",
+    "chef_service_professor_schedules_nav_item": "View Professor Schedules",
+    "chef_service_professor_schedules_page_title": "Professor Schedules - Service {serviceName}",
+    "no_professors_in_service": "No professors found in this service.",
+    "no_assignments_for_professor": "No assignments for this professor in the selected academic year.",
+    "date": "Date",
+    "time": "Time",
+    "duration": "Duration",
+    "module": "Module",
+    "room": "Room",
+    "role": "Role",
+    "session": "Session",
+    "minutes": "minutes",
+    "responsible": "Responsible",
+    "supervisor": "Supervisor"
 }

@@ -43,10 +43,8 @@ class HandleInertiaRequests extends Middleware
         $selectedIdInSession = null; // Or handle as an error/specific state
     }
 
-
     $selectedAnneeObject = $selectedIdInSession ? $allAnneesUniversitaires->firstWhere('id', $selectedIdInSession) : null;
     $selectedAnneeString = $selectedAnneeObject?->annee;
-
 
         return array_merge(parent::share($request), [
             'name' => config('app.name'),

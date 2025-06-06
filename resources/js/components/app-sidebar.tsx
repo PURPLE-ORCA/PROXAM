@@ -147,6 +147,23 @@ export function AppSidebar() {
         });
     }
 
+    // CHEF DE SERVICE ROUTES
+    if (auth.user && auth.abilities?.is_chef_service) {
+        mainNavItems.push({
+            title: translations?.chef_service_professor_schedules_nav_item || 'View Professor Schedules',
+            href: route('chef_service.professor_schedules.index'),
+            icon: UsersIcon, // Or other suitable icon
+            active: route().current('chef_service.professor_schedules.index'),
+        });
+        // Add Chef de Service dashboard link later if needed
+        // mainNavItems.push({
+        //     title: translations?.chef_service_dashboard_nav_item || 'Service Dashboard',
+        //     href: route('chef_service.dashboard'),
+        //     icon: LayoutDashboard,
+        //     active: route().current('chef_service.dashboard'),
+        // });
+    }
+
     // Admin or RH specific links (like Admin Unavailabilities Management)
     if (auth.user && auth.abilities?.is_admin_or_rh) {
         // Avoid adding if it's a professor and they already have "My Unavailabilities"

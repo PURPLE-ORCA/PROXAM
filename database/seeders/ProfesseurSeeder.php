@@ -1,5 +1,4 @@
 <?php
-
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
@@ -63,7 +62,7 @@ class ProfesseurSeeder extends Seeder
                 'name' => $selectedPrenom . ' ' . $selectedNom,
                 'email' => $email,
                 'password' => Hash::make('password'),
-                'role' => 'professeur',
+                'role' => 'professeur', // All start as 'professeur'
                 'email_verified_at' => now(),
             ]);
 
@@ -82,37 +81,38 @@ class ProfesseurSeeder extends Seeder
                 'prenom' => $selectedPrenom,
                 'rang' => $rangs[array_rand($rangs)],
                 'statut' => $statut,
-                'is_chef_service' => false, // Set all to false initially
+                'is_chef_service' => false, // Correctly set to false initially
                 'date_recrutement' => Carbon::instance(fake()->dateTimeBetween('-20 years', '-6 months')),
                 'specialite' => $specialites[array_rand($specialites)],
                 'service_id' => $services[array_rand($services)],
             ]);
         }
 
-        // Assign exactly one Chef de Service per Service, from active professors if possible
-        foreach (Service::all() as $service) {
-            // First, ensure no one is currently chef for this service (clean slate for this logic)
-            Professeur::where('service_id', $service->id)->update(['is_chef_service' => false]);
+        // Assign exactly one Chef de Service per Service
+        $services = Service::all();
+        $this->command->info("Assigning a Chef de Service for each of the {$services->count()} services...");
 
-            // Attempt to pick an 'Active' professor from this service
-            $profToMakeChef = Professeur::where('service_id', $service->id)
-                                      ->where('statut', 'Active')
-                                      ->inRandomOrder()
-                                      ->first();
-
-            if (!$profToMakeChef) {
-                // Fallback: if no 'Active' prof in this service, pick any prof from this service
-                $profToMakeChef = Professeur::where('service_id', $service->id)
-                                          ->inRandomOrder()
-                                          ->first();
-            }
+        foreach ($services as $service) {
+            // Find a professor in this service to promote
+            $profToMakeChef = Professeur::where('service_id', $service->id)->inRandomOrder()->first();
 
             if ($profToMakeChef) {
+                // Update the Professeur record
                 $profToMakeChef->update(['is_chef_service' => true]);
+
+                // Find the associated User record and update its role
+                $userToMakeChef = $profToMakeChef->user;
+                if ($userToMakeChef) {
+                    $userToMakeChef->update(['role' => 'chef_service']);
+                    $this->command->info("  - User '{$userToMakeChef->name}' (ID: {$userToMakeChef->id}) is now Chef de Service for '{$service->nom}'.");
+                } else {
+                    $this->command->warn("  - Professeur ID {$profToMakeChef->id} has no associated user to update role for service '{$service->nom}'.");
+                }
             } else {
-                $this->command->warn("ProfesseurSeeder: No professors found for service ID {$service->id} to assign as Chef de Service.");
+                $this->command->warn("ProfesseurSeeder: No professors found for service '{$service->nom}' to assign as Chef de Service.");
             }
         }
+
         $this->command->info("ProfesseurSeeder: Successfully created {$targetProfessorCount} professors and assigned chefs de service.");
     }
 }

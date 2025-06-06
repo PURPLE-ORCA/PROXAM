@@ -19,6 +19,7 @@ use App\Http\Controllers\Professor\ScheduleController as ProfessorScheduleContro
 use App\Http\Controllers\Professor\DashboardController as ProfessorDashboardController; // Add this
 use App\Http\Controllers\Professor\UnavailabilityController as ProfessorUnavailabilityController; // Add this
 use App\Http\Controllers\Professor\ExchangeController as ProfessorExchangeController;
+use App\Http\Controllers\ChefService\ProfessorScheduleController as ChefServiceProfessorScheduleController; // New controller
 use App\Http\Controllers\NotificationController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -146,6 +147,16 @@ Route::get('dashboard', function (Request $request) {
             Route::post('/exchanges/{echange}/refuse', [ProfessorExchangeController::class, 'refuseSwap'])->name('exchanges.refuse');
             Route::get('/exchanges/updates-summary', [ProfessorExchangeController::class, 'getUpdatesSummary'])->name('exchanges.updatesSummary');
     });
+
+    // CHEF DE SERVICE ROUTES
+    Route::middleware(['can:is_chef_service']) // Use your existing Gate
+        ->prefix('chef-service')
+        ->name('chef_service.')
+        ->group(function () {
+            Route::get('/professor-schedules', [ChefServiceProfessorScheduleController::class, 'index'])->name('professor_schedules.index');
+            // Potentially a dashboard for Chef de Service later
+            // Route::get('/dashboard', [ChefServiceDashboardController::class, 'index'])->name('dashboard');
+        });
 }); 
 
 require __DIR__.'/settings.php';
