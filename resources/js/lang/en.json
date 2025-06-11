@@ -489,5 +489,11 @@
     "without_service": "Without Service",
     "without_modules": "Without Modules",
     "all_professors_have_service": "All professors have a service assigned.",
-    "all_professors_have_modules": "All active professors have modules assigned."
+    "all_professors_have_modules": "All active professors have modules assigned.",
+    "professor_assignment_load": "Professor Assignment Load",
+    "professor_rank_distribution": "Professor Rank Distribution",
+    "service_department_load": "Service Department Load",
+    "room_utilization": "Room Utilization",
+    "exchange_system_summary": "Exchange System Summary",
+    "recently_added_records": "Recently Added Records"
 }

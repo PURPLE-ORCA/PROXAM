@@ -490,5 +490,11 @@
     "without_service": "بدون مصلحة",
     "without_modules": "بدون وحدات",
     "all_professors_have_service": "جميع الأساتذة لديهم مصلحة معينة.",
-    "all_professors_have_modules": "جميع الأساتذة النشطين لديهم وحدات معينة."
+    "all_professors_have_modules": "جميع الأساتذة النشطين لديهم وحدات معينة.",
+    "professor_assignment_load": "عبء تعيين الأستاذ",
+    "professor_rank_distribution": "توزيع رتب الأساتذة",
+    "service_department_load": "عبء قسم الخدمة",
+    "room_utilization": "استخدام القاعة",
+    "exchange_system_summary": "ملخص نظام التبادل",
+    "recently_added_records": "السجلات المضافة مؤخرًا"
 }

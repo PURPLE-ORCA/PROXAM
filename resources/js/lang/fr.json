@@ -490,5 +490,11 @@
     "without_service": "Sans Service",
     "without_modules": "Sans Modules",
     "all_professors_have_service": "Tous les professeurs ont un service assigné.",
-    "all_professors_have_modules": "Tous les professeurs actifs ont des modules assignés."
+    "all_professors_have_modules": "Tous les professeurs actifs ont des modules assignés.",
+    "professor_assignment_load": "Charge d'affectation des professeurs",
+    "professor_rank_distribution": "Répartition des grades des professeurs",
+    "service_department_load": "Charge du département de service",
+    "room_utilization": "Utilisation des salles",
+    "exchange_system_summary": "Résumé du système d'échange",
+    "recently_added_records": "Enregistrements récemment ajoutés"
 }
