@@ -1,97 +1,31 @@
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem } from '@/types';
+import { type BreadcrumbItem, DashboardProps, Examen, Professeur, Notification } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { TranslationContext } from '@/context/TranslationProvider';
 import { useContext } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { AlertTriangle, Bell, Info, CheckCircle, AlertCircle } from 'lucide-react';
-import { PageProps, Examen, Notification, Professeur } from '@/types';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { AlertTriangle, Bell } from 'lucide-react';
+import KpiCard from '@/components/Dashboard/KpiCard';
+import UpcomingExamsWidget from '@/components/Dashboard/UpcomingExamsWidget';
+import AdminNotificationsWidget from '@/components/Dashboard/AdminNotificationsWidget';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { formatDistanceToNow } from 'date-fns';
+import ProfessorLoadChart from '@/components/Dashboard/ProfessorLoadChart';
+import RankDistributionChart from '@/components/Dashboard/RankDistributionChart';
+import ServiceLoadChart from '@/components/Dashboard/ServiceLoadChart';
+import RoomUtilizationChart from '@/components/Dashboard/RoomUtilizationChart';
+import ExchangeSummaryWidget from '@/components/Dashboard/ExchangeSummaryWidget';
+import RecentActivityWidget from '@/components/Dashboard/RecentActivityWidget';
+import ExamTypeDistributionChart from '@/components/Dashboard/ExamTypeDistributionChart';
+import UpcomingExamsTimelineWidget from '@/components/Dashboard/UpcomingExamsTimelineWidget';
+import AssignmentHotspotsWidget from '@/components/Dashboard/AssignmentHotspotsWidget';
+import LastRunSummaryWidget from '@/components/Dashboard/LastRunSummaryWidget';
+import UnconfiguredProfessorsWidget from '@/components/Dashboard/UnconfiguredProfessorsWidget';
+import QuickActionsWidget from '@/components/Dashboard/QuickActionsWidget';
 import { Separator } from '@/components/ui/separator';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import CalendarHeatmap from 'react-calendar-heatmap';
 import 'react-calendar-heatmap/dist/styles.css';
+import { formatDistanceToNow } from 'date-fns';
 import { format, parseISO } from 'date-fns';
-
-interface KpiData {
-    totalActiveProfessors: number;
-    totalExamsThisYear: number;
-    totalAssignmentsThisYear: number;
-    unstaffedExamsThisYear: number;
-}
-
-interface ProfessorLoadData {
-    name: string;
-    assignments: number;
-}
-
-interface RankDistributionData {
-    rank: string;
-    count: number;
-    color: string;
-}
-
-interface ServiceLoadData {
-    service_name: string;
-    total_hours: number;
-}
-
-interface RoomUtilizationData {
-    room_name: string;
-    usage_count: number;
-}
-
-interface ExchangeMetrics {
-    totalRequests: number;
-    approvedRequests: number;
-    rejectedRequests: number;
-    mostActiveUsers: string[];
-}
-
-interface RecentRecord {
-    type: string;
-    name: string;
-    created_at: string;
-    action: string;
-}
-
-interface LastAssignmentRunSummary {
-    run_at: string;
-    seson_code: string;
-    summary: string;
-}
-
-interface UnconfiguredProfessors {
-    without_service: (Professeur & { user: { name: string } })[];
-    without_modules: (Professeur & { user: { name: string } })[];
-}
-
-interface DashboardProps extends PageProps {
-    kpiData: KpiData;
-    upcomingExams: (Examen & {
-        module: { nom: string };
-        salles: { nom: string }[];
-        attributions_count: number;
-        total_required_professors: number;
-    })[];
-    adminNotifications: (Notification & { link: string })[];
-    professorLoadData: ProfessorLoadData[];
-    rankDistributionData: RankDistributionData[];
-    serviceLoadData: ServiceLoadData[];
-    roomUtilizationData: RoomUtilizationData[];
-    exchangeMetrics: ExchangeMetrics;
-    recentRecords: RecentRecord[];
-    examTypeDistribution: { [key: string]: number };
-    upcomingExamsForTimeline: { [key: string]: (Examen & { module: { nom: string } })[] };
-    assignmentHotspots: { [key: string]: number };
-    lastAssignmentRunSummary: LastAssignmentRunSummary | null;
-    unconfiguredProfessors: UnconfiguredProfessors;
-}
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -117,14 +51,7 @@ export default function Dashboard() {
         upcomingExamsForTimeline,
         assignmentHotspots,
         lastAssignmentRunSummary,
-        unconfiguredProfessors,
     } = usePage<DashboardProps>().props;
-
-    const examTypeData = Object.entries(examTypeDistribution).map(([name, value], index) => ({
-        name,
-        value,
-        fill: ['#2f024f', '#4B5563', '#9CA3AF', '#D1D5DB'][index % 4], // Using theme colors
-    }));
 
     const heatmapData = Object.entries(assignmentHotspots).map(([date, count]) => ({
         date,
@@ -137,497 +64,79 @@ export default function Dashboard() {
             <div className="flex h-full flex-1 flex-col gap-4 p-4">
                 {/* KPI Cards Row */}
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">
-                                {translations.total_active_professors}
-                            </CardTitle>
-                            <Bell className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{kpiData.totalActiveProfessors}</div>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">
-                                {translations.total_exams_this_academic_year} ({academicYear?.annee_debut}-{academicYear?.annee_fin})
-                            </CardTitle>
-                            <Bell className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{kpiData.totalExamsThisYear}</div>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">
-                                {translations.total_assignments_this_academic_year} ({academicYear?.annee_debut}-{academicYear?.annee_fin})
-                            </CardTitle>
-                            <Bell className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{kpiData.totalAssignmentsThisYear}</div>
-                        </CardContent>
-                    </Card>
-                    <Card className="border-red-500 text-red-500">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">
-                                {translations.unstaffed_exams_this_academic_year} ({academicYear?.annee_debut}-{academicYear?.annee_fin})
-                            </CardTitle>
-                            <AlertTriangle className="h-4 w-4 text-red-500" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{kpiData.unstaffedExamsThisYear}</div>
-                        </CardContent>
-                    </Card>
+                    <KpiCard
+                        title={translations.total_active_professors}
+                        value={kpiData.totalActiveProfessors}
+                        icon={Bell}
+                    />
+                    <KpiCard
+                        title={translations.total_exams_this_academic_year}
+                        value={kpiData.totalExamsThisYear}
+                        icon={Bell}
+                        description={`(${academicYear?.annee_debut}-${academicYear?.annee_fin})`}
+                    />
+                    <KpiCard
+                        title={translations.total_assignments_this_academic_year}
+                        value={kpiData.totalAssignmentsThisYear}
+                        icon={Bell}
+                        description={`(${academicYear?.annee_debut}-${academicYear?.annee_fin})`}
+                    />
+                    <KpiCard
+                        title={translations.unstaffed_exams_this_academic_year}
+                        value={kpiData.unstaffedExamsThisYear}
+                        icon={AlertTriangle}
+                        description={`(${academicYear?.annee_debut}-${academicYear?.annee_fin})`}
+                        variant="destructive"
+                    />
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-                    {/* Upcoming Exams Widget */}
-                    <Card className="col-span-4">
-                        <CardHeader>
-                            <CardTitle>{translations.upcoming_exams}</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="space-y-4">
-                                {upcomingExams.length > 0 ? (
-                                    upcomingExams.map((exam) => (
-                                        <div key={exam.id} className="flex items-center justify-between">
-                                            <div>
-                                                <p className="font-medium">{exam.module.nom}</p>
-                                                <p className="text-sm text-muted-foreground">
-                                                    {new Date(exam.debut).toLocaleDateString()} - {new Date(exam.debut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                </p>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <Badge variant={exam.attributions_count >= exam.total_required_professors ? 'default' : 'destructive'}>
-                                                    {exam.attributions_count}/{exam.total_required_professors} {translations.staffed}
-                                                </Badge>
-                                                <Link href={route('admin.examens.assignments.index', { examen: exam.id })}>
-                                                    <Button variant="outline" size="sm">{translations.manage}</Button>
-                                                </Link>
-                                            </div>
-                                        </div>
-                                    ))
-                                ) : (
-                                    <p className="text-muted-foreground">{translations.no_upcoming_exams}</p>
-                                )}
-                            </div>
-                        </CardContent>
-                    </Card>
+                    <UpcomingExamsWidget exams={upcomingExams} translations={translations} />
 
-                    {/* Latest Admin Notifications Widget */}
-                    <Card className="col-span-3">
-                        <CardHeader>
-                            <CardTitle>{translations.latest_admin_notifications}</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="space-y-4">
-                                {adminNotifications.length > 0 ? (
-                                    adminNotifications.map((notification) => (
-                                        <Link key={notification.id} href={notification.link || '#'}>
-                                            <div className="flex items-center gap-3">
-                                                {notification.severity === 'info' && <Info className="h-5 w-5 text-blue-500" />}
-                                                {notification.severity === 'success' && <CheckCircle className="h-5 w-5 text-green-500" />}
-                                                {notification.severity === 'warning' && <AlertTriangle className="h-5 w-5 text-yellow-500" />}
-                                                {notification.severity === 'error' && <AlertCircle className="h-5 w-5 text-red-500" />}
-                                                {!notification.severity && <Bell className="h-5 w-5 text-muted-foreground" />} {/* Default icon */}
-                                                <div>
-                                                    <p className="font-medium">{notification.title}</p>
-                                                    <p className="text-sm text-muted-foreground">{notification.message}</p>
-                                                </div>
-                                            </div>
-                                        </Link>
-                                    ))
-                                ) : (
-                                    <p className="text-muted-foreground">{translations.no_new_notifications}</p>
-                                )}
-                            </div>
-                        </CardContent>
-                    </Card>
+                    <AdminNotificationsWidget notifications={adminNotifications} translations={translations} />
                 </div>
 
                 {/* New Charts Row */}
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
-                    {/* Professor Assignment Load Chart */}
-                    <Card className="lg:col-span-1">
-                        <CardHeader>
-                            <CardTitle>{translations.professor_assignment_load}</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <ChartContainer config={{
-                                assignments: {
-                                    label: translations.assignments,
-                                    color: "hsl(var(--chart-1))",
-                                },
-                            }} className="aspect-auto h-[300px] w-full">
-                                    <BarChart layout="vertical" data={professorLoadData} margin={{ left: 100, right: 20 }} width={330} height={300}>
-                                        <CartesianGrid horizontal={false} />
-                                        <XAxis type="number" dataKey="assignments" />
-                                        <YAxis type="category" dataKey="name" width={120} tick={{ fontSize: 12 }} />
-                                        <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
-                                        <Bar dataKey="assignments" fill="var(--primary)" radius={[4, 4, 0, 0]} />
-                                    </BarChart>
-                            </ChartContainer>
-                        </CardContent>
-                    </Card>
+                    <ProfessorLoadChart data={professorLoadData} translations={translations} />
 
-                    {/* Rank Distribution Chart */}
-                    <Card className="lg:col-span-1">
-                        <CardHeader>
-                            <CardTitle>{translations.professor_rank_distribution}</CardTitle>
-                        </CardHeader>
-                        <CardContent className="flex flex-col items-center justify-center">
-                            <ChartContainer config={{
-                                count: {
-                                    label: translations.count,
-                                    color: "hsl(var(--chart-1))",
-                                },
-                            }} className="aspect-auto h-[300px] w-full">
-                                    <PieChart width={330} height={300}>
-                                        <Pie
-                                            data={rankDistributionData}
-                                            dataKey="count"
-                                            nameKey="rank"
-                                            cx="50%"
-                                            cy="50%"
-                                            innerRadius={60}
-                                            outerRadius={80}
-                                            labelLine={false}
-                                        >
-                                            {rankDistributionData.map((entry, index) => (
-                                                <Cell key={`cell-${index}`} fill={entry.color} />
-                                            ))}
-                                        </Pie>
-                                        <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
-                                    </PieChart>
-                            </ChartContainer>
-                            <div className="flex flex-wrap justify-center gap-4 mt-4">
-                                {rankDistributionData.map((entry, index) => (
-                                    <div key={`legend-${index}`} className="flex items-center gap-2">
-                                        <div className="h-4 w-4 rounded-full" style={{ backgroundColor: entry.color }} />
-                                        <span className="text-sm text-muted-foreground">{entry.rank} ({entry.count})</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </CardContent>
-                    </Card>
+                    <RankDistributionChart data={rankDistributionData} translations={translations} />
                 </div>
 
                 {/* New Charts Row 2 */}
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
-                    {/* Service/Department Load Chart */}
-                    <Card className="lg:col-span-1">
-                        <CardHeader>
-                            <CardTitle>{translations.service_department_load}</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <ChartContainer config={{
-                                total_hours: {
-                                    label: translations.total_hours,
-                                    color: "hsl(var(--chart-2))",
-                                },
-                            }} className="aspect-auto h-[300px] w-full">
-                                    <BarChart layout="vertical" data={serviceLoadData} margin={{ left: 100, right: 20 }} width={330} height={300}>
-                                        <CartesianGrid horizontal={false} />
-                                        <XAxis type="number" dataKey="total_hours" />
-                                        <YAxis type="category" dataKey="service_name" width={120} tick={{ fontSize: 12 }} />
-                                        <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
-                                        <Bar dataKey="total_hours" fill="var(--primary)" radius={[4, 4, 0, 0]} />
-                                    </BarChart>
-                            </ChartContainer>
-                        </CardContent>
-                    </Card>
+                    <ServiceLoadChart data={serviceLoadData} translations={translations} />
 
-                    {/* Room Utilization Chart */}
-                    <Card className="lg:col-span-1">
-                        <CardHeader>
-                            <CardTitle>{translations.room_utilization}</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <ChartContainer config={{
-                                usage_count: {
-                                    label: translations.usage_count,
-                                    color: "hsl(var(--chart-3))",
-                                },
-                            }} className="aspect-auto h-[300px] w-full">
-                                    <BarChart layout="vertical" data={roomUtilizationData} margin={{ left: 100, right: 20 }} width={330} height={300}>
-                                        <CartesianGrid horizontal={false} />
-                                        <XAxis type="number" dataKey="usage_count" />
-                                        <YAxis type="category" dataKey="room_name" width={120} tick={{ fontSize: 12 }} />
-                                        <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
-                                        <Bar dataKey="usage_count" fill="var(--primary)" radius={[4, 4, 0, 0]} />
-                                    </BarChart>
-                            </ChartContainer>
-                        </CardContent>
-                    </Card>
+                    <RoomUtilizationChart data={roomUtilizationData} translations={translations} />
                 </div>
 
                 {/* New Widgets Row */}
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
-                    {/* Exchange System Summary Widget */}
-                    <Card className="lg:col-span-1">
-                        <CardHeader>
-                            <CardTitle>{translations.exchange_system_summary}</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="grid grid-cols-3 gap-4 text-center">
-                                <div>
-                                    <p className="text-2xl font-bold">{exchangeMetrics.totalRequests}</p>
-                                    <p className="text-sm text-muted-foreground">{translations.total_requests}</p>
-                                </div>
-                                <div>
-                                    <p className="text-2xl font-bold text-green-500">{exchangeMetrics.approvedRequests}</p>
-                                    <p className="text-sm text-muted-foreground">{translations.approved_requests}</p>
-                                </div>
-                                <div>
-                                    <p className="text-2xl font-bold text-red-500">{exchangeMetrics.rejectedRequests}</p>
-                                    <p className="text-sm text-muted-foreground">{translations.rejected_requests}</p>
-                                </div>
-                            </div>
-                            <Separator />
-                            <div>
-                                <h4 className="mb-2 text-lg font-semibold">{translations.most_active_exchange_users}</h4>
-                                <div className="flex flex-wrap gap-2">
-                                    {exchangeMetrics.mostActiveUsers.length > 0 ? (
-                                        exchangeMetrics.mostActiveUsers.map((user, index) => (
-                                            <Badge key={index} variant="secondary">{user}</Badge>
-                                        ))
-                                    ) : (
-                                        <p className="text-muted-foreground">{translations.no_active_users}</p>
-                                    )}
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
+                    <ExchangeSummaryWidget metrics={exchangeMetrics} translations={translations} />
 
-                    {/* Recently Added Records Widget */}
-                    <Card className="lg:col-span-1">
-                        <CardHeader>
-                            <CardTitle>{translations.recently_added_records}</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <ScrollArea className="h-[300px]">
-                                <div className="space-y-4 pr-4">
-                                    {recentRecords.length > 0 ? (
-                                        recentRecords.map((record, index) => (
-                                            <div key={index} className="flex items-center justify-between">
-                                                <div className="flex items-center gap-2">
-                                                    <Badge variant="outline">{record.type}</Badge>
-                                                    <div>
-                                                        <p className="font-medium">{record.name}</p>
-                                                        <p className="text-sm text-muted-foreground">
-                                                            {record.action} {formatDistanceToNow(new Date(record.created_at), { addSuffix: true })}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))
-                                    ) : (
-                                        <p className="text-muted-foreground">{translations.no_recent_records}</p>
-                                    )}
-                                </div>
-                            </ScrollArea>
-                        </CardContent>
-                    </Card>
+                    <RecentActivityWidget records={recentRecords} translations={translations} />
                 </div>
 
                 {/* New Widgets Row for V1.5 */}
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
-                    {/* Widget D: Exam Type Distribution (Pie Chart) */}
-                    <Card className="lg:col-span-1">
-                        <CardHeader>
-                            <CardTitle>{translations.exam_type_distribution}</CardTitle>
-                        </CardHeader>
-                        <CardContent className="flex flex-col items-center justify-center">
-                            <ChartContainer config={{
-                                value: {
-                                    label: translations.count,
-                                    color: "hsl(var(--chart-1))",
-                                },
-                            }} className="aspect-auto h-[300px] w-full">
-                                <PieChart width={330} height={300}>
-                                    <Pie
-                                        data={examTypeData}
-                                        dataKey="value"
-                                        nameKey="name"
-                                        cx="50%"
-                                        cy="50%"
-                                        outerRadius={80}
-                                        labelLine={false}
-                                    >
-                                        {examTypeData.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={entry.fill} />
-                                        ))}
-                                    </Pie>
-                                    <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
-                                </PieChart>
-                            </ChartContainer>
-                            <div className="flex flex-wrap justify-center gap-4 mt-4">
-                                {examTypeData.map((entry, index) => (
-                                    <div key={`legend-${index}`} className="flex items-center gap-2">
-                                        <div className="h-4 w-4 rounded-full" style={{ backgroundColor: entry.fill }} />
-                                        <span className="text-sm text-muted-foreground">{entry.name} ({entry.value})</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </CardContent>
-                    </Card>
+                    <ExamTypeDistributionChart data={examTypeDistribution} translations={translations} />
 
-                    {/* Widget E: Upcoming Exams Timeline */}
-                    <Card className="lg:col-span-1">
-                        <CardHeader>
-                            <CardTitle>{translations.upcoming_exams_timeline}</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <ScrollArea className="h-[300px]">
-                                <div className="relative pl-6 space-y-6">
-                                    {Object.keys(upcomingExamsForTimeline).length > 0 ? (
-                                        Object.entries(upcomingExamsForTimeline).map(([date, exams]) => (
-                                            <div key={date} className="relative">
-                                                <h4 className="text-lg font-semibold mb-2">
-                                                    {format(parseISO(date), 'PPP')} {/* e.g., July 24th, 2025 */}
-                                                </h4>
-                                                <ul className="space-y-2">
-                                                    {exams.map((exam) => (
-                                                        <li key={exam.id} className="relative flex items-start before:absolute before:left-[-22px] before:top-2 before:h-2 before:w-2 before:rounded-full before:bg-primary after:absolute after:left-[-19px] after:top-4 after:h-[calc(100%-1rem)] after:w-px after:bg-border">
-                                                            <span className="ml-2 text-sm">
-                                                                {format(new Date(exam.debut), 'HH:mm')} - {exam.module.nom}
-                                                            </span>
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            </div>
-                                        ))
-                                    ) : (
-                                        <p className="text-muted-foreground">{translations.no_upcoming_exams_timeline}</p>
-                                    )}
-                                </div>
-                            </ScrollArea>
-                        </CardContent>
-                    </Card>
+                    <UpcomingExamsTimelineWidget timelineData={upcomingExamsForTimeline} translations={translations} />
                 </div>
 
                 {/* New Widgets Row 2 for V1.5 */}
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
-                    {/* Widget F: Assignment Hotspots (Heat Map) */}
-                    <Card className="lg:col-span-1">
-                        <CardHeader>
-                            <CardTitle>{translations.assignment_hotspots}</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            {academicYear?.date_debut && academicYear?.date_fin ? (
-                                <CalendarHeatmap
-                                    startDate={parseISO(academicYear.date_debut)}
-                                    endDate={parseISO(academicYear.date_fin)}
-                                    values={heatmapData}
-                                    classForValue={(value) => {
-                                        if (!value) return 'color-empty';
-                                        return `color-scale-${Math.min(value.count, 4)}`;
-                                    }}
-                                    gutterSize={1}
-                                    showWeekdayLabels={true}
-                                />
-                            ) : (
-                                <p className="text-muted-foreground">{translations.no_academic_year_dates}</p>
-                            )}
-                        </CardContent>
-                    </Card>
+                    <AssignmentHotspotsWidget heatmapData={heatmapData} academicYear={academicYear} translations={translations} />
 
-                    {/* Widget G: Last Assignment Run Summary */}
-                    <Card className="lg:col-span-1">
-                        <CardHeader>
-                            <CardTitle>{translations.last_assignment_run_summary}</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            {lastAssignmentRunSummary ? (
-                                <p className="text-muted-foreground">
-                                    {translations.last_run}: {format(parseISO(lastAssignmentRunSummary.run_at), 'PPP HH:mm')} {translations.for_session} '{lastAssignmentRunSummary.seson_code}'. {lastAssignmentRunSummary.summary}
-                                </p>
-                            ) : (
-                                <p className="text-muted-foreground">{translations.no_assignment_runs_recorded}</p>
-                            )}
-                        </CardContent>
-                    </Card>
+                    <LastRunSummaryWidget summary={lastAssignmentRunSummary} translations={translations} />
                 </div>
 
                 {/* New Widgets Row 3 for V1.5 */}
                 <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-1">
-                    {/* Widget H: Unconfigured Professors */}
-                    <Card className="lg:col-span-1">
-                        <CardHeader>
-                            <CardTitle>{translations.unconfigured_professors}</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <Tabs defaultValue="without_service">
-                                <TabsList className="grid w-full grid-cols-2">
-                                    <TabsTrigger value="without_service">
-                                        {translations.without_service} ({unconfiguredProfessors.without_service.length})
-                                    </TabsTrigger>
-                                    <TabsTrigger value="without_modules">
-                                        {translations.without_modules} ({unconfiguredProfessors.without_modules.length})
-                                    </TabsTrigger>
-                                </TabsList>
-                                <TabsContent value="without_service" className="mt-4">
-                                    <ScrollArea className="h-[200px]">
-                                        <ul className="space-y-2 pr-4">
-                                            {unconfiguredProfessors.without_service.length > 0 ? (
-                                                unconfiguredProfessors.without_service.map((prof) => (
-                                                    <li key={prof.id}>
-                                                        <Link href={route('admin.professeurs.edit', prof.id)} className="text-primary hover:underline">
-                                                            {prof.user.name}
-                                                        </Link>
-                                                    </li>
-                                                ))
-                                            ) : (
-                                                <p className="text-muted-foreground">{translations.all_professors_have_service}</p>
-                                            )}
-                                        </ul>
-                                    </ScrollArea>
-                                </TabsContent>
-                                <TabsContent value="without_modules" className="mt-4">
-                                    <ScrollArea className="h-[200px]">
-                                        <ul className="space-y-2 pr-4">
-                                            {unconfiguredProfessors.without_modules.length > 0 ? (
-                                                unconfiguredProfessors.without_modules.map((prof) => (
-                                                    <li key={prof.id}>
-                                                        <Link href={route('admin.professeurs.edit', prof.id)} className="text-primary hover:underline">
-                                                            {prof.user.name}
-                                                        </Link>
-                                                    </li>
-                                                ))
-                                            ) : (
-                                                <p className="text-muted-foreground">{translations.all_professors_have_modules}</p>
-                                            )}
-                                        </ul>
-                                    </ScrollArea>
-                                </TabsContent>
-                            </Tabs>
-                        </CardContent>
-                    </Card>
+                    <UnconfiguredProfessorsWidget translations={translations} />
                 </div>
 
-                {/* Quick Actions Widget */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle>{translations.quick_actions}</CardTitle>
-                    </CardHeader>
-                    <CardContent className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                        <Link href={route('admin.examens.create')}>
-                            <Button className="w-full">{translations.create_new_exam}</Button>
-                        </Link>
-                        <Link href={route('admin.professeurs.create')}>
-                            <Button className="w-full">{translations.add_new_professor}</Button>
-                        </Link>
-                        <Link href={route('admin.unavailabilities.create')}>
-                            <Button className="w-full">{translations.add_unavailability}</Button>
-                        </Link>
-                        <Link href={route('professeur.exchanges.index')}>
-                            <Button className="w-full">{translations.view_exchange_requests}</Button>
-                        </Link>
-                    </CardContent>
-                </Card>
+                <QuickActionsWidget translations={translations} />
             </div>
         </AppLayout>
     );

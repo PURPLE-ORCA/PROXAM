@@ -28,6 +28,7 @@ export interface Professeur {
     prenom: string;
     statut: string; // e.g., 'Active', 'Inactive'
     // Add other properties as needed
+    user: { name: string }; // Added for UnconfiguredProfessors
 }
 
 export interface Module {
@@ -127,6 +128,82 @@ export interface PageProps {
     errors?: Record<string, string>;
     [key: string]: unknown;
     academicYear: AcademicYearSharedData; 
+}
+
+// Dashboard Interfaces
+export interface KpiData {
+    totalActiveProfessors: number;
+    totalExamsThisYear: number;
+    totalAssignmentsThisYear: number;
+    unstaffedExamsThisYear: number;
+}
+
+export interface ProfessorLoadData {
+    name: string;
+    assignments: number;
+}
+
+export interface RankDistributionData {
+    rank: string;
+    count: number;
+    color: string;
+}
+
+export interface ServiceLoadData {
+    service_name: string;
+    total_hours: number;
+}
+
+export interface RoomUtilizationData {
+    room_name: string;
+    usage_count: number;
+}
+
+export interface ExchangeMetrics {
+    totalRequests: number;
+    approvedRequests: number;
+    rejectedRequests: number;
+    mostActiveUsers: string[];
+}
+
+export interface RecentRecord {
+    type: string;
+    name: string;
+    created_at: string;
+    action: string;
+}
+
+export interface LastAssignmentRunSummary {
+    run_at: string;
+    seson_code: string;
+    summary: string;
+}
+
+export interface UnconfiguredProfessors {
+    without_service: (Professeur & { user: { name: string } })[];
+    without_modules: (Professeur & { user: { name: string } })[];
+}
+
+export interface DashboardProps extends PageProps {
+    kpiData: KpiData;
+    upcomingExams: (Examen & {
+        module: { nom: string };
+        salles: { nom: string }[];
+        attributions_count: number;
+        total_required_professors: number;
+    })[];
+    adminNotifications: (Notification & { link: string })[];
+    professorLoadData: ProfessorLoadData[];
+    rankDistributionData: RankDistributionData[];
+    serviceLoadData: ServiceLoadData[];
+    roomUtilizationData: RoomUtilizationData[];
+    exchangeMetrics: ExchangeMetrics;
+    recentRecords: RecentRecord[];
+    examTypeDistribution: { [key: string]: number };
+    upcomingExamsForTimeline: { [key: string]: (Examen & { module: { nom: string } })[] };
+    assignmentHotspots: { [key: string]: number };
+    lastAssignmentRunSummary: LastAssignmentRunSummary | null;
+    unconfiguredProfessors: UnconfiguredProfessors;
 }
 
 declare module '@inertiajs/react' {
