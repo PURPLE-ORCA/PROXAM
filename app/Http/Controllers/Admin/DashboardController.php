@@ -10,6 +10,7 @@ use App\Models\Examen;
 use App\Models\Attribution;
 use App\Models\Notification;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
@@ -50,10 +51,40 @@ class DashboardController extends Controller
             ->take(5)
             ->get();
 
+        $professorLoadData = \App\Models\Professeur::select('id', 'nom', 'prenom')
+            ->withCount(['attributions' => function ($query) use ($selectedAnneeUniId) {
+                $query->whereHas('examen.seson', fn($q) => $q->where('annee_uni_id', $selectedAnneeUniId));
+            }])
+            ->orderBy('attributions_count', 'desc')
+            ->take(15)
+            ->get()
+            ->map(function ($prof) {
+                return [
+                    'name' => "{$prof->prenom} {$prof->nom}",
+                    'assignments' => $prof->attributions_count,
+                ];
+            });
+
+        $rankDistributionData = \App\Models\Professeur::select('rang', DB::raw('count(*) as count'))
+            ->where('statut', 'Active')
+            ->groupBy('rang')
+            ->orderBy('rang')
+            ->get()
+            ->map(function ($item) {
+                $colors = ['PES' => '#2f024f', 'PAG' => '#4B5563', 'PA' => '#9CA3AF']; // Using main color #2f024f for PES
+                return [
+                    'rank' => $item->rang,
+                    'count' => $item->count,
+                    'color' => $colors[$item->rang] ?? '#D1D5DB',
+                ];
+            });
+
         return Inertia::render('dashboard', [
             'kpiData' => $kpiData,
             'upcomingExams' => $upcomingExams,
             'adminNotifications' => $adminNotifications,
+            'professorLoadData' => $professorLoadData,
+            'rankDistributionData' => $rankDistributionData,
         ]);
     }
 }

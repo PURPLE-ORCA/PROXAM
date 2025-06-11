@@ -8,13 +8,25 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle, Bell, Info, CheckCircle, AlertCircle } from 'lucide-react';
 import { PageProps, Examen, Notification, Professeur } from '@/types';
-// Removed: import { AnneeUni, Examen, Notification, Professeur } from '@/types/models';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'; // Assuming these are available from shadcn/ui
 
 interface KpiData {
     totalActiveProfessors: number;
     totalExamsThisYear: number;
     totalAssignmentsThisYear: number;
     unstaffedExamsThisYear: number;
+}
+
+interface ProfessorLoadData {
+    name: string;
+    assignments: number;
+}
+
+interface RankDistributionData {
+    rank: string;
+    count: number;
+    color: string;
 }
 
 interface DashboardProps extends PageProps {
@@ -26,6 +38,8 @@ interface DashboardProps extends PageProps {
         total_required_professors: number;
     })[];
     adminNotifications: (Notification & { link: string })[];
+    professorLoadData: ProfessorLoadData[];
+    rankDistributionData: RankDistributionData[];
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -37,7 +51,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 export default function Dashboard() {
     const { translations } = useContext(TranslationContext);
-    const { kpiData, upcomingExams, adminNotifications, academicYear } = usePage<DashboardProps>().props;
+    const { kpiData, upcomingExams, adminNotifications, academicYear, professorLoadData, rankDistributionData } = usePage<DashboardProps>().props;
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -151,6 +165,77 @@ export default function Dashboard() {
                                 ) : (
                                     <p className="text-muted-foreground">{translations.no_new_notifications}</p>
                                 )}
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                {/* New Charts Row */}
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
+                    {/* Professor Assignment Load Chart */}
+                    <Card className="lg:col-span-1">
+                        <CardHeader>
+                            <CardTitle>{translations.professor_assignment_load}</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <ChartContainer config={{
+                                assignments: {
+                                    label: translations.assignments,
+                                    color: "hsl(var(--chart-1))",
+                                },
+                            }} className="aspect-auto h-[300px] w-full">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart layout="vertical" data={professorLoadData} margin={{ left: 100, right: 20 }}>
+                                        <CartesianGrid horizontal={false} />
+                                        <XAxis type="number" dataKey="assignments" />
+                                        <YAxis type="category" dataKey="name" width={120} tick={{ fontSize: 12 }} />
+                                        <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+                                        <Bar dataKey="assignments" fill="var(--primary)" radius={[4, 4, 0, 0]} />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </ChartContainer>
+                        </CardContent>
+                    </Card>
+
+                    {/* Rank Distribution Chart */}
+                    <Card className="lg:col-span-1">
+                        <CardHeader>
+                            <CardTitle>{translations.professor_rank_distribution}</CardTitle>
+                        </CardHeader>
+                        <CardContent className="flex flex-col items-center justify-center">
+                            <ChartContainer config={{
+                                count: {
+                                    label: translations.count,
+                                    color: "hsl(var(--chart-1))",
+                                },
+                            }} className="aspect-auto h-[300px] w-full">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <PieChart>
+                                        <Pie
+                                            data={rankDistributionData}
+                                            dataKey="count"
+                                            nameKey="rank"
+                                            cx="50%"
+                                            cy="50%"
+                                            innerRadius={60}
+                                            outerRadius={80}
+                                            labelLine={false}
+                                        >
+                                            {rankDistributionData.map((entry, index) => (
+                                                <Cell key={`cell-${index}`} fill={entry.color} />
+                                            ))}
+                                        </Pie>
+                                        <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            </ChartContainer>
+                            <div className="flex flex-wrap justify-center gap-4 mt-4">
+                                {rankDistributionData.map((entry, index) => (
+                                    <div key={`legend-${index}`} className="flex items-center gap-2">
+                                        <div className="h-4 w-4 rounded-full" style={{ backgroundColor: entry.color }} />
+                                        <span className="text-sm text-muted-foreground">{entry.rank} ({entry.count})</span>
+                                    </div>
+                                ))}
                             </div>
                         </CardContent>
                     </Card>
