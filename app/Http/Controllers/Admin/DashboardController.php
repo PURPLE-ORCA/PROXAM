@@ -13,7 +13,9 @@ use App\Models\Service;
 use App\Models\Salle;
 use App\Models\Echange;
 use App\Models\Unavailability;
+use App\Models\AnneeUni;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
@@ -33,6 +35,11 @@ class DashboardController extends Controller
                 'roomUtilizationData' => [],
                 'exchangeMetrics' => [],
                 'recentRecords' => [],
+                'examTypeDistribution' => [],
+                'upcomingExamsForTimeline' => [],
+                'assignmentHotspots' => [],
+                'lastAssignmentRunSummary' => null,
+                'unconfiguredProfessors' => [],
             ]);
         }
 
@@ -45,6 +52,12 @@ class DashboardController extends Controller
         $roomUtilizationData = $this->getRoomUtilizationData($selectedAnneeUniId);
         $exchangeMetrics = $this->getExchangeMetrics($selectedAnneeUniId);
         $recentRecords = $this->getRecentRecords();
+        $examTypeDistribution = $this->getExamTypeDistribution($selectedAnneeUniId);
+        $upcomingExamsForTimeline = $this->getUpcomingExamsForTimeline($selectedAnneeUniId);
+        $assignmentHotspots = $this->getAssignmentHotspots($selectedAnneeUniId);
+        $lastAssignmentRunSummary = $this->getLastAssignmentRunSummary();
+        $unconfiguredProfessors = $this->getUnconfiguredProfessors();
+
 
         return Inertia::render('dashboard', [
             'kpiData' => $kpiData,
@@ -56,6 +69,11 @@ class DashboardController extends Controller
             'roomUtilizationData' => $roomUtilizationData,
             'exchangeMetrics' => $exchangeMetrics,
             'recentRecords' => $recentRecords,
+            'examTypeDistribution' => $examTypeDistribution,
+            'upcomingExamsForTimeline' => $upcomingExamsForTimeline,
+            'assignmentHotspots' => $assignmentHotspots,
+            'lastAssignmentRunSummary' => $lastAssignmentRunSummary,
+            'unconfiguredProfessors' => $unconfiguredProfessors,
         ]);
     }
 
@@ -193,5 +211,52 @@ class DashboardController extends Controller
                             ->take(5)
                             ->values();
         return $recentRecords;
+    }
+
+    private function getExamTypeDistribution($selectedAnneeUniId)
+    {
+        return Examen::whereHas('seson', fn($q) => $q->where('annee_uni_id', $selectedAnneeUniId))
+            ->groupBy('type')
+            ->select('type', DB::raw('count(*) as count'))
+            ->pluck('count', 'type')
+            ->all();
+    }
+
+    private function getUpcomingExamsForTimeline($selectedAnneeUniId)
+    {
+        $exams = Examen::whereHas('seson', fn($q) => $q->where('annee_uni_id', $selectedAnneeUniId))
+            ->whereBetween('debut', [now(), now()->addDays(30)])
+            ->with('module')
+            ->orderBy('debut', 'asc')
+            ->get();
+
+        return $exams->groupBy(function ($exam) {
+            return $exam->debut->format('Y-m-d');
+        });
+    }
+
+    private function getAssignmentHotspots($selectedAnneeUniId)
+    {
+        $anneeUni = AnneeUni::find($selectedAnneeUniId);
+        if (!$anneeUni) return [];
+
+        return Examen::whereHas('seson', fn($q) => $q->where('annee_uni_id', $selectedAnneeUniId))
+            ->select(DB::raw("CAST(debut AS DATE) as date"), DB::raw('count(*) as count'))
+            ->groupBy('date')
+            ->pluck('count', 'date')
+            ->all();
+    }
+
+    private function getLastAssignmentRunSummary()
+    {
+        return Cache::get('last_assignment_run_summary');
+    }
+
+    private function getUnconfiguredProfessors()
+    {
+        return [
+            'without_service' => Professeur::whereNull('service_id')->with('user')->get(),
+            'without_modules' => Professeur::whereDoesntHave('modules')->where('statut', 'Active')->with('user')->get(),
+        ];
     }
 }

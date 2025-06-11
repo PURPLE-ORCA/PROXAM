@@ -12,7 +12,11 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { formatDistanceToNow } from 'date-fns';
 import { Separator } from '@/components/ui/separator';
-import { ScrollArea } from '@/components/ui/scroll-area'; // Added ScrollArea
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import CalendarHeatmap from 'react-calendar-heatmap';
+import 'react-calendar-heatmap/dist/styles.css';
+import { format, parseISO } from 'date-fns';
 
 interface KpiData {
     totalActiveProfessors: number;
@@ -56,6 +60,17 @@ interface RecentRecord {
     action: string;
 }
 
+interface LastAssignmentRunSummary {
+    run_at: string;
+    seson_code: string;
+    summary: string;
+}
+
+interface UnconfiguredProfessors {
+    without_service: (Professeur & { user: { name: string } })[];
+    without_modules: (Professeur & { user: { name: string } })[];
+}
+
 interface DashboardProps extends PageProps {
     kpiData: KpiData;
     upcomingExams: (Examen & {
@@ -71,6 +86,11 @@ interface DashboardProps extends PageProps {
     roomUtilizationData: RoomUtilizationData[];
     exchangeMetrics: ExchangeMetrics;
     recentRecords: RecentRecord[];
+    examTypeDistribution: { [key: string]: number };
+    upcomingExamsForTimeline: { [key: string]: (Examen & { module: { nom: string } })[] };
+    assignmentHotspots: { [key: string]: number };
+    lastAssignmentRunSummary: LastAssignmentRunSummary | null;
+    unconfiguredProfessors: UnconfiguredProfessors;
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -82,7 +102,34 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 export default function Dashboard() {
     const { translations } = useContext(TranslationContext);
-    const { kpiData, upcomingExams, adminNotifications, academicYear, professorLoadData, rankDistributionData, serviceLoadData, roomUtilizationData, exchangeMetrics, recentRecords } = usePage<DashboardProps>().props;
+    const {
+        kpiData,
+        upcomingExams,
+        adminNotifications,
+        academicYear,
+        professorLoadData,
+        rankDistributionData,
+        serviceLoadData,
+        roomUtilizationData,
+        exchangeMetrics,
+        recentRecords,
+        examTypeDistribution,
+        upcomingExamsForTimeline,
+        assignmentHotspots,
+        lastAssignmentRunSummary,
+        unconfiguredProfessors,
+    } = usePage<DashboardProps>().props;
+
+    const examTypeData = Object.entries(examTypeDistribution).map(([name, value], index) => ({
+        name,
+        value,
+        fill: ['#2f024f', '#4B5563', '#9CA3AF', '#D1D5DB'][index % 4], // Using theme colors
+    }));
+
+    const heatmapData = Object.entries(assignmentHotspots).map(([date, count]) => ({
+        date,
+        count,
+    }));
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -382,6 +429,181 @@ export default function Dashboard() {
                                     )}
                                 </div>
                             </ScrollArea>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                {/* New Widgets Row for V1.5 */}
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
+                    {/* Widget D: Exam Type Distribution (Pie Chart) */}
+                    <Card className="lg:col-span-1">
+                        <CardHeader>
+                            <CardTitle>{translations.exam_type_distribution}</CardTitle>
+                        </CardHeader>
+                        <CardContent className="flex flex-col items-center justify-center">
+                            <ChartContainer config={{
+                                value: {
+                                    label: translations.count,
+                                    color: "hsl(var(--chart-1))",
+                                },
+                            }} className="aspect-auto h-[300px] w-full">
+                                <PieChart width={330} height={300}>
+                                    <Pie
+                                        data={examTypeData}
+                                        dataKey="value"
+                                        nameKey="name"
+                                        cx="50%"
+                                        cy="50%"
+                                        outerRadius={80}
+                                        labelLine={false}
+                                    >
+                                        {examTypeData.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={entry.fill} />
+                                        ))}
+                                    </Pie>
+                                    <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+                                </PieChart>
+                            </ChartContainer>
+                            <div className="flex flex-wrap justify-center gap-4 mt-4">
+                                {examTypeData.map((entry, index) => (
+                                    <div key={`legend-${index}`} className="flex items-center gap-2">
+                                        <div className="h-4 w-4 rounded-full" style={{ backgroundColor: entry.fill }} />
+                                        <span className="text-sm text-muted-foreground">{entry.name} ({entry.value})</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* Widget E: Upcoming Exams Timeline */}
+                    <Card className="lg:col-span-1">
+                        <CardHeader>
+                            <CardTitle>{translations.upcoming_exams_timeline}</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <ScrollArea className="h-[300px]">
+                                <div className="relative pl-6 space-y-6">
+                                    {Object.keys(upcomingExamsForTimeline).length > 0 ? (
+                                        Object.entries(upcomingExamsForTimeline).map(([date, exams]) => (
+                                            <div key={date} className="relative">
+                                                <h4 className="text-lg font-semibold mb-2">
+                                                    {format(parseISO(date), 'PPP')} {/* e.g., July 24th, 2025 */}
+                                                </h4>
+                                                <ul className="space-y-2">
+                                                    {exams.map((exam) => (
+                                                        <li key={exam.id} className="relative flex items-start before:absolute before:left-[-22px] before:top-2 before:h-2 before:w-2 before:rounded-full before:bg-primary after:absolute after:left-[-19px] after:top-4 after:h-[calc(100%-1rem)] after:w-px after:bg-border">
+                                                            <span className="ml-2 text-sm">
+                                                                {format(new Date(exam.debut), 'HH:mm')} - {exam.module.nom}
+                                                            </span>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <p className="text-muted-foreground">{translations.no_upcoming_exams_timeline}</p>
+                                    )}
+                                </div>
+                            </ScrollArea>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                {/* New Widgets Row 2 for V1.5 */}
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
+                    {/* Widget F: Assignment Hotspots (Heat Map) */}
+                    <Card className="lg:col-span-1">
+                        <CardHeader>
+                            <CardTitle>{translations.assignment_hotspots}</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            {academicYear?.date_debut && academicYear?.date_fin ? (
+                                <CalendarHeatmap
+                                    startDate={parseISO(academicYear.date_debut)}
+                                    endDate={parseISO(academicYear.date_fin)}
+                                    values={heatmapData}
+                                    classForValue={(value) => {
+                                        if (!value) return 'color-empty';
+                                        return `color-scale-${Math.min(value.count, 4)}`;
+                                    }}
+                                    gutterSize={1}
+                                    showWeekdayLabels={true}
+                                />
+                            ) : (
+                                <p className="text-muted-foreground">{translations.no_academic_year_dates}</p>
+                            )}
+                        </CardContent>
+                    </Card>
+
+                    {/* Widget G: Last Assignment Run Summary */}
+                    <Card className="lg:col-span-1">
+                        <CardHeader>
+                            <CardTitle>{translations.last_assignment_run_summary}</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            {lastAssignmentRunSummary ? (
+                                <p className="text-muted-foreground">
+                                    {translations.last_run}: {format(parseISO(lastAssignmentRunSummary.run_at), 'PPP HH:mm')} {translations.for_session} '{lastAssignmentRunSummary.seson_code}'. {lastAssignmentRunSummary.summary}
+                                </p>
+                            ) : (
+                                <p className="text-muted-foreground">{translations.no_assignment_runs_recorded}</p>
+                            )}
+                        </CardContent>
+                    </Card>
+                </div>
+
+                {/* New Widgets Row 3 for V1.5 */}
+                <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-1">
+                    {/* Widget H: Unconfigured Professors */}
+                    <Card className="lg:col-span-1">
+                        <CardHeader>
+                            <CardTitle>{translations.unconfigured_professors}</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <Tabs defaultValue="without_service">
+                                <TabsList className="grid w-full grid-cols-2">
+                                    <TabsTrigger value="without_service">
+                                        {translations.without_service} ({unconfiguredProfessors.without_service.length})
+                                    </TabsTrigger>
+                                    <TabsTrigger value="without_modules">
+                                        {translations.without_modules} ({unconfiguredProfessors.without_modules.length})
+                                    </TabsTrigger>
+                                </TabsList>
+                                <TabsContent value="without_service" className="mt-4">
+                                    <ScrollArea className="h-[200px]">
+                                        <ul className="space-y-2 pr-4">
+                                            {unconfiguredProfessors.without_service.length > 0 ? (
+                                                unconfiguredProfessors.without_service.map((prof) => (
+                                                    <li key={prof.id}>
+                                                        <Link href={route('admin.professeurs.edit', prof.id)} className="text-primary hover:underline">
+                                                            {prof.user.name}
+                                                        </Link>
+                                                    </li>
+                                                ))
+                                            ) : (
+                                                <p className="text-muted-foreground">{translations.all_professors_have_service}</p>
+                                            )}
+                                        </ul>
+                                    </ScrollArea>
+                                </TabsContent>
+                                <TabsContent value="without_modules" className="mt-4">
+                                    <ScrollArea className="h-[200px]">
+                                        <ul className="space-y-2 pr-4">
+                                            {unconfiguredProfessors.without_modules.length > 0 ? (
+                                                unconfiguredProfessors.without_modules.map((prof) => (
+                                                    <li key={prof.id}>
+                                                        <Link href={route('admin.professeurs.edit', prof.id)} className="text-primary hover:underline">
+                                                            {prof.user.name}
+                                                        </Link>
+                                                    </li>
+                                                ))
+                                            ) : (
+                                                <p className="text-muted-foreground">{translations.all_professors_have_modules}</p>
+                                            )}
+                                        </ul>
+                                    </ScrollArea>
+                                </TabsContent>
+                            </Tabs>
                         </CardContent>
                     </Card>
                 </div>

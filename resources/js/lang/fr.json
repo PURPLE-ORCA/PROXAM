@@ -476,5 +476,19 @@
     "create_new_exam": "Créer Nouvel Examen",
     "add_new_professor": "Ajouter Nouveau Professeur",
     "add_unavailability": "Ajouter Indisponibilité",
-    "view_exchange_requests": "Voir Demandes d'Échange"
+    "view_exchange_requests": "Voir Demandes d'Échange",
+    "exam_type_distribution": "Répartition des Types d'Examen",
+    "upcoming_exams_timeline": "Chronologie des Examens à Venir",
+    "no_upcoming_exams_timeline": "Aucun examen à venir dans les 30 prochains jours.",
+    "assignment_hotspots": "Points Chauds d'Affectation",
+    "no_academic_year_dates": "Dates de début/fin de l'année académique non configurées.",
+    "last_assignment_run_summary": "Résumé de la Dernière Exécution d'Affectation",
+    "last_run": "Dernière exécution",
+    "for_session": "pour la session",
+    "no_assignment_runs_recorded": "Aucune exécution d'affectation n'a été enregistrée pour le moment.",
+    "unconfigured_professors": "Professeurs Non Configurés",
+    "without_service": "Sans Service",
+    "without_modules": "Sans Modules",
+    "all_professors_have_service": "Tous les professeurs ont un service assigné.",
+    "all_professors_have_modules": "Tous les professeurs actifs ont des modules assignés."
 }

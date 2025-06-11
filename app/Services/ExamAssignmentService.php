@@ -12,6 +12,7 @@ use App\Models\Unavailability;
 use App\Models\Salle; // Ensure Salle is imported
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -102,6 +103,14 @@ class ExamAssignmentService
         if (!empty($overallResult['exams_with_warnings'])) $finalMessage .= " Exams with warnings: " . count($overallResult['exams_with_warnings']) . ".";
         $overallResult['final_summary_message'] = $finalMessage;
         // Log::info("BATCH ASSIGNMENT: {$finalMessage}");
+
+        $summaryData = [
+            'run_at' => now()->toDateTimeString(),
+            'seson_code' => $seson->code,
+            'summary' => $overallResult['final_summary_message'],
+        ];
+        Cache::put('last_assignment_run_summary', $summaryData, now()->addDays(30)); // Cache for 30 days
+
         return $overallResult;
     }
 

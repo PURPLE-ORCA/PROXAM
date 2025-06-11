@@ -4,8 +4,10 @@ import type { Config as ZiggyConfig } from 'ziggy-js';
 export interface AnneeUniType {
     id: number;
     annee: string;
-    annee_debut: number; // Added
-    annee_fin: number;   // Added
+    annee_debut: string; // Changed to string
+    annee_fin: string;   // Changed to string
+    date_debut: string; // Added for direct access if needed
+    date_fin: string;   // Added for direct access if needed
 }
 
 export interface AcademicYearSharedData {
@@ -13,8 +15,10 @@ export interface AcademicYearSharedData {
     all: AnneeUniType[];
     selected_id: number | null;
     selected_annee: string | null;
-    annee_debut: number | null; // Added for direct access if needed
-    annee_fin: number | null;   // Added for direct access if needed
+    annee_debut: string | null; // Changed to string
+    annee_fin: string | null;   // Changed to string
+    date_debut: string | null; // Added for direct access if needed
+    date_fin: string | null;   // Added for direct access if needed
 }
 
 // New Model Interfaces
