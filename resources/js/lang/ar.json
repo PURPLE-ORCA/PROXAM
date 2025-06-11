@@ -439,5 +439,20 @@
     "widget_recent_activity_title": "فترات عدم التوفر المضافة مؤخرًا",
     "welcome_rh_description": "إدارة فترات عدم توفر الأساتذة وعرض الأنشطة ذات الصلة.",
     "no_recent_unavailabilities": "لم يتم العثور على فترات عدم توفر حديثة.",
-    "view_all_unavailabilities": "عرض جميع فترات عدم التوفر"
+    "view_all_unavailabilities": "عرض جميع فترات عدم التوفر",
+    "total_active_professors": "إجمالي الأساتذة النشطين",
+    "total_exams_this_academic_year": "إجمالي الامتحانات لهذه السنة الأكاديمية",
+    "total_assignments_this_academic_year": "إجمالي التكليفات لهذه السنة الأكاديمية",
+    "unstaffed_exams_this_academic_year": "الامتحانات غير المكتملة لهذه السنة الأكاديمية",
+    "upcoming_exams": "الامتحانات القادمة",
+    "staffed": "مكتمل",
+    "manage": "إدارة",
+    "no_upcoming_exams": "لا توجد امتحانات قادمة.",
+    "latest_admin_notifications": "آخر إشعارات المسؤول",
+    "no_new_notifications": "لا توجد إشعارات جديدة.",
+    "quick_actions": "إجراءات سريعة",
+    "create_new_exam": "إنشاء امتحان جديد",
+    "add_new_professor": "إضافة أستاذ جديد",
+    "add_unavailability": "إضافة عدم توفر",
+    "view_exchange_requests": "عرض طلبات التبادل"
 }

@@ -23,6 +23,7 @@ use App\Http\Controllers\RH\DashboardController as RHDashboardController; // New
 use App\Http\Controllers\ChefService\ProfessorScheduleController as ChefServiceProfessorScheduleController; // New controller
 use App\Http\Controllers\Admin\ProfesseurImportController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -55,13 +56,16 @@ Route::get('dashboard', function (Request $request) {
     if ($user->hasRole('professeur')) {
         return redirect()->route('professeur.dashboard');
     }
-    if ($user->hasRole('rh')) { // <<<< ADD THIS BLOCK
+    if ($user->hasRole('rh')) {
         return redirect()->route('rh.dashboard');
     }
-    return Inertia::render('dashboard'); // Default for admin
+    // If the user is an admin or any other role not explicitly redirected, render the admin dashboard
+    return app(AdminDashboardController::class)->index($request);
 })->name('dashboard');
 
     Route::prefix('admin')->name('admin.')->middleware('can:is_admin')->group(function () {
+        // The admin dashboard is now directly rendered by the main /dashboard route, so this specific route is no longer needed.
+        // Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
         Route::resource('services', ServiceController::class)->except(['show']);
         // Route::resource('modules', ModuleController::class)->except(['show']);
         Route::resource('salles', SalleController::class)->except(['show']); 

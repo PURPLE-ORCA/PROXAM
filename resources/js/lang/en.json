@@ -460,5 +460,20 @@
     "download_template_link": "Download Template File",
     "select_file_label": "Select File",
     "upload_and_import_button": "Upload and Import",
-    "uploading_button": "Uploading..."
+    "uploading_button": "Uploading...",
+    "total_active_professors": "Total Active Professors",
+    "total_exams_this_academic_year": "Total Exams This Academic Year",
+    "total_assignments_this_academic_year": "Total Assignments This Academic Year",
+    "unstaffed_exams_this_academic_year": "Unstaffed Exams This Academic Year",
+    "upcoming_exams": "Upcoming Exams",
+    "staffed": "Staffed",
+    "manage": "Manage",
+    "no_upcoming_exams": "No upcoming exams.",
+    "latest_admin_notifications": "Latest Admin Notifications",
+    "no_new_notifications": "No new notifications.",
+    "quick_actions": "Quick Actions",
+    "create_new_exam": "Create New Exam",
+    "add_new_professor": "Add New Professor",
+    "add_unavailability": "Add Unavailability",
+    "view_exchange_requests": "View Exchange Requests"
 }

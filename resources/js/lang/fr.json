@@ -461,5 +461,20 @@
     "download_template_link": "Télécharger le fichier modèle",
     "select_file_label": "Sélectionner un fichier",
     "upload_and_import_button": "Télécharger et Importer",
-    "uploading_button": "Téléchargement..."
+    "uploading_button": "Téléchargement...",
+    "total_active_professors": "Total Professeurs Actifs",
+    "total_exams_this_academic_year": "Total Examens Cette Année Académique",
+    "total_assignments_this_academic_year": "Total Affectations Cette Année Académique",
+    "unstaffed_exams_this_academic_year": "Examens Non Pourvus Cette Année Académique",
+    "upcoming_exams": "Examens à Venir",
+    "staffed": "Pourvu",
+    "manage": "Gérer",
+    "no_upcoming_exams": "Aucun examen à venir.",
+    "latest_admin_notifications": "Dernières Notifications Admin",
+    "no_new_notifications": "Aucune nouvelle notification.",
+    "quick_actions": "Actions Rapides",
+    "create_new_exam": "Créer Nouvel Examen",
+    "add_new_professor": "Ajouter Nouveau Professeur",
+    "add_unavailability": "Ajouter Indisponibilité",
+    "view_exchange_requests": "Voir Demandes d'Échange"
 }
