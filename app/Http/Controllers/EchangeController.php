@@ -6,12 +6,20 @@ use App\Models\Echange;
 use App\Http\Requests\StoreEchangeRequest;
 use App\Http\Requests\UpdateEchangeRequest;
 use App\Models\Notification;
+use App\Services\ConstraintCheckingService; // Added
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail; // Add this
-use App\Mail\ExchangeProposalReceivedMail; // Add this
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\DB; // Added
+use App\Mail\ExchangeProposalReceivedMail;
 
 class EchangeController extends Controller
 {
+    protected $constraintCheckingService;
+
+    public function __construct(ConstraintCheckingService $constraintCheckingService)
+    {
+        $this->constraintCheckingService = $constraintCheckingService;
+    }
     public function proposeSwap(Echange $echange)
     {
         // Assuming $offeredAttribution and $proposerProfesseur are available in this context
@@ -58,7 +66,7 @@ class EchangeController extends Controller
 
         $examNameForProposer = $offeredAttribution->examen->module->nom ?? 'the exam';
 
-        Log::info("ACCEPT_SWAP_NOTIFY_PROPOSER: Attempting for User ID: " . ($proposerProfesseur->user?->id ?? 'USER NULL FOR PROPOSER') . " Echange ID: {$echange->id}");
+        // Log::info("ACCEPT_SWAP_NOTIFY_PROPOSER: Attempting for User ID: " . ($proposerProfesseur->user?->id ?? 'USER NULL FOR PROPOSER') . " Echange ID: {$echange->id}");
         Notification::create([
             'user_id' => $proposerProfesseur->user->id,
             'type' => 'exchange_approved',
@@ -66,7 +74,7 @@ class EchangeController extends Controller
             'link' => route('professeur.exchanges.index', ['tab' => 'exchange-history']),
             'data' => ['echange_id' => $echange->id],
         ]);
-        Log::info("ACCEPT_SWAP_NOTIFY_PROPOSER: CREATED for User ID: " . ($proposerProfesseur->user?->id ?? 'USER NULL FOR PROPOSER'));
+        // Log::info("ACCEPT_SWAP_NOTIFY_PROPOSER: CREATED for User ID: " . ($proposerProfesseur->user?->id ?? 'USER NULL FOR PROPOSER'));
 
         // Notify Admins (in-app only)
         $admins = \App\Models\User::where('role', 'admin')->get();
@@ -75,7 +83,7 @@ class EchangeController extends Controller
         $proposerProfesseur->loadMissing('user');
 
         foreach ($admins as $admin) {
-            Log::info("ACCEPT_SWAP_NOTIFY_ADMIN: Attempting for Admin User ID: {$admin->id} Echange ID: {$echange->id}");
+            // Log::info("ACCEPT_SWAP_NOTIFY_ADMIN: Attempting for Admin User ID: {$admin->id} Echange ID: {$echange->id}");
             Notification::create([
                 'user_id' => $admin->id,
                 'type' => 'admin_exchange_approved',
@@ -83,10 +91,65 @@ class EchangeController extends Controller
                 'link' => '#', // Or a link to an admin exchange view
                 'data' => ['echange_id' => $echange->id],
             ]);
-            Log::info("ACCEPT_SWAP_NOTIFY_ADMIN: CREATED for Admin User ID: {$admin->id}");
+            // Log::info("ACCEPT_SWAP_NOTIFY_ADMIN: CREATED for Admin User ID: {$admin->id}");
         }
 
-        // Further logic for acceptSwap...
+        DB::transaction(function () use ($echange, $proposerProfesseur, $offeredAttribution, $requesterProfesseur, $examNameForProposer) {
+            // Update professor IDs for the attributions
+            $offeredAttribution->professeur_id = $requesterProfesseur->id;
+            $offeredAttribution->save();
+
+            $acceptedAttribution = $echange->acceptedAttribution; // Assuming this relationship exists
+            $acceptedAttribution->professeur_id = $proposerProfesseur->id;
+            $acceptedAttribution->save();
+
+            // Re-evaluate and assign the 'responsable' role for both affected exam-salles
+            $this->constraintCheckingService->reassignResponsableForExamSalle(
+                $offeredAttribution->examen_id,
+                $offeredAttribution->salle_id
+            );
+            $this->constraintCheckingService->reassignResponsableForExamSalle(
+                $acceptedAttribution->examen_id,
+                $acceptedAttribution->salle_id
+            );
+
+            // Update echange status and clear flags
+            $echange->status = 'accepted';
+            $echange->accepted_at = now();
+            $echange->save();
+
+            // Clear is_involved_in_exchange flags for the involved attributions
+            $offeredAttribution->is_involved_in_exchange = false;
+            $offeredAttribution->save();
+
+            $acceptedAttribution->is_involved_in_exchange = false;
+            $acceptedAttribution->save();
+
+            // Notify Proposer (Prof B)
+            // Log::info("ACCEPT_SWAP_NOTIFY_PROPOSER: Attempting for User ID: " . ($proposerProfesseur->user?->id ?? 'USER NULL FOR PROPOSER') . " Echange ID: {$echange->id}");
+            Notification::create([
+                'user_id' => $proposerProfesseur->user->id,
+                'type' => 'exchange_approved',
+                'message' => 'Your exchange proposal for ' . $examNameForProposer . ' has been approved!',
+                'link' => route('professeur.exchanges.index', ['tab' => 'exchange-history']),
+                'data' => ['echange_id' => $echange->id],
+            ]);
+            // Log::info("ACCEPT_SWAP_NOTIFY_PROPOSER: CREATED for User ID: " . ($proposerProfesseur->user?->id ?? 'USER NULL FOR PROPOSER'));
+
+            // Notify Admins (in-app only)
+            $admins = \App\Models\User::where('role', 'admin')->get();
+            foreach ($admins as $admin) {
+                // Log::info("ACCEPT_SWAP_NOTIFY_ADMIN: Attempting for Admin User ID: {$admin->id} Echange ID: {$echange->id}");
+                Notification::create([
+                    'user_id' => $admin->id,
+                    'type' => 'admin_exchange_approved',
+                    'message' => 'An exchange between ' . $requesterProfesseur->user->name . ' and ' . $proposerProfesseur->user->name . ' has been approved.',
+                    'link' => '#', // Or a link to an admin exchange view
+                    'data' => ['echange_id' => $echange->id],
+                ]);
+                // Log::info("ACCEPT_SWAP_NOTIFY_ADMIN: CREATED for Admin User ID: {$admin->id}");
+            }
+        });
     }
 
     /**
