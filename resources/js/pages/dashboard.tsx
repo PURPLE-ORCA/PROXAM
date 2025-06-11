@@ -9,7 +9,10 @@ import { Button } from '@/components/ui/button';
 import { AlertTriangle, Bell, Info, CheckCircle, AlertCircle } from 'lucide-react';
 import { PageProps, Examen, Notification, Professeur } from '@/types';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'; // Assuming these are available from shadcn/ui
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { formatDistanceToNow } from 'date-fns';
+import { Separator } from '@/components/ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area'; // Added ScrollArea
 
 interface KpiData {
     totalActiveProfessors: number;
@@ -29,6 +32,30 @@ interface RankDistributionData {
     color: string;
 }
 
+interface ServiceLoadData {
+    service_name: string;
+    total_hours: number;
+}
+
+interface RoomUtilizationData {
+    room_name: string;
+    usage_count: number;
+}
+
+interface ExchangeMetrics {
+    totalRequests: number;
+    approvedRequests: number;
+    rejectedRequests: number;
+    mostActiveUsers: string[];
+}
+
+interface RecentRecord {
+    type: string;
+    name: string;
+    created_at: string;
+    action: string;
+}
+
 interface DashboardProps extends PageProps {
     kpiData: KpiData;
     upcomingExams: (Examen & {
@@ -40,6 +67,10 @@ interface DashboardProps extends PageProps {
     adminNotifications: (Notification & { link: string })[];
     professorLoadData: ProfessorLoadData[];
     rankDistributionData: RankDistributionData[];
+    serviceLoadData: ServiceLoadData[];
+    roomUtilizationData: RoomUtilizationData[];
+    exchangeMetrics: ExchangeMetrics;
+    recentRecords: RecentRecord[];
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -51,7 +82,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 export default function Dashboard() {
     const { translations } = useContext(TranslationContext);
-    const { kpiData, upcomingExams, adminNotifications, academicYear, professorLoadData, rankDistributionData } = usePage<DashboardProps>().props;
+    const { kpiData, upcomingExams, adminNotifications, academicYear, professorLoadData, rankDistributionData, serviceLoadData, roomUtilizationData, exchangeMetrics, recentRecords } = usePage<DashboardProps>().props;
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -184,15 +215,13 @@ export default function Dashboard() {
                                     color: "hsl(var(--chart-1))",
                                 },
                             }} className="aspect-auto h-[300px] w-full">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart layout="vertical" data={professorLoadData} margin={{ left: 100, right: 20 }}>
+                                    <BarChart layout="vertical" data={professorLoadData} margin={{ left: 100, right: 20 }} width={330} height={300}>
                                         <CartesianGrid horizontal={false} />
                                         <XAxis type="number" dataKey="assignments" />
                                         <YAxis type="category" dataKey="name" width={120} tick={{ fontSize: 12 }} />
                                         <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
                                         <Bar dataKey="assignments" fill="var(--primary)" radius={[4, 4, 0, 0]} />
                                     </BarChart>
-                                </ResponsiveContainer>
                             </ChartContainer>
                         </CardContent>
                     </Card>
@@ -209,8 +238,7 @@ export default function Dashboard() {
                                     color: "hsl(var(--chart-1))",
                                 },
                             }} className="aspect-auto h-[300px] w-full">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <PieChart>
+                                    <PieChart width={330} height={300}>
                                         <Pie
                                             data={rankDistributionData}
                                             dataKey="count"
@@ -227,7 +255,6 @@ export default function Dashboard() {
                                         </Pie>
                                         <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
                                     </PieChart>
-                                </ResponsiveContainer>
                             </ChartContainer>
                             <div className="flex flex-wrap justify-center gap-4 mt-4">
                                 {rankDistributionData.map((entry, index) => (
@@ -237,6 +264,124 @@ export default function Dashboard() {
                                     </div>
                                 ))}
                             </div>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                {/* New Charts Row 2 */}
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
+                    {/* Service/Department Load Chart */}
+                    <Card className="lg:col-span-1">
+                        <CardHeader>
+                            <CardTitle>{translations.service_department_load}</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <ChartContainer config={{
+                                total_hours: {
+                                    label: translations.total_hours,
+                                    color: "hsl(var(--chart-2))",
+                                },
+                            }} className="aspect-auto h-[300px] w-full">
+                                    <BarChart layout="vertical" data={serviceLoadData} margin={{ left: 100, right: 20 }} width={330} height={300}>
+                                        <CartesianGrid horizontal={false} />
+                                        <XAxis type="number" dataKey="total_hours" />
+                                        <YAxis type="category" dataKey="service_name" width={120} tick={{ fontSize: 12 }} />
+                                        <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+                                        <Bar dataKey="total_hours" fill="var(--primary)" radius={[4, 4, 0, 0]} />
+                                    </BarChart>
+                            </ChartContainer>
+                        </CardContent>
+                    </Card>
+
+                    {/* Room Utilization Chart */}
+                    <Card className="lg:col-span-1">
+                        <CardHeader>
+                            <CardTitle>{translations.room_utilization}</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <ChartContainer config={{
+                                usage_count: {
+                                    label: translations.usage_count,
+                                    color: "hsl(var(--chart-3))",
+                                },
+                            }} className="aspect-auto h-[300px] w-full">
+                                    <BarChart layout="vertical" data={roomUtilizationData} margin={{ left: 100, right: 20 }} width={330} height={300}>
+                                        <CartesianGrid horizontal={false} />
+                                        <XAxis type="number" dataKey="usage_count" />
+                                        <YAxis type="category" dataKey="room_name" width={120} tick={{ fontSize: 12 }} />
+                                        <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+                                        <Bar dataKey="usage_count" fill="var(--primary)" radius={[4, 4, 0, 0]} />
+                                    </BarChart>
+                            </ChartContainer>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                {/* New Widgets Row */}
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
+                    {/* Exchange System Summary Widget */}
+                    <Card className="lg:col-span-1">
+                        <CardHeader>
+                            <CardTitle>{translations.exchange_system_summary}</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="grid grid-cols-3 gap-4 text-center">
+                                <div>
+                                    <p className="text-2xl font-bold">{exchangeMetrics.totalRequests}</p>
+                                    <p className="text-sm text-muted-foreground">{translations.total_requests}</p>
+                                </div>
+                                <div>
+                                    <p className="text-2xl font-bold text-green-500">{exchangeMetrics.approvedRequests}</p>
+                                    <p className="text-sm text-muted-foreground">{translations.approved_requests}</p>
+                                </div>
+                                <div>
+                                    <p className="text-2xl font-bold text-red-500">{exchangeMetrics.rejectedRequests}</p>
+                                    <p className="text-sm text-muted-foreground">{translations.rejected_requests}</p>
+                                </div>
+                            </div>
+                            <Separator />
+                            <div>
+                                <h4 className="mb-2 text-lg font-semibold">{translations.most_active_exchange_users}</h4>
+                                <div className="flex flex-wrap gap-2">
+                                    {exchangeMetrics.mostActiveUsers.length > 0 ? (
+                                        exchangeMetrics.mostActiveUsers.map((user, index) => (
+                                            <Badge key={index} variant="secondary">{user}</Badge>
+                                        ))
+                                    ) : (
+                                        <p className="text-muted-foreground">{translations.no_active_users}</p>
+                                    )}
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* Recently Added Records Widget */}
+                    <Card className="lg:col-span-1">
+                        <CardHeader>
+                            <CardTitle>{translations.recently_added_records}</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <ScrollArea className="h-[300px]">
+                                <div className="space-y-4 pr-4">
+                                    {recentRecords.length > 0 ? (
+                                        recentRecords.map((record, index) => (
+                                            <div key={index} className="flex items-center justify-between">
+                                                <div className="flex items-center gap-2">
+                                                    <Badge variant="outline">{record.type}</Badge>
+                                                    <div>
+                                                        <p className="font-medium">{record.name}</p>
+                                                        <p className="text-sm text-muted-foreground">
+                                                            {record.action} {formatDistanceToNow(new Date(record.created_at), { addSuffix: true })}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <p className="text-muted-foreground">{translations.no_recent_records}</p>
+                                    )}
+                                </div>
+                            </ScrollArea>
                         </CardContent>
                     </Card>
                 </div>
