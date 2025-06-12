@@ -6,29 +6,53 @@ import { SelectContent, SelectItem, SelectTrigger, SelectValue, Select as Shadcn
 import { TranslationContext } from '@/context/TranslationProvider';
 import { Combobox, ComboboxButton, ComboboxInput, ComboboxOption, ComboboxOptions } from '@headlessui/react';
 import { Icon } from '@iconify/react';
-import { Link } from '@inertiajs/react';
-import { useContext, useEffect, useMemo, useState } from 'react';
+import { Link, useForm } from '@inertiajs/react';
+import { useContext, useMemo, useState } from 'react';
 
 // Define string constants
 const SPECIALITE_MEDICAL_KEY = 'medical';
 const SPECIALITE_SURGICAL_KEY = 'surgical';
 
 export default function ProfesseurForm({
-    data,
-    setData,
-    errors,
-    processing,
-    onSubmit,
+    isEdit = false, // Keep this to know the mode
+    professeurToEdit,
     services,
     modules,
     rangs,
     statuts,
     existingSpecialties = [],
-    isEdit = false,
-    professeurToEdit,
 }) {
     const { translations } = useContext(TranslationContext);
     const [specialtyQuery, setSpecialtyQuery] = useState('');
+
+    const { data, setData, post, put, processing, errors, reset } = useForm({
+        // Initialize with data from professorToEdit if in edit mode
+        professeur_nom: professeurToEdit?.nom || '',
+        professeur_prenom: professeurToEdit?.prenom || '',
+        email: professeurToEdit?.user?.email || '', // Access nested user email
+        rang: professeurToEdit?.rang || '',
+        statut: professeurToEdit?.statut || '',
+        is_chef_service: professeurToEdit?.is_chef_service || false,
+        // Format the date correctly
+        date_recrutement: professeurToEdit?.date_recrutement ? professeurToEdit.date_recrutement.split('T')[0] : '',
+        specialite: professeurToEdit?.specialite || '',
+        service_id: professeurToEdit?.service_id?.toString() || '',
+        module_ids: professeurToEdit?.modules?.map(m => m.id) || [], // Map to an array of IDs
+    });
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        if (isEdit) {
+            put(route('admin.professeurs.update', professeurToEdit.id), {
+                preserveScroll: true,
+            });
+        } else {
+            post(route('admin.professeurs.store'), {
+                preserveScroll: true,
+                onSuccess: () => reset(),
+            });
+        }
+    };
 
     const allSpecialtyOptions = useMemo(() => {
         const preferred = [
@@ -50,32 +74,6 @@ export default function ProfesseurForm({
         specialtyQuery === ''
             ? allSpecialtyOptions
             : allSpecialtyOptions.filter((spec) => spec.name.toLowerCase().includes(specialtyQuery.toLowerCase()));
-
-    // Initialize form data when editing
-    useEffect(() => {
-        if (isEdit && professeurToEdit) {
-
-            setData({
-                professeur_nom: professeurToEdit.nom || '',
-                professeur_prenom: professeurToEdit.prenom || '',
-                email: professeurToEdit.user?.email || '',
-                rang: professeurToEdit.rang || '',
-                statut: professeurToEdit.statut || '',
-                is_chef_service: Boolean(professeurToEdit.is_chef_service),
-                date_recrutement: professeurToEdit.date_recrutement || '',
-                specialite: professeurToEdit.specialite || '',
-                service_id: professeurToEdit.service_id?.toString() || '',
-                module_ids: professeurToEdit.modules ? professeurToEdit.modules.map((m) => m.id) : [],
-            });
-        }
-    }, [isEdit, professeurToEdit, setData]);
-
-    // Reset specialty query when specialty data changes
-    useEffect(() => {
-        if (data.specialite && specialtyQuery !== '') {
-            setSpecialtyQuery('');
-        }
-    }, [data.specialite]);
 
     const handleModuleChange = (moduleId) => {
         const currentModules = data.module_ids || [];
@@ -111,7 +109,7 @@ export default function ProfesseurForm({
     };
 
     return (
-        <form onSubmit={onSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
             <fieldset className="grid grid-cols-1 gap-x-6 gap-y-6 rounded-md border border-[var(--border)] p-4 sm:grid-cols-6">
                 <legend className="px-1 text-sm leading-6 font-semibold text-[var(--foreground)]">
                     {translations?.professeur_form_user_section_legend || 'User Account Details'}

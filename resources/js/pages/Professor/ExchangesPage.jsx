@@ -8,13 +8,12 @@ import { toast } from 'sonner';
 import AppLayout from '@/layouts/app-layout';
 import { TranslationContext } from '@/context/TranslationProvider';
 
-// Import newly created components
 import RequestNewExchangeForm from './Exchanges/RequestNewExchangeForm';
 import ExchangeMarketTab from './Exchanges/ExchangeMarketTab';
 import MyRequestsTab from './Exchanges/MyRequestsTab';
 import MyProposalsTab from './Exchanges/MyProposalsTab';
 import HistoryTab from './Exchanges/HistoryTab';
-// Import Modals
+
 import ProposeSwapModal from './Exchanges/Modals/ProposeSwapModal';
 import ConfirmCancellationModal from './Exchanges/Modals/ConfirmCancellationModal';
 import ReviewSwapProposalModal from './Exchanges/Modals/ReviewSwapProposalModal';
@@ -26,7 +25,7 @@ export default function ExchangesPage({
     myOpenRequests,
     myProposals,
     exchangeHistory,
-    myAttributions, // Passed from controller for 'storeRequest'
+    myAttributions, 
 }) {
     const { flash } = usePage().props;
     const { translations } = useContext(TranslationContext);
@@ -52,7 +51,7 @@ export default function ExchangesPage({
     const [isConfirmWithdrawalModalOpen, setIsConfirmWithdrawalModalOpen] = useState(false);
     const [selectedExchangeForWithdrawal, setSelectedExchangeForWithdrawal] = useState(null);
 
-    // State for new exchange request form
+    // State for exchange request form
     const { data: newRequestData, setData: setNewRequestData, post: postNewRequest, processing: isNewRequestProcessing, errors: newRequestErrors, reset: resetNewRequestForm } = useForm({
         attribution_id: '',
         motif: '',
@@ -87,9 +86,6 @@ export default function ExchangesPage({
 
     const handleTabChange = (value) => {
         setActiveTab(value);
-        // Optionally reload data for the tab if it's not fresh
-        // For simplicity, we'll rely on Inertia's default prop passing for initial load
-        // and manual reloads for actions.
     };
 
     // Handlers for actions
@@ -99,7 +95,7 @@ export default function ExchangesPage({
             onSuccess: () => {
                 toast.success(translations?.toasts_exchange_request_created || 'Exchange request created.');
                 resetNewRequestForm();
-                router.reload({ only: ['myOpenRequests', 'exchangeMarket'] }); // Refresh relevant tabs
+                router.reload({ only: ['myOpenRequests', 'exchangeMarket'] });
             },
             onError: (errors) => {
                 const errorMessage = Object.values(errors).flat().join(' ');
