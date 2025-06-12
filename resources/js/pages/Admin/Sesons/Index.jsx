@@ -271,7 +271,7 @@ export default function Index({ sesons: sesonsPagination, filters }) {
                     )}
 
                     {auth.abilities?.is_admin && seson.assignments_approved_at && (
-                        <div className="flex flex-col text-xs">
+                        <div className="flex flex-col items-start gap-1">
                             <Badge variant="success" className="mb-1">
                                 Approved: {new Date(seson.assignments_approved_at).toLocaleDateString()}
                             </Badge>
@@ -280,6 +280,14 @@ export default function Index({ sesons: sesonsPagination, filters }) {
                             ) : (
                                 <Badge variant="outline">Notification Pending/Failed</Badge>
                             )}
+
+                            {/* New Download Button */}
+                            <a href={route('admin.sesons.download-convocations', seson.id)}>
+                                <Button variant="outline" size="sm">
+                                    <Icon icon="mdi:download-box-outline" className="mr-2 h-4 w-4" />
+                                    {translations?.downloadConvocations || 'Download Convocations'}
+                                </Button>
+                            </a>
                         </div>
                     )}
 

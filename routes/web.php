@@ -129,6 +129,10 @@ Route::get('dashboard', function (Request $request) {
     
         Route::post('/sesons/{seson}/approve-notifications', [App\Http\Controllers\Admin\SesonNotificationController::class, 'approveAndDispatchNotifications'])
             ->name('sesons.approve-notifications');
+        
+        // New Download Convocations Route
+        Route::get('/sesons/{seson}/download-convocations', [App\Http\Controllers\Admin\SesonNotificationController::class, 'downloadAllConvocations'])
+             ->name('sesons.download-convocations');
     });
 
     // Group for routes accessible by Admin OR RH
