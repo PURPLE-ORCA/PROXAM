@@ -4,210 +4,91 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { TranslationContext } from '@/context/TranslationProvider';
 import { Icon } from '@iconify/react';
-import { Link } from '@inertiajs/react';
-import axios from 'axios';
-import { useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'; // Added useLayoutEffect, useRef
+import { Link, useForm } from '@inertiajs/react';
+import { useMemo, useContext, useState, useEffect } from 'react';
+
+const formatDatetimeForInput = (datetimeString) => {
+    if (!datetimeString) return '';
+    try {
+        const date = new Date(datetimeString);
+        // Adjust for timezone offset to display correctly in local time input
+        date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
+        return date.toISOString().slice(0, 16); // YYYY-MM-DDTHH:mm
+    } catch (e) {
+        return '';
+    }
+};
 
 export default function ExamenForm({
-    data,
-    setData,
-    errors,
-    processing,
-    onSubmit,
+    isEdit = false,
+    examenToEdit,
+    // ... other data props ...
     quadrimestres,
     allFilieres,
     allLevels,
     allModules,
     salles,
     types,
-    isEdit = false,
-    examenToEdit,
 }) {
     const { translations } = useContext(TranslationContext);
 
-    const [selectedFiliereId, setSelectedFiliereId] = useState('');
-    const [availableLevels, setAvailableLevels] = useState([]);
-    const [selectedLevelId, setSelectedLevelId] = useState('');
-    const [availableModulesForSelect, setAvailableModulesForSelect] = useState([]);
-    const [isLoadingModuleConfig, setIsLoadingModuleConfig] = useState(false);
-    const isInitializedRef = useRef(false); // Use useRef for initialization flag
+    // Initialize EVERYTHING from props directly in useState/useForm
+    const { data, setData, post, put, processing, errors, reset } = useForm({
+        nom: examenToEdit?.nom || '',
+        quadrimestre_id: examenToEdit?.quadrimestre_id?.toString() || '',
+        module_id: examenToEdit?.module_id?.toString() || '',
+        type: examenToEdit?.type || '',
+        debut: formatDatetimeForInput(examenToEdit?.debut),
+        salles_pivot: (examenToEdit?.salles || []).map((s) => ({
+            salle_id: s.id.toString(),
+            capacite: s.pivot.capacite.toString(),
+            professeurs_assignes_salle: s.pivot.professeurs_assignes_salle.toString(),
+        })),
+    });
 
-    // // At the top of ExamenForm
-    // console.log("ExamenForm mounted/rendered. isEdit:", isEdit);
-    // console.log("examenToEdit:", examenToEdit);
-    // console.log("allFilieres:", allFilieres);
-    // console.log("allLevels:", allLevels);
-    // console.log("allModules:", allModules);
-
-    // Helper function to initialize cascading selects based on module_id
-    const initializeCascadingSelects = useCallback(
-        (moduleId) => {
-            console.log("initializeCascadingSelects called with moduleId:", moduleId);
-            if (!moduleId || !allModules || allModules.length === 0 || !allLevels || allLevels.length === 0 || !allFilieres || allFilieres.length === 0) {
-                // console.log("initializeCascadingSelects: missing data or empty arrays, returning.");
-                return;
-            }
-
-            const currentModule = allModules.find((m) => m.id.toString() === moduleId.toString());
-            // console.log("currentModule:", currentModule);
-            if (currentModule && currentModule.level_id) {
-                const currentLevel = allLevels.find((l) => l.id.toString() === currentModule.level_id.toString());
-                // console.log("currentLevel:", currentLevel);
-                if (currentLevel && currentLevel.filiere_id) {
-                    // console.log("Setting selectedFiliereId to:", currentLevel.filiere_id.toString());
-                    setSelectedFiliereId(currentLevel.filiere_id.toString());
-                    setSelectedLevelId(currentLevel.id.toString());
-
-                    // Set available levels for this filiere
-                    setAvailableLevels(allLevels.filter((l) => l.filiere_id.toString() === currentLevel.filiere_id.toString()));
-
-                    // Set available modules for this level
-                    setAvailableModulesForSelect(allModules.filter((m) => m.level_id.toString() === currentLevel.id.toString()));
-                }
-            }
-        },
-        [allModules, allLevels, allFilieres],
+    // Initialize the cascading select IDs from the prop
+    const [selectedFiliereId, setSelectedFiliereId] = useState(
+        () => examenToEdit?.module?.level?.filiere_id?.toString() || ''
+    );
+    const [selectedLevelId, setSelectedLevelId] = useState(
+        () => examenToEdit?.module?.level_id?.toString() || ''
     );
 
-    // Use useLayoutEffect for synchronous initialization
-    useLayoutEffect(() => {
-        // console.log("Initialization useLayoutEffect - isEdit:", isEdit, "examenToEdit:", examenToEdit, "isInitializedRef.current:", isInitializedRef.current);
+    // Effects to handle USER changes
+    const handleFiliereChange = (filiereId) => {
+        setSelectedFiliereId(filiereId);
+        // On user change, reset downstream
+        setSelectedLevelId('');
+        setData('module_id', '');
+    };
+    const handleLevelChange = (levelId) => {
+        setSelectedLevelId(levelId);
+        // On user change, reset downstream
+        setData('module_id', '');
+    };
 
-        // Only run once and if all necessary data props are available
-        if (!isInitializedRef.current && allFilieres.length > 0 && allLevels.length > 0 && allModules.length > 0) {
-            if (isEdit && examenToEdit) {
-                // Set form data for EDIT mode
-                setData({
-                    nom: examenToEdit.nom || '',
-                    quadrimestre_id: examenToEdit.quadrimestre_id?.toString() || '',
-                    module_id: examenToEdit.module_id?.toString() || '',
-                    type: examenToEdit.type || '',
-                    debut: examenToEdit.debut
-                        ? new Date(new Date(examenToEdit.debut).getTime() - new Date(examenToEdit.debut).getTimezoneOffset() * 60000)
-                              .toISOString()
-                              .slice(0, 16)
-                        : '',
-                    salles_pivot: (examenToEdit.salles || []).map((s) => ({
-                        salle_id: s.id.toString(),
-                        capacite: s.pivot.capacite.toString(),
-                        professeurs_assignes_salle: s.pivot.professeurs_assignes_salle.toString(),
-                    })),
-                });
+    // Derived options for dropdowns
+    const availableLevels = useMemo(() => {
+        if (!selectedFiliereId) return [];
+        return allLevels.filter(l => l.filiere_id.toString() === selectedFiliereId);
+    }, [selectedFiliereId, allLevels]);
 
-                // Initialize cascading selects AFTER data is set and all props are available
-            if (examenToEdit.module_id && examenToEdit.module && examenToEdit.module.level && examenToEdit.module.level.filiere) {
-                // console.log("Initializing cascading selects with module data from examenToEdit");
-                const currentLevel = examenToEdit.module.level;
-                setSelectedFiliereId(currentLevel.filiere.id.toString());
-                setSelectedLevelId(currentLevel.id.toString());
-                setAvailableModulesForSelect(allModules.filter(m => m.level_id.toString() === currentLevel.id.toString()));
-            }
-            } else if (!isEdit) { // Only for CREATE mode
-                // Reset for CREATE mode
-                setData({
-                    nom: '',
-                    quadrimestre_id: '',
-                    module_id: '',
-                    type: '',
-                    debut: '',
-                    salles_pivot: [],
-                });
-                setSelectedFiliereId('');
-                setSelectedLevelId('');
-                setAvailableLevels([]);
-                setAvailableModulesForSelect([]);
-            }
-            isInitializedRef.current = true; // Mark as initialized
+    const availableModulesForSelect = useMemo(() => {
+        if (!selectedLevelId) return [];
+        return allModules.filter(m => m.level_id.toString() === selectedLevelId);
+    }, [selectedLevelId, allModules]);
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        if (isEdit) {
+            put(route('admin.examens.update', { examen: examenToEdit.id }), { preserveScroll: true });
+        } else {
+            post(route('admin.examens.store'), {
+                preserveScroll: true,
+                onSuccess: () => reset(),
+            });
         }
-    }, [isEdit, examenToEdit, allModules, allLevels, allFilieres, initializeCascadingSelects]); // Removed setData from dependencies
-
-    // Update available levels when selectedFiliereId changes (user interaction)
-    useEffect(() => {
-        // Only run if initialized and selectedFiliereId is explicitly set (not during initial load if it's empty)
-        if (isInitializedRef.current && selectedFiliereId) {
-            const newAvailableLevels = allLevels.filter((l) => l.filiere_id.toString() === selectedFiliereId);
-            setAvailableLevels(newAvailableLevels);
-
-            // If current level doesn't belong to new filiere, reset it
-            if (data.module_id && allModules && allLevels) {
-                const currentModule = allModules.find((m) => m.id.toString() === data.module_id);
-                const currentLevel = currentModule ? allLevels.find((l) => l.id.toString() === currentModule.level_id.toString()) : null;
-                if (!currentLevel || currentLevel.filiere_id.toString() !== selectedFiliereId) {
-                    setSelectedLevelId('');
-                    setData('module_id', '');
-                }
-            }
-        } else if (isInitializedRef.current && !selectedFiliereId) { // Reset if filiere is cleared by user
-            setAvailableLevels([]);
-            setSelectedLevelId('');
-            setData('module_id', '');
-        }
-    }, [selectedFiliereId, allLevels, allModules, data.module_id, setData]); // Removed isInitialized from dependencies
-
-    // Update available modules when selectedLevelId changes (user interaction)
-    useEffect(() => {
-        // Only run if initialized and selectedLevelId is explicitly set (not during initial load if it's empty)
-        if (isInitializedRef.current && selectedLevelId) {
-            const newAvailableModules = allModules.filter((m) => m.level_id.toString() === selectedLevelId);
-            setAvailableModulesForSelect(newAvailableModules);
-
-            // If current module doesn't belong to new level, reset it
-            if (data.module_id && allModules) {
-                const currentModule = allModules.find((m) => m.id.toString() === data.module_id);
-                if (!currentModule || currentModule.level_id.toString() !== selectedLevelId) {
-                    setData('module_id', '');
-                }
-            }
-        } else if (isInitializedRef.current && !selectedLevelId) { // Reset if level is cleared by user
-            setAvailableModulesForSelect([]);
-            setData('module_id', '');
-        }
-    }, [selectedLevelId, allModules, data.module_id, setData]); // Removed isInitialized from dependencies
-
-    const fetchAndApplyModuleConfig = useCallback(
-        async (moduleId) => {
-            if (!moduleId) {
-                if (!isEdit) setData('salles_pivot', []);
-                return;
-            }
-
-            // Don't fetch if in edit mode and module hasn't changed
-            if (isEdit && examenToEdit && moduleId === examenToEdit.module_id?.toString()) {
-                return;
-            }
-
-            setIsLoadingModuleConfig(true);
-            try {
-                const response = await axios.get(route('admin.modules.default-exam-config', { module: moduleId }));
-                const config = response.data;
-                setData((prevData) => ({
-                    ...prevData,
-                    salles_pivot: (config.room_configs || []).map((rc) => ({
-                        salle_id: rc.salle_id.toString(),
-                        capacite: rc.configured_capacity.toString(),
-                        professeurs_assignes_salle: rc.configured_prof_count.toString(),
-                    })),
-                }));
-            } catch (error) {
-                console.error('Failed to fetch module exam config:', error);
-                setData((prevData) => ({ ...prevData, salles_pivot: [] }));
-            } finally {
-                setIsLoadingModuleConfig(false);
-            }
-        },
-        [setData, isEdit, examenToEdit],
-    );
-
-    // Effect to fetch module config when module_id changes
-    useEffect(() => {
-        if (!isInitializedRef.current) return; // Don't run during initialization
-
-        if (data.module_id) {
-            fetchAndApplyModuleConfig(data.module_id);
-        } else if (!isEdit) {
-            setData('salles_pivot', []);
-        }
-    }, [data.module_id, fetchAndApplyModuleConfig, isEdit, setData]); // Removed isInitialized from dependencies
+    };
 
     const handleSalleChange = (index, field, value) => {
         const updatedSalles = JSON.parse(JSON.stringify(data.salles_pivot || []));
@@ -249,7 +130,7 @@ export default function ExamenForm({
     }, [data.salles_pivot]);
 
     return (
-        <form onSubmit={onSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
             <fieldset className="grid grid-cols-1 gap-x-6 gap-y-4 rounded-md border border-[var(--border)] p-4 sm:grid-cols-6">
                 <legend className="px-1 text-sm leading-6 font-semibold text-[var(--foreground)]">
                     {translations?.examen_form_basic_details_legend || 'Basic Exam Details'}
@@ -263,7 +144,11 @@ export default function ExamenForm({
 
                 <div className="sm:col-span-3">
                     <Label htmlFor="filiere_for_module_select">{translations?.examen_form_filiere_label || 'Study Field'} *</Label>
-                    <Select value={selectedFiliereId} onValueChange={setSelectedFiliereId} required>
+                    <Select
+                        value={selectedFiliereId}
+                        onValueChange={handleFiliereChange} // Use local state handler
+                        required
+                    >
                         <SelectTrigger id="filiere_for_module_select" className="mt-1">
                             <SelectValue placeholder={translations?.examen_form_select_filiere_placeholder || 'Select Field'} />
                         </SelectTrigger>
@@ -279,7 +164,12 @@ export default function ExamenForm({
 
                 <div className="sm:col-span-3">
                     <Label htmlFor="level_for_module_select">{translations?.examen_form_level_label || 'Level'} *</Label>
-                    <Select value={selectedLevelId} onValueChange={setSelectedLevelId} disabled={!selectedFiliereId} required>
+                    <Select
+                        value={selectedLevelId}
+                        onValueChange={handleLevelChange} // Use local state handler
+                        disabled={!selectedFiliereId}
+                        required
+                    >
                         <SelectTrigger id="level_for_module_select" className="mt-1">
                             <SelectValue placeholder={translations?.examen_form_select_level_placeholder || 'Select Level'} />
                         </SelectTrigger>
@@ -295,7 +185,12 @@ export default function ExamenForm({
 
                 <div className="sm:col-span-3">
                     <Label htmlFor="module_id">{translations?.examen_form_module_label || 'Module'} *</Label>
-                    <Select value={data.module_id || ''} onValueChange={(v) => setData('module_id', v)} disabled={!selectedLevelId} required>
+                    <Select
+                        value={data.module_id || ''}
+                        onValueChange={(v) => setData('module_id', v)} // Directly set form data
+                        disabled={!selectedLevelId}
+                        required
+                    >
                         <SelectTrigger id="module_id" className="mt-1">
                             <SelectValue placeholder={translations?.examen_form_select_module_placeholder || 'Select Module'} />
                         </SelectTrigger>
@@ -370,11 +265,7 @@ export default function ExamenForm({
             </fieldset>
 
             <fieldset className="relative rounded-md border border-[var(--border)] p-4">
-                {isLoadingModuleConfig && (
-                    <div className="absolute inset-0 z-10 flex items-center justify-center rounded-md bg-white/70 dark:bg-black/70">
-                        <Icon icon="mdi:loading" className="h-8 w-8 animate-spin text-[var(--primary)]" />
-                    </div>
-                )}
+                {/* Removed isLoadingModuleConfig and loading overlay */}
                 <legend className="px-1 text-sm leading-6 font-semibold text-[var(--foreground)]">
                     {translations?.examen_form_salles_section_legend || 'Assigned Rooms & Capacities'} *
                 </legend>
@@ -464,10 +355,10 @@ export default function ExamenForm({
                 </Button>
                 <Button
                     type="submit"
-                    disabled={processing || isLoadingModuleConfig}
+                    disabled={processing}
                     className="bg-[var(--primary)] text-[var(--primary-foreground)] hover:bg-[var(--primary)]/90"
                 >
-                    {processing || isLoadingModuleConfig
+                    {processing
                         ? translations?.saving_button || 'Saving...'
                         : isEdit
                           ? translations?.update_button || 'Update'

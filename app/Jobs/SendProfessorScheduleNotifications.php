@@ -13,7 +13,9 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
-use Barryvdh\DomPDF\Facade\Pdf; // Import the facade
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class SendProfessorScheduleNotifications implements ShouldQueue
 {
@@ -77,7 +79,6 @@ class SendProfessorScheduleNotifications implements ShouldQueue
             }
 
             foreach ($professorIds as $professeurId) {
-                $tempPdfPath = null; // Initialize for potential finally block
                 try {
                     /** @var \App\Models\Professeur $professor */
                     // Ensure a single model is returned, even if find() somehow returns a collection
@@ -108,15 +109,16 @@ class SendProfessorScheduleNotifications implements ShouldQueue
                     ];
                     $pdf = Pdf::loadView('pdfs.professor_session_schedule', $dataForPdfView);
                     $pdfOutput = $pdf->output();
-                    // Save temp PDF (as before)
-                    $tempFilename = 'generated_schedule_prof_' . $professor->id . '_seson_' . $this->seson->id . '_' . time() . '.pdf';
-                    $tempPdfPath = storage_path('app/temp_pdfs/' . $tempFilename);
-                    if (!is_dir(storage_path('app/temp_pdfs'))) {
-                        mkdir(storage_path('app/temp_pdfs'), 0755, true);
-                    }
-                    file_put_contents($tempPdfPath, $pdfOutput);
-                    Log::info("Temporarily saved PDF to: " . $tempPdfPath . " (NOT EMAILED)");
-                    // --- END: Optional PDF Generation ---
+
+                    // --- SAVE THE PDF TO THE CORRECT, PERSISTENT LOCATION ---
+                    // Define a clear, permanent path.
+                    $persistentPdfPath = "convocations/{$this->seson->id}/Convocation - " . Str::slug($professor->prenom . ' ' . $professor->nom) . ".pdf";
+                    
+                    // Use Storage::put() to save the file. It automatically creates directories.
+                    Storage::disk('local')->put($persistentPdfPath, $pdfOutput);
+                    
+                    Log::info("Saved persistent convocation PDF to: {$persistentPdfPath}");
+                    // --- END OF NEW CODE ---
 
                     // --- START: Debugging Logs (Professor object) ---
                     // Log::info("Debugging Professor object before Mailable:");
@@ -143,12 +145,6 @@ class SendProfessorScheduleNotifications implements ShouldQueue
 
                 } catch (\Exception $e) {
                     Log::error("Failed to send notification for professor ID {$professeurId} in Seson ID {$this->seson->id}: " . $e->getMessage());
-                } finally {
-                    // Optional: Cleanup temporary PDF if you kept the generation step
-                    // if ($tempPdfPath && file_exists($tempPdfPath)) {
-                    //     unlink($tempPdfPath);
-                    //     Log::info("Deleted temporary PDF: " . $tempPdfPath);
-                    // }
                 }
             }
 

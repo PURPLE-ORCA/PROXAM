@@ -1,4 +1,5 @@
 import ConfirmationModal from '@/components/Common/ConfirmationModal';
+import ImportModal from '@/components/ImportModal';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { TranslationContext } from '@/context/TranslationProvider';
@@ -22,10 +23,11 @@ const defaultPageIndex = 0;
 
 export default function Index({ professeurs: professeursPagination, filters, servicesForFilter, rangsForFilter, statutsForFilter }) {
     const { translations, language } = useContext(TranslationContext);
-    const { auth } = usePage().props; // Removed PageProps type for JSX
+    const { auth } = usePage().props;   
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [itemToDelete, setItemToDelete] = useState(null);
+    const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
     const getStatutTranslation = (statutKey) => {
         if (!statutKey) return translations?.statut_undefined || 'N/A';
@@ -49,23 +51,32 @@ export default function Index({ professeurs: professeursPagination, filters, ser
         pageSize: professeursPagination.per_page ?? defaultPageSize,
     });
 
+    // State for all filters
+    const [globalFilter, setGlobalFilter] = useState(filters?.search || '');
+    const [columnFilters, setColumnFilters] = useState(filters?.filters ? Object.entries(filters.filters).map(([id, value]) => ({id, value})) : []);
+
+    // Debounce effect for filtering
     useEffect(() => {
-        if (pagination.pageIndex !== professeursPagination.current_page - 1 || pagination.pageSize !== professeursPagination.per_page) {
+        const timeout = setTimeout(() => {
+            const parsedColumnFilters = columnFilters.reduce((acc, filter) => {
+                acc[filter.id] = filter.value;
+                return acc;
+            }, {});
+
             router.get(
                 route('admin.professeurs.index'),
                 {
                     page: pagination.pageIndex + 1,
                     per_page: pagination.pageSize,
-                    search: filters?.search || '',
-                    service_id: filters?.service_id || undefined,
-                    rang: filters?.rang || undefined,
-                    statut: filters?.statut || undefined,
-                    statut: filters?.date_recrutement || undefined,
+                    search: globalFilter || undefined,
+                    filters: parsedColumnFilters, // Send the new column filters
                 },
-                { preserveState: true, replace: true, preserveScroll: true },
+                { preserveState: true, replace: true }
             );
-        }
-    }, [pagination.pageIndex, pagination.pageSize, professeursPagination, filters]);
+        }, 500); // 500ms delay after user stops typing
+
+        return () => clearTimeout(timeout);
+    }, [pagination, globalFilter, columnFilters]);
 
     const columns = useMemo(
         () => [
@@ -74,14 +85,17 @@ export default function Index({ professeurs: professeursPagination, filters, ser
                 id: 'fullName',
                 header: translations?.professeur_name_column_header || 'Name',
                 size: 200,
+                // Default filter is 'text' input
             },
             { accessorKey: 'user.email', header: translations?.user_email_column_header || 'Email', size: 250 },
-            { accessorKey: 'service.nom', header: translations?.professeur_service_column_header || 'Service', size: 150 },
+            { accessorKey: 'service.nom', header: translations?.professeur_service_column_header || 'Service', size: 150, filterVariant: 'text' },
             {
                 accessorKey: 'rang',
                 header: translations?.professeur_rank_column_header || 'Rank',
                 Cell: ({ cell }) => getRangTranslation(cell.getValue()),
                 size: 100,
+                filterVariant: 'select', // Use a dropdown for this
+                filterSelectOptions: Object.entries(rangsForFilter).map(([key, value]) => ({ value: key, text: value })),
             },
             {
                 accessorKey: 'statut',
@@ -92,6 +106,8 @@ export default function Index({ professeurs: professeursPagination, filters, ser
                     return <Badge className={`${colorClass} text-white`}>{getStatutTranslation(statut)}</Badge>;
                 },
                 size: 120,
+                filterVariant: 'select', // Use a dropdown for this
+                filterSelectOptions: Object.entries(statutsForFilter).map(([key, value]) => ({ value: key, text: value })),
             },
             { accessorKey: 'specialite', header: translations?.professeur_specialty_column_header || 'Specialty', size: 150 },
             { accessorKey: 'date_recrutement', header:'recutment', size: 150 },
@@ -109,7 +125,7 @@ export default function Index({ professeurs: professeursPagination, filters, ser
                 muiTableHeadCellProps: { align: 'center' },
             },
         ],
-        [translations, language], // Removed availableRolesForFilter as it's not used in columns for this specific setup
+        [translations, language, rangsForFilter, statutsForFilter],
     );
 
     const openDeleteModal = (professeurItem) => {
@@ -136,7 +152,15 @@ export default function Index({ professeurs: professeursPagination, filters, ser
         columns,
         data: professeursPagination.data || [],
         manualPagination: true,
-        state: { pagination },
+        manualFiltering: true, // IMPORTANT: Tells MRT we are handling filtering on the server
+        enableColumnFilters: true,
+        onGlobalFilterChange: setGlobalFilter, // For the top search bar
+        onColumnFiltersChange: setColumnFilters, // For per-column filters
+        state: {
+            pagination,
+            globalFilter, // Wire up the states
+            columnFilters,
+        },
         rowCount: professeursPagination.total,
         onPaginationChange: setPagination,
         enableEditing: auth.abilities?.is_admin,
@@ -228,9 +252,19 @@ export default function Index({ professeurs: professeursPagination, filters, ser
             </div>
         ),
         renderTopToolbarCustomActions: () => (
-            <Button asChild variant="default" className="bg-[var(--primary)] text-[var(--primary-foreground)] hover:bg-[var(--primary)]/90">
-                <Link href={route('admin.professeurs.create')}>{translations?.add_professeur_button || 'Add Professor'}</Link>
-            </Button>
+            <div className="flex gap-2">
+                <Button asChild variant="default" className="bg-[var(--primary)] text-[var(--primary-foreground)] hover:bg-[var(--primary)]/90">
+                    <Link href={route('admin.professeurs.create')}>{translations?.add_professeur_button || 'Add Professor'}</Link>
+                </Button>
+                <Button
+                    variant="outline"
+                    onClick={() => setIsImportModalOpen(true)}
+                    className="border-[var(--primary)] text-[var(--primary)] hover:bg-[var(--primary)] hover:text-[var(--primary-foreground)]"
+                >
+                    <Icon icon="mdi:upload" className="mr-2 h-5 w-5" />
+                    {translations?.import_professors_button || 'Import from File'}
+                </Button>
+            </div>
         ),
     });
 
@@ -254,6 +288,10 @@ export default function Index({ professeurs: professeursPagination, filters, ser
                         : translations?.generic_delete_confirmation || 'Are you sure you want to delete this item?'
                 }
                 confirmText={translations?.delete_button_title || 'Delete'}
+            />
+            <ImportModal
+                isOpen={isImportModalOpen}
+                onClose={() => setIsImportModalOpen(false)}
             />
         </AppLayout>
     );

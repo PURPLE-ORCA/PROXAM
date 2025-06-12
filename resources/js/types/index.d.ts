@@ -4,6 +4,10 @@ import type { Config as ZiggyConfig } from 'ziggy-js';
 export interface AnneeUniType {
     id: number;
     annee: string;
+    annee_debut: string; // Changed to string
+    annee_fin: string;   // Changed to string
+    date_debut: string; // Added for direct access if needed
+    date_fin: string;   // Added for direct access if needed
 }
 
 export interface AcademicYearSharedData {
@@ -11,6 +15,62 @@ export interface AcademicYearSharedData {
     all: AnneeUniType[];
     selected_id: number | null;
     selected_annee: string | null;
+    annee_debut: string | null; // Changed to string
+    annee_fin: string | null;   // Changed to string
+    date_debut: string | null; // Added for direct access if needed
+    date_fin: string | null;   // Added for direct access if needed
+}
+
+// New Model Interfaces
+export interface Professeur {
+    id: number;
+    nom: string;
+    prenom: string;
+    statut: string; // e.g., 'Active', 'Inactive'
+    // Add other properties as needed
+    user: { name: string }; // Added for UnconfiguredProfessors
+}
+
+export interface Module {
+    id: number;
+    nom: string;
+    // Add other properties as needed
+}
+
+export interface Salle {
+    id: number;
+    nom: string;
+    // Add other properties as needed
+}
+
+export interface Examen {
+    id: number;
+    nom?: string; // Optional
+    debut: string; // Date string
+    fin: string;   // Date string
+    module_id: number;
+    seson_id: number;
+    quadrimestre_id: number;
+    type: string;
+    filiere_id: number;
+    total_required_professors: number;
+    module: Module; // Relation
+    salles: Salle[]; // Relation
+    attributions_count?: number; // From withCount
+    // Add other properties as needed
+}
+
+export interface Notification {
+    id: number;
+    user_id: number;
+    title: string;
+    message: string;
+    link?: string; // Optional, for clickable notifications
+    read_at: string | null;
+    created_at: string;
+    updated_at: string;
+    severity?: 'info' | 'success' | 'warning' | 'error'; // Optional, for styling
+    // Add other properties as needed
 }
 
 export interface Abilities {
@@ -68,6 +128,82 @@ export interface PageProps {
     errors?: Record<string, string>;
     [key: string]: unknown;
     academicYear: AcademicYearSharedData; 
+}
+
+// Dashboard Interfaces
+export interface KpiData {
+    totalActiveProfessors: number;
+    totalExamsThisYear: number;
+    totalAssignmentsThisYear: number;
+    unstaffedExamsThisYear: number;
+}
+
+export interface ProfessorLoadData {
+    name: string;
+    assignments: number;
+}
+
+export interface RankDistributionData {
+    rank: string;
+    count: number;
+    color: string;
+}
+
+export interface ServiceLoadData {
+    service_name: string;
+    total_hours: number;
+}
+
+export interface RoomUtilizationData {
+    room_name: string;
+    usage_count: number;
+}
+
+export interface ExchangeMetrics {
+    totalRequests: number;
+    approvedRequests: number;
+    rejectedRequests: number;
+    mostActiveUsers: string[];
+}
+
+export interface RecentRecord {
+    type: string;
+    name: string;
+    created_at: string;
+    action: string;
+}
+
+export interface LastAssignmentRunSummary {
+    run_at: string;
+    seson_code: string;
+    summary: string;
+}
+
+export interface UnconfiguredProfessors {
+    without_service: (Professeur & { user: { name: string } })[];
+    without_modules: (Professeur & { user: { name: string } })[];
+}
+
+export interface DashboardProps extends PageProps {
+    kpiData: KpiData;
+    upcomingExams: (Examen & {
+        module: { nom: string };
+        salles: { nom: string }[];
+        attributions_count: number;
+        total_required_professors: number;
+    })[];
+    adminNotifications: (Notification & { link: string })[];
+    professorLoadData: ProfessorLoadData[];
+    rankDistributionData: RankDistributionData[];
+    serviceLoadData: ServiceLoadData[];
+    roomUtilizationData: RoomUtilizationData[];
+    exchangeMetrics: ExchangeMetrics;
+    recentRecords: RecentRecord[];
+    examTypeDistribution: { [key: string]: number };
+    upcomingExamsForTimeline: { [key: string]: (Examen & { module: { nom: string } })[] };
+    assignmentHotspots: { [key: string]: number };
+    lastAssignmentRunSummary: LastAssignmentRunSummary | null;
+    unconfiguredProfessors: UnconfiguredProfessors;
 }
 
 declare module '@inertiajs/react' {

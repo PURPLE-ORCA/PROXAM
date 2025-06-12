@@ -23,25 +23,48 @@ class ProfesseurController extends Controller
 
     public function index(Request $request)
     {
-        $professeurs = Professeur::with(['user', 'service'])
-            ->when($request->input('search'), function ($query, $search) {
-                $query->where('nom', 'like', "%{$search}%")
-                      ->orWhere('prenom', 'like', "%{$search}%")
-                      ->orWhereHas('user', fn($q) => $q->where('email', 'like', "%{$search}%"))
-                      ->orWhereHas('service', fn($q) => $q->where('nom', 'like', "%{$search}%"));
-            })
-            ->when($request->input('service_id'), fn($q, $serviceId) => $q->where('service_id', $serviceId))
-            ->when($request->input('rang'), fn($q, $rang) => $q->where('rang', $rang))
-            ->when($request->input('statut'), fn($q, $statut) => $q->where('statut', $statut))
-            ->orderBy('nom')->orderBy('prenom')
-            ->paginate(15)
+        $professeursQuery = Professeur::with(['user', 'service']);
+
+        // --- REFINED FILTERING LOGIC ---
+        // Global search (if you keep it, it searches across multiple fields)
+        $professeursQuery->when($request->input('search'), function ($query, $search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('nom', 'like', "%{$search}%")
+                  ->orWhere('prenom', 'like', "%{$search}%")
+                  ->orWhereHas('user', fn($subQ) => $subQ->where('email', 'like', "%{$search}%"));
+            });
+        });
+
+        // Specific Column Filters
+        $professeursQuery->when($request->input('filters.fullName'), function ($query, $name) {
+            $query->where(function ($q) use ($name) {
+                $q->where('nom', 'like', "%{$name}%")
+                  ->orWhere('prenom', 'like', "%{$name}%");
+            });
+        });
+        $professeursQuery->when($request->input('filters.user.email'), function ($query, $email) {
+            $query->whereHas('user', fn($q) => $q->where('email', 'like', "%{$email}%"));
+        });
+        $professeursQuery->when($request->input('filters.service.nom'), function ($query, $serviceName) {
+            $query->whereHas('service', fn($q) => $q->where('nom', 'like', "%{$serviceName}%"));
+        });
+        $professeursQuery->when($request->input('filters.rang'), function ($query, $rang) {
+            $query->where('rang', $rang);
+        });
+        $professeursQuery->when($request->input('filters.statut'), function ($query, $statut) {
+            $query->where('statut', $statut);
+        });
+        // --- END REFINED FILTERING LOGIC ---
+
+        $professeurs = $professeursQuery->orderBy('nom')->orderBy('prenom')
+            ->paginate($request->input('per_page', 40))
             ->withQueryString();
 
         $services = Service::orderBy('nom')->get(['id', 'nom']); // For filter dropdown
 
         return Inertia::render($this->baseInertiaPath() . 'Index', [
             'professeurs' => $professeurs,
-            'filters' => $request->only(['search', 'service_id', 'rang', 'statut']),
+            'filters' => $request->all(['search', 'filters']),
             'servicesForFilter' => $services,
             'rangsForFilter' => Professeur::getRangs(), 
             'statutsForFilter' => Professeur::getStatuts(), 
