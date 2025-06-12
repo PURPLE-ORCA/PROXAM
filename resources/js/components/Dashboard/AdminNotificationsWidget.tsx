@@ -19,15 +19,26 @@ export default function AdminNotificationsWidget({ notifications, translations }
                 <div className="space-y-4">
                     {notifications.length > 0 ? (
                         notifications.map((notification) => (
-                            <Link key={notification.id} href={notification.link || '#'}>
-                                <div className="flex items-center gap-3">
+                            <Link key={notification.id} href={notification.link || '#'} className="block">
+                                <div
+                                    className={`flex items-center gap-3 p-2 rounded-md ${
+                                        notification.read_at ? 'bg-gray-100 dark:bg-gray-800 text-muted-foreground' : 'hover:bg-gray-50 dark:hover:bg-gray-800/50'
+                                    }`}
+                                >
                                     {notification.severity === 'info' && <Info className="h-5 w-5 text-blue-500" />}
                                     {notification.severity === 'success' && <CheckCircle className="h-5 w-5 text-green-500" />}
                                     {notification.severity === 'warning' && <AlertTriangle className="h-5 w-5 text-yellow-500" />}
                                     {notification.severity === 'error' && <AlertCircle className="h-5 w-5 text-red-500" />}
                                     {!notification.severity && <Bell className="h-5 w-5 text-muted-foreground" />} {/* Default icon */}
-                                    <div>
-                                        <p className="font-medium">{notification.title}</p>
+                                    <div className="flex-1">
+                                        <p className="font-medium flex items-center gap-2">
+                                            {notification.title}
+                                            {notification.read_at && (
+                                                <span className="text-xs text-gray-500 dark:text-gray-400">
+                                                    <CheckCircle className="h-4 w-4 inline-block ml-1" />
+                                                </span>
+                                            )}
+                                        </p>
                                         <p className="text-sm text-muted-foreground">{notification.message}</p>
                                     </div>
                                 </div>
