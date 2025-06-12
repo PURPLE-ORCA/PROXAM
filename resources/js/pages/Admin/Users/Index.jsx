@@ -17,7 +17,7 @@ const roleColors = {
     default: 'bg-gray-500 hover:bg-gray-600',
 };
 
-const defaultPageSize = 15;
+const defaultPageSize = 30;
 const defaultPageIndex = 0;
 
 export default function Index({ users: usersPagination, filters, roles: availableRolesForFilter }) {

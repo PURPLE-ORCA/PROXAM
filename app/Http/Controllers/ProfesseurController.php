@@ -57,7 +57,7 @@ class ProfesseurController extends Controller
         // --- END REFINED FILTERING LOGIC ---
 
         $professeurs = $professeursQuery->orderBy('nom')->orderBy('prenom')
-            ->paginate($request->input('per_page', 15)) // Allow page size to be dynamic
+            ->paginate($request->input('per_page', 40))
             ->withQueryString();
 
         $services = Service::orderBy('nom')->get(['id', 'nom']); // For filter dropdown

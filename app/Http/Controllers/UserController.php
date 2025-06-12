@@ -26,7 +26,7 @@ class UserController extends Controller
             })
             ->when($request->input('role'), fn($query, $role) => $query->where('role', $role))
             ->orderBy('name')
-            ->paginate(15)
+            ->paginate(40)
             ->withQueryString();
 
         // For role filter dropdown

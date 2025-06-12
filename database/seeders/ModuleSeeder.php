@@ -10,46 +10,48 @@ class ModuleSeeder extends Seeder
 {
     public function run()
     {
-        $level1Med = Level::where('nom', '1ère Année Médecine')->first();
-        $level2Med = Level::where('nom', '2ème Année Médecine')->first();
-        
-        $modulesData = [];
-
-        if ($level1Med) {
-            $modulesData[] = ['nom' => 'Anatomie Générale', 'level_id' => $level1Med->id];
-            $modulesData[] = ['nom' => 'Biochimie Structurale', 'level_id' => $level1Med->id];
-            $modulesData[] = ['nom' => 'Physiologie Humaine I', 'level_id' => $level1Med->id];
-        }
-        if ($level2Med) {
-            $modulesData[] = ['nom' => 'Pharmacologie Générale', 'level_id' => $level2Med->id];
-            $modulesData[] = ['nom' => 'Microbiologie Médicale', 'level_id' => $level2Med->id];
-            $modulesData[] = ['nom' => 'Physiologie Humaine II', 'level_id' => $level2Med->id];
+        $allLevels = Level::all();
+        if ($allLevels->isEmpty()) {
+            $this->command->warn('ModuleSeeder: No levels found. Please seed levels first.');
+            return;
         }
 
-        $existingModules = [
-            'Anatomie Générale', 'Biochimie Structurale', 'Physiologie Humaine', 
-            'Pharmacologie Générale', 'Microbiologie Médicale', 'Pathologie Générale',
-            'Chirurgie Digestive', 'Médecine Interne', 'Pédiatrie Générale',
-            'Gynécologie Obstétrique', 'Radiologie Diagnostique', 'Dermatologie Clinique',
-            'Neurologie Fondamentale', 'Cardiologie', 'Ophtalmologie Médicale',
-            'ORL', 'Psychiatrie Adulte', 'Médecine Légale', 'Immunologie', 'Parasitologie',
-            'Hématologie', 'Endocrinologie', 'Néphrologie', 'Pneumologie', 'Rhumatologie',
-            'Oncologie Médicale', 'Gériatrie', 'Médecine d\'Urgence', 'Médecine du Travail', 'Médecine Tropicale'
+        $moduleNames = [
+            'Anatomie Générale', 'Biochimie Structurale', 'Physiologie Humaine I', 'Cytologie & Histologie', 'Génétique Fondamentale',
+            'Pharmacologie Générale', 'Microbiologie Médicale', 'Physiologie Humaine II', 'Pathologie Générale', 'Sémiologie Médicale',
+            'Chirurgie Digestive', 'Médecine Interne', 'Pédiatrie Générale', 'Cardiologie', 'Pneumologie',
+            'Gynécologie Obstétrique', 'Radiologie Diagnostique', 'Dermatologie Clinique', 'Neurologie Fondamentale', 'Endocrinologie',
+            'Ophtalmologie Médicale', 'ORL', 'Psychiatrie Adulte', 'Médecine Légale', 'Immunologie',
+            'Parasitologie', 'Hématologie', 'Néphrologie', 'Rhumatologie', 'Oncologie Médicale',
+            'Gériatrie', 'Médecine d\'Urgence', 'Médecine du Travail', 'Médecine Tropicale', 'Santé Publique'
         ];
-        
-        foreach ($modulesData as $module) {
-            Module::create($module);
+
+        // Create a base set of all modules linked to the first level to ensure they all exist
+        $firstLevelId = $allLevels->first()->id;
+        foreach ($moduleNames as $moduleName) {
+            Module::firstOrCreate(
+                ['nom' => $moduleName, 'level_id' => $firstLevelId]
+            );
         }
 
-            $defaultLevel = Level::first(); 
-            if ($defaultLevel) {
-                foreach ($existingModules as $moduleName) {
-                    if (!Module::where('nom', $moduleName)->exists()) {
-                        Module::create(['nom' => $moduleName, 'level_id' => $defaultLevel->id]);
-                    }
+        // Now, assign a variety of these modules to other levels
+        $allModules = Module::all();
+        foreach ($allLevels as $level) {
+            if ($level->id === $firstLevelId) continue; // Skip the one we already populated fully
+
+            $numModulesToAssign = rand(5, 15); // Each level will have between 5 and 15 modules
+            $selectedModules = $allModules->random($numModulesToAssign);
+
+            foreach ($selectedModules as $module) {
+                // Check if this combination already exists to avoid unique constraint errors
+                if (!Module::where('nom', $module->nom)->where('level_id', $level->id)->exists()) {
+                    Module::create([
+                        'nom' => $module->nom,
+                        'level_id' => $level->id,
+                    ]);
                 }
-            } else {
-                $this->command->warn('ModuleSeeder: No levels found to assign modules to.');
             }
+        }
+        $this->command->info('ModuleSeeder: Modules seeded and assigned across levels successfully.');
     }
 }
