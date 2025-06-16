@@ -62,13 +62,11 @@ export default function Dashboard() {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Dashboard" />
             <div className="flex h-full flex-1 flex-col gap-4 p-4">
+                <QuickActionsWidget translations={translations} />
+
                 {/* KPI Cards Row */}
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                    <KpiCard
-                        title={translations.total_active_professors}
-                        value={kpiData.totalActiveProfessors}
-                        icon={Bell}
-                    />
+                    <KpiCard title={translations.total_active_professors} value={kpiData.totalActiveProfessors} icon={Bell} />
                     <KpiCard
                         title={translations.total_exams_this_academic_year}
                         value={kpiData.totalExamsThisYear}
@@ -135,8 +133,6 @@ export default function Dashboard() {
                 <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-1">
                     <UnconfiguredProfessorsWidget translations={translations} />
                 </div>
-
-                <QuickActionsWidget translations={translations} />
             </div>
         </AppLayout>
     );

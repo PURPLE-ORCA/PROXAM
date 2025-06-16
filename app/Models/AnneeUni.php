@@ -9,11 +9,13 @@ class AnneeUni extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['nom_annee', 'date_debut', 'date_fin'];
+    protected $fillable = [
+        'annee',
+    ];
 
     protected $casts = [
-        'date_debut' => 'date',
-        'date_fin' => 'date',
+        // 'date_debut' => 'date', // Removed as per new form
+        // 'date_fin' => 'date', // Removed as per new form
     ];
     
     // Add relationships if needed
