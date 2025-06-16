@@ -1,4 +1,20 @@
-@import 'tailwindcss';
+@import 'tailwindcss';/* In resources/css/app.css */
+
+.my-masonry-grid {
+  display: flex;
+  margin-left: -1.5rem; /* gutter size offset */
+  width: auto;
+}
+.my-masonry-grid_column {
+  padding-left: 1.5rem; /* gutter size */
+  background-clip: padding-box;
+}
+
+/* Optional: style the card within the grid item */
+.my-masonry-grid_column > a {
+  margin-bottom: 1.5rem;
+  display: block;
+}
 
 @plugin 'tailwindcss-animate';
 
@@ -111,6 +127,7 @@
     --sidebar-accent-foreground: oklch(0.205 0 0);
     --sidebar-border: oklch(0.922 0 0);
     --sidebar-ring: oklch(0.87 0 0);
+    --fmpo: #08c9b7;
 }
 
 .dark {
@@ -146,6 +163,7 @@
     --sidebar-accent-foreground: oklch(0.985 0 0);
     --sidebar-border: oklch(0.269 0 0);
     --sidebar-ring: oklch(0.269 0 0);
+    --fmpo: #08c9b7;
 }
 
 @layer base {

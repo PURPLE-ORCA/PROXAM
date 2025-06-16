@@ -1,4 +1,3 @@
-import { type BreadcrumbItem as BreadcrumbItemType } from '@/types';
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -11,20 +10,27 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { SidebarTrigger } from '@/components/ui/sidebar';
 import { TranslationContext } from '@/context/TranslationProvider';
-import { type AnneeUniType, type PageProps } from '@/types'; // Ensure AnneeUniType is correct
+import { type BreadcrumbItem as BreadcrumbItemType, type PageProps } from '@/types';
 import { Icon } from '@iconify/react';
-import { Link, router, usePage } from '@inertiajs/react'; // router is needed
+import { Link, router, usePage } from '@inertiajs/react';
 import { useContext } from 'react';
 import NotificationBadge from './NotificationBadge';
 
 export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: BreadcrumbItemType[] }) {
     const { auth, academicYear, ziggy } = usePage<PageProps>().props;
     const user = auth.user;
-
     const { translations, switchLanguage } = useContext(TranslationContext);
     const currentUiLang = localStorage.getItem('lang') || 'en';
+
+    // --- NEW LOGIC ---
+    // First, determine if the current user is one who would even use the Control Center.
+    const userCanSeeControlCenter = auth.abilities?.is_admin || auth.abilities?.is_rh || auth.abilities?.is_chef_service;
+
+    // Now, determine if we should show the back button.
+    // Show it if the user CAN see the control center, but is NOT currently on it.
+    const showBackButton = userCanSeeControlCenter && route().current() !== 'control-center';
+    // --- END NEW LOGIC ---
 
     const locals = [
         { locale: 'en', label: translations?.language_english || 'English' },
@@ -44,47 +50,30 @@ export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: Breadcrum
     const handleAcademicYearChange = (yearIdString: string) => {
         const yearId = parseInt(yearIdString, 10);
         if (yearId && yearId !== academicYear.selected_id) {
-            router.post(
-                route('admin.academic-year.select'),
-                {
-                    // Using POST as it changes server state (session)
-                    annee_uni_id: yearId,
-                },
-                {
-                    preserveScroll: true,
-                    // preserveState: false, // Default for POST is false, which forces a fresh visit
-                    // This is good as we want all data to reflect the new year.
-                    onSuccess: () => {
-                        // After the session is updated on the backend and Inertia reloads,
-                        // the new academicYear prop will be available, and the page content
-                        // (fetched by controllers using the new session value) will update.
-                        // No need to explicitly call router.reload() here if using POST
-                        // and preserveState is false (or default for POST).
-                        // If you were using router.put or a GET request that doesn't fully reload,
-                        // then router.reload() might be necessary.
-                    },
-                    onError: (errors) => {
-                        console.error('Failed to switch academic year:', errors);
-                        // Optionally show an error toast
-                    },
-                },
-            );
+            router.post(route('admin.academic-year.select'), { annee_uni_id: yearId }, { preserveScroll: true });
         }
     };
 
     return (
         <header className="border-sidebar-border/50 bg-background flex h-16 shrink-0 items-center justify-between gap-2 border-b px-4 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 md:px-6">
             <div className="flex items-center gap-2">
-                <SidebarTrigger className="-ml-1.5 md:-ml-1" />
-                <Breadcrumbs breadcrumbs={breadcrumbs} />
+                {/* --- MODIFIED SECTION --- */}
+                {showBackButton ? (
+                    <Link href={route('control-center')}>
+                        <Button variant="outline" size="sm" className="gap-1.5">
+                            <Icon icon="mdi:arrow-left" className="h-4 w-4" />
+                            {translations?.back_to_control_center || 'Control Center'}
+                        </Button>
+                    </Link>
+                ) : (
+                    <Breadcrumbs breadcrumbs={breadcrumbs} />
+                )}
+                {/* --- END MODIFIED SECTION --- */}
             </div>
 
             <div className="flex flex-1 items-center justify-end gap-1.5 md:gap-2">
                 {academicYear && academicYear.all && academicYear.all.length > 0 && (
-                    <Select
-                        value={academicYear.selected_id?.toString() || ''}
-                        onValueChange={handleAcademicYearChange} // This will now trigger the POST request
-                    >
+                    <Select value={academicYear.selected_id?.toString() || ''} onValueChange={handleAcademicYearChange}>
                         <SelectTrigger className="h-9 w-auto max-w-[200px] min-w-[150px] border-0 bg-transparent px-2 py-1.5 text-xs text-[var(--muted-foreground)] shadow-none hover:text-[var(--foreground)] focus:ring-0 md:text-sm">
                             <div className="flex items-center gap-1.5">
                                 <Icon icon="mdi:calendar-blank-outline" className="h-4 w-4" />
@@ -92,7 +81,7 @@ export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: Breadcrum
                             </div>
                         </SelectTrigger>
                         <SelectContent className="max-h-72 min-w-[var(--radix-select-trigger-width)] border-[var(--border)] bg-[var(--popover)] text-[var(--popover-foreground)]">
-                            {academicYear.all.map((year: AnneeUniType) => (
+                            {academicYear.all.map((year) => (
                                 <SelectItem
                                     key={year.id}
                                     value={year.id.toString()}

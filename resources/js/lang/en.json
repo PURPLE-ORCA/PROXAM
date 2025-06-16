@@ -569,5 +569,6 @@
     "original_request_label": "Original Request:",
     "by_label": "by",
     "proposed_swap_label": "Proposed Swap:",
-    "no_exchange_history_available": "No exchange history available."
+    "no_exchange_history_available": "No exchange history available.",
+    "back_to_control_center": "Control Center"
 }
