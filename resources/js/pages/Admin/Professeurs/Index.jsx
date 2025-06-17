@@ -2,11 +2,25 @@ import ConfirmationModal from '@/components/Common/ConfirmationModal';
 import ImportModal from '@/components/ImportModal';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+// --- 1. IMPORT DROPDOWN COMPONENTS ---
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+// ------------------------------------
 import { TranslationContext } from '@/context/TranslationProvider';
 import AppLayout from '@/layouts/app-layout';
 import { Icon } from '@iconify/react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
+// --- 1. IMPORT THE FORMAT FUNCTION ---
+import { format } from 'date-fns';
+// ------------------------------------
 import { MaterialReactTable, useMaterialReactTable } from 'material-react-table';
+import ProfessorModal from './ProfessorModal'; // Import our new modal
 import { useContext, useEffect, useMemo, useState } from 'react';
 
 const statutColors = {
@@ -21,13 +35,40 @@ const statutColors = {
 const defaultPageSize = 15;
 const defaultPageIndex = 0;
 
-export default function Index({ professeurs: professeursPagination, filters, servicesForFilter, rangsForFilter, statutsForFilter }) {
+export default function Index({
+    professeurs: professeursPagination,
+    filters,
+    servicesForFilter,
+    rangsForFilter,
+    statutsForFilter,
+    // New props from the controller for the modal:
+    servicesForForm,
+    modulesForForm,
+    rangsForForm,
+    statutsForForm,
+    existingSpecialtiesForForm,
+}) {
     const { translations, language } = useContext(TranslationContext);
     const { auth } = usePage().props;   
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [itemToDelete, setItemToDelete] = useState(null);
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+
+    // --- NEW STATE FOR OUR PROFESSOR MODAL ---
+    const [isProfessorModalOpen, setProfessorModalOpen] = useState(false);
+    const [professorToEdit, setProfessorToEdit] = useState(null);
+
+    // --- NEW HANDLERS ---
+    const openCreateModal = () => {
+        setProfessorToEdit(null); // Clear any previous edit data
+        setProfessorModalOpen(true);
+    };
+
+    const openEditModal = (professeur) => {
+        setProfessorToEdit(professeur);
+        setProfessorModalOpen(true);
+    };
 
     const getStatutTranslation = (statutKey) => {
         if (!statutKey) return translations?.statut_undefined || 'N/A';
@@ -110,7 +151,20 @@ export default function Index({ professeurs: professeursPagination, filters, ser
                 filterSelectOptions: Object.entries(statutsForFilter).map(([key, value]) => ({ value: key, text: value })),
             },
             { accessorKey: 'specialite', header: translations?.professeur_specialty_column_header || 'Specialty', size: 150 },
-            { accessorKey: 'date_recrutement', header:'recutment', size: 150 },
+
+            // --- 2. MODIFY THIS COLUMN DEFINITION ---
+            {
+                accessorKey: 'date_recrutement',
+                header: 'Recruitment',
+                size: 150,
+                Cell: ({ cell }) => {
+                    const date = cell.getValue();
+                    if (!date) return 'N/A';
+                    // Format the ISO string into a more readable date
+                    return format(new Date(date), 'dd/MM/yyyy');
+                },
+            },
+            // ----------------------------------------
             {
                 accessorKey: 'is_chef_service',
                 header: translations?.professeur_is_head_column_header || 'Head',
@@ -165,7 +219,10 @@ export default function Index({ professeurs: professeursPagination, filters, ser
         onPaginationChange: setPagination,
         enableEditing: auth.abilities?.is_admin,
         enableRowActions: auth.abilities?.is_admin,
-
+        // --- 2. ADD THIS PROPERTY ---
+        positionActionsColumn: 'last',
+        // -------------------------
+        
         muiTablePaperProps: {
             elevation: 0,
             sx: { borderRadius: 'var(--radius-md)', backgroundColor: 'var(--background)', '.dark &': { backgroundColor: 'var(--background)' } },
@@ -228,34 +285,36 @@ export default function Index({ professeurs: professeursPagination, filters, ser
             },
         },
 
+
+        // --- 3. REPLACE THIS ENTIRE FUNCTION ---
         renderRowActions: ({ row }) => (
-            <div className="flex items-center gap-1">
-                <Button variant="ghost" size="icon" asChild className="text-[var(--foreground)] hover:bg-[var(--accent)]">
-                    <Link
-                        href={route('admin.professeurs.edit', { professeur: row.original.id })}
-                        title={translations?.edit_button_title || 'Modifier'}
-                    >
-                        <Icon icon="mdi:pencil" className="h-5 w-5" />
-                    </Link>
-                </Button>
-                {auth.user?.id !== row.original.user?.id && (
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => openDeleteModal(row.original)}
-                        className="text-[var(--foreground)] hover:bg-[var(--accent)] hover:text-[var(--destructive)]"
-                        title={translations?.delete_button_title || 'Supprimer'}
-                    >
-                        <Icon icon="mdi:delete" className="h-5 w-5" />
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="h-8 w-8 p-0">
+                        <span className="sr-only">Open menu</span>
+                        <Icon icon="mdi:dots-horizontal" className="h-4 w-4" />
                     </Button>
-                )}
-            </div>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                    <DropdownMenuItem onClick={() => openEditModal(row.original)}>
+                        <Icon icon="mdi:pencil-outline" className="mr-2 h-4 w-4" />
+                        Edit
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    {auth.user?.id !== row.original.user?.id && (
+                         <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10" onClick={() => openDeleteModal(row.original)}>
+                            <Icon icon="mdi:delete-outline" className="mr-2 h-4 w-4" />
+                            Delete
+                        </DropdownMenuItem>
+                    )}
+                </DropdownMenuContent>
+            </DropdownMenu>
         ),
+        
         renderTopToolbarCustomActions: () => (
             <div className="flex gap-2">
-                <Button asChild variant="default" className="bg-[var(--primary)] text-[var(--primary-foreground)] hover:bg-[var(--primary)]/90">
-                    <Link href={route('admin.professeurs.create')}>{translations?.add_professeur_button || 'Add Professor'}</Link>
-                </Button>
+                <Button onClick={openCreateModal}>Add Professor</Button>
                 <Button
                     variant="outline"
                     onClick={() => setIsImportModalOpen(true)}
@@ -292,6 +351,19 @@ export default function Index({ professeurs: professeursPagination, filters, ser
             <ImportModal
                 isOpen={isImportModalOpen}
                 onClose={() => setIsImportModalOpen(false)}
+            />
+
+            {/* --- RENDER OUR NEW MODAL --- */}
+            <ProfessorModal
+                isOpen={isProfessorModalOpen}
+                onClose={() => setProfessorModalOpen(false)}
+                professeur={professorToEdit}
+                // Pass all the necessary data for the form dropdowns
+                services={servicesForForm}
+                modules={modulesForForm}
+                rangs={rangsForForm}
+                statuts={statutsForForm}
+                existingSpecialties={existingSpecialtiesForForm}
             />
         </AppLayout>
     );

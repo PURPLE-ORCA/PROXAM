@@ -60,38 +60,32 @@ class ProfesseurController extends Controller
             ->paginate($request->input('per_page', 40))
             ->withQueryString();
 
-        $services = Service::orderBy('nom')->get(['id', 'nom']); // For filter dropdown
-
-        return Inertia::render($this->baseInertiaPath() . 'Index', [
-            'professeurs' => $professeurs,
-            'filters' => $request->all(['search', 'filters']),
-            'servicesForFilter' => $services,
-            'rangsForFilter' => Professeur::getRangs(), 
-            'statutsForFilter' => Professeur::getStatuts(), 
-        ]);
-    }
-
-    public function create()
-    {
+        // --- ADD THIS DATA FOR THE MODAL ---
         $services = Service::orderBy('nom')->get(['id', 'nom']);
         $modules = Module::orderBy('nom')->get(['id', 'nom']);
         $rangs = Professeur::getRangs();
         $statuts = Professeur::getStatuts();
-        // Fetch distinct existing specialties from the database
         $existingSpecialties = Professeur::select('specialite')
                                         ->whereNotNull('specialite')
                                         ->where('specialite', '!=', '')
                                         ->distinct()
                                         ->pluck('specialite')
                                         ->toArray();
+        // --- END ADD ---
 
-        return Inertia::render($this->baseInertiaPath() . 'Create', [
-            'services' => $services,
-            'modules' => $modules,
-            'rangs' => $rangs,
-            'statuts' => $statuts,
-            'existingSpecialties' => $existingSpecialties, // Pass to form
-            // 'specialties' prop (key-value for medical/surgical) is no longer needed if form handles it directly
+        return Inertia::render($this->baseInertiaPath() . 'Index', [
+            'professeurs' => $professeurs,
+            'filters' => $request->all(['search', 'filters']),
+            // Keep existing data for MRT filters
+            'servicesForFilter' => $services,
+            'rangsForFilter' => $rangs,
+            'statutsForFilter' => $statuts,
+            // Pass new data for the modal form
+            'servicesForForm' => $services,
+            'modulesForForm' => $modules,
+            'rangsForForm' => $rangs,
+            'statutsForForm' => $statuts,
+            'existingSpecialtiesForForm' => $existingSpecialties,
         ]);
     }
 
@@ -153,31 +147,6 @@ class ProfesseurController extends Controller
             return redirect()->route('admin.professeurs.index')
                 ->with('success', 'toasts.professeur_created_successfully');
         });
-    }
-
-
-    public function edit(Professeur $professeur)
-    {
-        $professeur->load(['user', 'service', 'modules']);
-        $services = Service::orderBy('nom')->get(['id', 'nom']);
-        $modules = Module::orderBy('nom')->get(['id', 'nom']);
-        $rangs = Professeur::getRangs();
-        $statuts = Professeur::getStatuts();
-        $existingSpecialties = Professeur::select('specialite')
-                                        ->whereNotNull('specialite')
-                                        ->where('specialite', '!=', '')
-                                        ->distinct()
-                                        ->pluck('specialite')
-                                        ->toArray();
-
-        return Inertia::render($this->baseInertiaPath() . 'Edit', [
-            'professeurToEdit' => $professeur,
-            'services' => $services,
-            'modules' => $modules,
-            'rangs' => $rangs,
-            'statuts' => $statuts,
-            'existingSpecialties' => $existingSpecialties, // Pass to form
-        ]);
     }
 
     public function update(Request $request, Professeur $professeur)
