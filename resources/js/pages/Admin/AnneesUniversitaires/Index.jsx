@@ -7,6 +7,7 @@ import { DataTable } from '@/components/DataTable';
 import { getColumns } from './columns';
 import AnneeUniModal from './AnneeUniModal';
 import { Button } from '@/components/ui/button';
+import SimpleTableToolbar from '@/components/SimpleTableToolbar'; // <-- Import the simple toolbar
 
 export default function Index({ anneesUniversitaires: anneesPagination, filters }) {
     const { translations } = useContext(TranslationContext);
@@ -57,18 +58,22 @@ export default function Index({ anneesUniversitaires: anneesPagination, filters 
         <AppLayout>
             <Head title={translations?.annee_uni_page_title || 'Academic Years'} />
             <div className="p-4 md:p-6">
-                 <DataTable
-                    columns={columns}
-                    data={anneesPagination.data}
-                    pagination={anneesPagination}
-                    onPaginationChange={handlePaginationChange}
-                    onSearch={handleSearch}
+                <SimpleTableToolbar
                     filters={filters}
+                    onSearch={handleSearch}
+                    placeholder="Filter academic years..."
                 >
                     <Button onClick={openCreateModal}>
                         {translations?.add_annee_uni_button || 'Add Academic Year'}
                     </Button>
-                </DataTable>
+                </SimpleTableToolbar>
+
+                <DataTable
+                    columns={columns}
+                    data={anneesPagination.data}
+                    pagination={anneesPagination}
+                    onPaginationChange={handlePaginationChange}
+                />
             </div>
 
             <AnneeUniModal

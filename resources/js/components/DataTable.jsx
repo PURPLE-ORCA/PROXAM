@@ -1,66 +1,41 @@
-import {
-    flexRender,
-    getCoreRowModel,
-    getPaginationRowModel,
-    useReactTable,
-} from '@tanstack/react-table';
+import { flexRender, getCoreRowModel, getPaginationRowModel, getSortedRowModel, useReactTable } from '@tanstack/react-table';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { useEffect, useState } from 'react';
 
-export function DataTable({ columns, data, pagination, onPaginationChange, onSearch, filters, children }) {
+export function DataTable({ columns, data, pagination, onPaginationChange, onSortingChange, sorting }) {
     const table = useReactTable({
         data,
         columns,
         getCoreRowModel: getCoreRowModel(),
         getPaginationRowModel: getPaginationRowModel(),
+        getSortedRowModel: getSortedRowModel(), // <-- Add this
         manualPagination: true,
+        manualSorting: true, // <-- Add this
         rowCount: pagination.total,
         state: {
             pagination: {
-            pageIndex: pagination.current_page - 1,
+                pageIndex: pagination.current_page - 1,
                 pageSize: pagination.per_page,
             },
+            sorting, // <-- Wire up the sorting state
         },
         onPaginationChange: (updater) => {
-            const newPage = typeof updater === 'function' ? updater({ pageIndex: pagination.current_page - 1, pageSize: pagination.per_page }) : updater;
-            onPaginationChange({ page: newPage.pageIndex + 1, per_page: newPage.pageSize });
-        },
-    });
-
-    const [searchTerm, setSearchTerm] = useState(filters?.search || '');
-
-    // --- DEBOUNCING LOGIC (This part is fine) ---
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            // Only fire search if the local term is different from the one in the URL
-            if (searchTerm !== (filters?.search || '')) {
-                onSearch(searchTerm);
+            if (typeof updater === 'function') {
+                const newPagination = updater({
+                    pageIndex: pagination.current_page - 1,
+                    pageSize: pagination.per_page,
+                });
+                onPaginationChange({
+                    page: newPagination.pageIndex + 1,
+                    per_page: newPagination.pageSize,
+                });
             }
-        }, 300);
-
-        return () => clearTimeout(timer);
-    }, [searchTerm, onSearch]); // Simplified dependencies
-
-    // --- CRITICAL FIX: SYNC STATE WITH PROPS ---
-    // This effect runs whenever the filters from the URL change (e.g., after a search completes).
-    useEffect(() => {
-        setSearchTerm(filters?.search || '');
-    }, [filters?.search]);
-    // --- END CRITICAL FIX ---
-
+        },
+        onSortingChange: onSortingChange, // <-- Wire up the handler
+    });
+    
     return (
         <div>
-            <div className="flex items-center justify-between py-4">
-                <Input
-                    placeholder="Filter services..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="max-w-sm"
-                />
-                {children}
-            </div>
             <div className="rounded-md border">
                 <Table>
                     <TableHeader>

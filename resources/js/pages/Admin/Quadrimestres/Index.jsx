@@ -7,6 +7,7 @@ import { DataTable } from '@/components/DataTable';
 import { getColumns } from './columns';
 import QuadrimestreModal from './QuadrimestreModal';
 import { Button } from '@/components/ui/button';
+import SimpleTableToolbar from '@/components/SimpleTableToolbar'; // <-- Import the simple toolbar
 
 export default function Index({ quadrimestres: quadrimestresPagination, filters, sesons }) {
     const { translations } = useContext(TranslationContext);
@@ -59,18 +60,22 @@ export default function Index({ quadrimestres: quadrimestresPagination, filters,
         <AppLayout>
             <Head title={translations?.quadrimestres_page_title || 'Semesters'} />
             <div className="p-4 md:p-6">
-                 <DataTable
-                    columns={columns}
-                    data={quadrimestresPagination.data}
-                    pagination={quadrimestresPagination}
-                    onPaginationChange={handlePaginationChange}
-                    onSearch={handleSearch}
+                <SimpleTableToolbar
                     filters={filters}
+                    onSearch={handleSearch}
+                    placeholder="Filter semesters..."
                 >
                     <Button onClick={openCreateModal}>
                         {translations?.add_quadrimestre_button || 'Add Semester'}
                     </Button>
-                </DataTable>
+                </SimpleTableToolbar>
+
+                <DataTable
+                    columns={columns}
+                    data={quadrimestresPagination.data}
+                    pagination={quadrimestresPagination}
+                    onPaginationChange={handlePaginationChange}
+                />
             </div>
 
             <QuadrimestreModal

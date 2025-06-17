@@ -7,6 +7,7 @@ import { DataTable } from '@/components/DataTable';
 import { getColumns } from './columns';
 import SalleModal from './SalleModal';
 import { Button } from '@/components/ui/button';
+import SimpleTableToolbar from '@/components/SimpleTableToolbar'; // <-- Import the simple toolbar
 
 export default function Index({ salles: sallesPagination, filters }) {
     const { translations } = useContext(TranslationContext);
@@ -57,18 +58,22 @@ export default function Index({ salles: sallesPagination, filters }) {
         <AppLayout>
             <Head title={translations?.salles_page_title || 'Rooms'} />
             <div className="p-4 md:p-6">
-                 <DataTable
-                    columns={columns}
-                    data={sallesPagination.data}
-                    pagination={sallesPagination}
-                    onPaginationChange={handlePaginationChange}
-                    onSearch={handleSearch}
+                <SimpleTableToolbar
                     filters={filters}
+                    onSearch={handleSearch}
+                    placeholder="Filter rooms..."
                 >
                     <Button onClick={openCreateModal}>
                         {translations?.add_salle_button || 'Add Room'}
                     </Button>
-                </DataTable>
+                </SimpleTableToolbar>
+
+                <DataTable
+                    columns={columns}
+                    data={sallesPagination.data}
+                    pagination={sallesPagination}
+                    onPaginationChange={handlePaginationChange}
+                />
             </div>
 
             <SalleModal

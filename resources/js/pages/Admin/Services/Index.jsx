@@ -7,6 +7,7 @@ import { DataTable } from '@/components/DataTable'; // Our new reusable table
 import { getColumns } from './columns'; // Our new column definitions
 import ServiceModal from './ServiceModal'; // Our new create/edit modal
 import { Button } from '@/components/ui/button';
+import SimpleTableToolbar from '@/components/SimpleTableToolbar'; // <-- Import the simple toolbar
 
 export default function Index({ services: servicesPagination, filters }) {
     const { translations } = useContext(TranslationContext);
@@ -58,19 +59,23 @@ export default function Index({ services: servicesPagination, filters }) {
         <AppLayout>
             <Head title={translations?.services_page_title || 'Services'} />
             <div className="p-4 md:p-6">
-                 <DataTable
+                {/* Explicitly render the toolbar we want */}
+                <SimpleTableToolbar
+                    filters={filters}
+                    onSearch={handleSearch}
+                    placeholder="Filter services..."
+                >
+                    <Button onClick={openCreateModal}>
+                        {translations?.add_service_button || 'Add Service'}
+                    </Button>
+                </SimpleTableToolbar>
+
+                <DataTable
                     columns={columns}
                     data={servicesPagination.data}
                     pagination={servicesPagination}
                     onPaginationChange={handlePaginationChange}
-                    onSearch={handleSearch}
-                    filters={filters}
-                >
-                    {/* This button is passed as a child to the DataTable component's header */}
-                    <Button onClick={openCreateModal}>
-                        {translations?.add_service_button || 'Add Service'}
-                    </Button>
-                </DataTable>
+                />
             </div>
 
             {/* Modals are now rendered here, controlled by state */}

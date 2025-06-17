@@ -1,232 +1,132 @@
-import ConfirmationModal from '@/components/Common/ConfirmationModal';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { TranslationContext } from '@/context/TranslationProvider';
-import AppLayout from '@/layouts/app-layout';
-import { Icon } from '@iconify/react';
-import { Head, Link, router, usePage } from '@inertiajs/react';
-import { MaterialReactTable, useMaterialReactTable } from 'material-react-table';
-import { useContext, useEffect, useMemo, useState } from 'react';
+import AppLayout from "@/layouts/app-layout";
+import { Head, router, usePage } from '@inertiajs/react';
+import { useMemo, useState, useCallback, useEffect } from 'react';
+import ConfirmationModal from "@/components/Common/ConfirmationModal";
+import { DataTable } from "@/components/DataTable";
+import { getColumns } from './columns';
+import UserModal from './UserModal';
+import UserTableToolbar from './UserTableToolbar';
+import { Button } from "@/components/ui/button";
 
-// Define roleColors for consistent styling, can be moved to a config or theme file
-const roleColors = {
-    admin: 'bg-red-500 hover:bg-red-600',
-    rh: 'bg-blue-500 hover:bg-blue-600',
-    professeur: 'bg-green-500 hover:bg-green-600',
-    chef_service: 'bg-yellow-500 hover:bg-yellow-600 text-black',
-    default: 'bg-gray-500 hover:bg-gray-600',
-};
+export default function Index({ users: usersPagination, filters, rolesForFilter, rolesForForm }) {
+    const { auth } = usePage().props;
 
-const defaultPageSize = 30;
-const defaultPageIndex = 0;
-
-export default function Index({ users: usersPagination, filters, roles: availableRolesForFilter }) {
-    const { translations, language } = useContext(TranslationContext); // language might be needed for getRoleTranslation if it's more complex
-    const { auth } = usePage().props; // No generic type needed for usePage in JSX
-
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [itemToDelete, setItemToDelete] = useState(null);
-
-    const getRoleTranslation = (roleKey) => {
-        if (!roleKey) return translations?.role_undefined || 'N/A';
-        const translationKey = `role_${roleKey}`;
-        return translations?.[translationKey] || roleKey.charAt(0).toUpperCase() + roleKey.slice(1);
-    };
-
-    const breadcrumbs = useMemo(() => [{ title: translations?.users_breadcrumb || 'Users', href: route('admin.users.index') }], [translations]);
-
-    const [pagination, setPagination] = useState({
-        pageIndex: usersPagination.current_page - 1 ?? defaultPageIndex,
-        pageSize: usersPagination.per_page ?? defaultPageSize,
+    // A single state object for all filters
+    const [activeFilters, setActiveFilters] = useState({
+        search: filters.search || '',
+        role: filters.role || '',
+        verified: filters.verified || '',
+        page: usersPagination.current_page,
+        per_page: usersPagination.per_page,
+        sortBy: filters.sortBy || 'name',
+        sortDirection: filters.sortDirection || 'asc',
     });
 
-    useEffect(() => {
-        if (pagination.pageIndex !== usersPagination.current_page - 1 || pagination.pageSize !== usersPagination.per_page) {
-            router.get(
-                route('admin.users.index'),
-                {
-                    page: pagination.pageIndex + 1,
-                    per_page: pagination.pageSize,
-                    search: filters?.search || '',
-                    role: filters?.role || undefined,
-                },
-                { preserveState: true, replace: true, preserveScroll: true },
-            );
-        }
-    }, [pagination.pageIndex, pagination.pageSize, usersPagination, filters]);
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [selectedUser, setSelectedUser] = useState(null);
 
-    const columns = useMemo(
-        () => [
-            { accessorKey: 'name', header: translations?.user_name_column_header || 'Name', size: 250 },
-            { accessorKey: 'email', header: translations?.user_email_column_header || 'Email', size: 300 },
-            {
-                accessorKey: 'role',
-                header: translations?.user_role_column_header || 'Role',
-                Cell: ({ cell }) => {
-                    const role = cell.getValue();
-                    const colorClass = role ? roleColors[role] || roleColors.default : roleColors.default;
-                    return <Badge className={`${colorClass} text-white`}>{getRoleTranslation(role)}</Badge>;
-                },
-                size: 150,
-            },
-            {
-                accessorKey: 'email_verified_at',
-                header: translations?.user_email_verified_column_header || 'Verified',
-                Cell: ({ cell }) =>
-                    cell.getValue() ? (
-                        <Icon icon="mdi:check-circle" className="mx-auto h-5 w-5 text-green-500" />
-                    ) : (
-                        <Icon icon="mdi:close-circle" className="mx-auto h-5 w-5 text-red-500" />
-                    ),
-                size: 100,
-                muiTableBodyCellProps: { align: 'center' },
-                muiTableHeadCellProps: { align: 'center' },
-            },
-        ],
-        [translations, language, availableRolesForFilter], // language dependency if getRoleTranslation uses it
-    );
-
-    const openDeleteModal = (userItem) => {
-        setItemToDelete(userItem);
-        setIsModalOpen(true);
+    const openCreateModal = () => setIsCreateModalOpen(true);
+    const openEditModal = (user) => {
+        setSelectedUser(user);
+        setIsEditModalOpen(true);
     };
-
-    const closeDeleteModal = () => {
-        setIsModalOpen(false);
-        setItemToDelete(null);
+    const openDeleteModal = (user) => {
+        setSelectedUser(user);
+        setIsDeleteModalOpen(true);
     };
 
     const confirmDelete = () => {
-        if (itemToDelete) {
-            router.delete(route('admin.users.destroy', { user: itemToDelete.id }), {
-                preserveScroll: true,
-                onSuccess: () => closeDeleteModal(),
-                onError: () => {
-                    closeDeleteModal();
+        if (selectedUser) {
+            router.delete(route('admin.users.destroy', selectedUser.id), {
+                onSuccess: () => {
+                    setIsDeleteModalOpen(false);
+                    setSelectedUser(null);
                 },
+                onError: (errors) => {
+                    console.error("Delete error:", errors);
+                    setIsDeleteModalOpen(false);
+                    setSelectedUser(null);
+                }
             });
         }
     };
+    
+    // Debounced effect to apply filters whenever they change
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            router.get(route('admin.users.index'), activeFilters, {
+                preserveState: true,
+                preserveScroll: true,
+                replace: true,
+            });
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [activeFilters]);
 
-    const table = useMaterialReactTable({
-        columns,
-        data: usersPagination.data || [],
-        manualPagination: true,
-        state: { pagination },
-        rowCount: usersPagination.total,
-        onPaginationChange: setPagination,
-        enableEditing: auth.abilities?.is_admin, // Relies on backend structure of auth.abilities
-        enableRowActions: auth.abilities?.is_admin,
+    // A single handler for all filter changes from the toolbar
+    const handleFilterChange = (newFilters) => {
+        setActiveFilters(prev => ({ ...prev, ...newFilters, page: 1 }));
+    };
 
-        muiTablePaperProps: {
-            elevation: 0,
-            sx: { borderRadius: 'var(--radius-md)', backgroundColor: 'var(--background)', '.dark &': { backgroundColor: 'var(--background)' } },
-        },
-        muiTableHeadCellProps: {
-            sx: {
-                backgroundColor: 'var(--background)',
-                color: 'var(--foreground)',
-                fontWeight: '600',
-                borderBottomWidth: '2px',
-                borderColor: 'var(--border)',
-                '& .MuiSvgIcon-root': { color: 'var(--foreground)' },
-                '.dark &': {
-                    backgroundColor: 'var(--background)',
-                    color: 'var(--foreground)',
-                    borderColor: 'var(--border)',
-                    '& .MuiSvgIcon-root': { color: 'var(--foreground)' },
-                },
-            },
-        },
-        muiTableBodyCellProps: {
-            sx: {
-                backgroundColor: 'var(--background)',
-                color: 'var(--foreground)',
-                borderBottom: '1px solid var(--border)',
-                '.dark &': { backgroundColor: 'var(--background)', color: 'var(--foreground)', borderBottom: '1px solid var(--border)' },
-            },
-        },
-        muiTableBodyRowProps: {
-            sx: {
-                backgroundColor: 'transparent',
-                '&:hover td': { backgroundColor: 'var(--accent)', '.dark &': { backgroundColor: 'var(--accent)' } },
-            },
-        },
-        muiTopToolbarProps: {
-            sx: {
-                backgroundColor: 'var(--background)',
-                borderBottom: '1px solid var(--border)',
-                '& .MuiIconButton-root, & .MuiSvgIcon-root, & .MuiInputBase-input': { color: 'var(--foreground)' },
-                '.dark &': {
-                    backgroundColor: 'var(--background)',
-                    borderBottom: '1px solid var(--border)',
-                    '& .MuiIconButton-root, & .MuiSvgIcon-root, & .MuiInputBase-input': { color: 'var(--foreground)' },
-                },
-            },
-        },
-        muiBottomToolbarProps: {
-            sx: {
-                backgroundColor: 'var(--background)',
-                color: 'var(--foreground)',
-                borderTop: '1px solid var(--border)',
-                '& .MuiIconButton-root:not([disabled]), & .MuiSvgIcon-root': { color: 'var(--foreground)' },
-                '& .Mui-disabled': { opacity: 0.5 },
-                '.dark &': {
-                    backgroundColor: 'var(--background)',
-                    color: 'var(--foreground)',
-                    borderTop: '1px solid var(--border)',
-                    '& .MuiIconButton-root:not([disabled]), & .MuiSvgIcon-root': { color: 'var(--foreground)' },
-                },
-            },
-        },
+    // Handler for pagination from the DataTable
+    const handlePaginationChange = useCallback(({ page, per_page }) => {
+        setActiveFilters(prev => ({...prev, page, per_page}));
+    }, []);
 
-        renderRowActions: ({ row }) => (
-            <div className="flex items-center gap-1">
-                <Button variant="ghost" size="icon" asChild className="text-[var(--foreground)] hover:bg-[var(--accent)]">
-                    <Link href={route('admin.users.edit', { user: row.original.id })} title={translations?.edit_button_title || 'Modifier'}>
-                        <Icon icon="mdi:pencil" className="h-5 w-5" />
-                    </Link>
-                </Button>
-                {auth.user?.id !== row.original.id && (
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => openDeleteModal(row.original)}
-                        className="text-[var(--foreground)] hover:bg-[var(--accent)] hover:text-[var(--destructive)]"
-                        title={translations?.delete_button_title || 'Supprimer'}
-                    >
-                        <Icon icon="mdi:delete" className="h-5 w-5" />
-                    </Button>
-                )}
-            </div>
-        ),
-        renderTopToolbarCustomActions: () => (
-            <Button asChild variant="default" className="bg-[var(--primary)] text-[var(--primary-foreground)] hover:bg-[var(--primary)]/90">
-                <Link href={route('admin.users.create')}>{translations?.add_user_button || 'Add User'}</Link>
-            </Button>
-        ),
-    });
+    // Handler for sorting from TanStack Table (passed to DataTable)
+    const handleSortingChange = (sorting) => {
+        const sort = sorting[0]; // TanStack table gives an array
+        if (sort) {
+            setActiveFilters(prev => ({...prev, sortBy: sort.id, sortDirection: sort.desc ? 'desc' : 'asc'}));
+        } else {
+            // Reset to default sort
+            setActiveFilters(prev => ({...prev, sortBy: 'name', sortDirection: 'asc'}));
+        }
+    };
+
+    const columns = useMemo(() => getColumns(auth, openEditModal, openDeleteModal), [auth]);
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title={translations?.users_page_title || 'Users List'} />
-            <div className="bg-[var(--background)] p-4 text-[var(--foreground)] md:p-6">
-                <MaterialReactTable table={table} />
+        <AppLayout>
+            <Head title="Users" />
+            <div className="p-4 md:p-6">
+                 <UserTableToolbar
+                    filters={activeFilters}
+                    onFilterChange={handleFilterChange}
+                    rolesForFilter={rolesForFilter}
+                >
+                    <Button onClick={openCreateModal}>Add User</Button>
+                </UserTableToolbar>
+                 <DataTable
+                    columns={columns}
+                    data={usersPagination.data}
+                    pagination={usersPagination}
+                    onPaginationChange={handlePaginationChange}
+                    onSortingChange={handleSortingChange}
+                    sorting={[{ id: activeFilters.sortBy, desc: activeFilters.sortDirection === 'desc' }]}
+                />
             </div>
+            <UserModal
+                isOpen={isCreateModalOpen}
+                onClose={() => setIsCreateModalOpen(false)}
+                roles={rolesForForm}
+            />
+            {selectedUser && (
+                <UserModal
+                    isOpen={isEditModalOpen}
+                    onClose={() => setIsEditModalOpen(false)}
+                    user={selectedUser}
+                    roles={rolesForForm}
+                />
+            )}
             <ConfirmationModal
-                isOpen={isModalOpen}
-                onClose={closeDeleteModal}
+                isOpen={isDeleteModalOpen}
+                onClose={() => setIsDeleteModalOpen(false)}
                 onConfirm={confirmDelete}
-                title={translations?.delete_user_modal_title || 'Delete User'}
-                message={
-                    itemToDelete
-                        ? (
-                              translations?.user_delete_confirmation ||
-                              'Are you sure you want to delete the user "{name}"? This may also delete associated professor data.'
-                          ).replace('{name}', itemToDelete.name)
-                        : translations?.generic_delete_confirmation || 'Are you sure you want to delete this item?'
-                }
-                confirmText={translations?.delete_button_title || 'Delete'}
+                title="Confirm Delete"
+                message={`Are you sure you want to delete user "${selectedUser?.name}"? This action cannot be undone.`}
             />
         </AppLayout>
     );
