@@ -92,7 +92,7 @@ class ExamenController extends Controller
 
         $examens = $examensQuery
             ->orderBy('debut', 'desc') // Order by exam start date
-            ->paginate(15)
+            ->paginate(30)
             ->withQueryString();
 
         return Inertia::render($this->baseInertiaPath() . 'Index', [
