@@ -1,12 +1,14 @@
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Icon } from '@iconify/react';
 import axios from 'axios';
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useContext } from 'react';
+import { Button } from '@/components/ui/button';
+import { TranslationContext } from '@/context/TranslationProvider';
 
-// This component is now only responsible for rendering. The parent handles the useForm hook.
+
+// This component now receives its state and handlers as props
 export default function ExamenForm({
     data,
     setData,
@@ -19,21 +21,23 @@ export default function ExamenForm({
     salles,
     types,
 }) {
-    // Local state for UI only (cascading dropdowns)
+    // Local UI state for cascading selects is still fine here
     const [selectedFiliereId, setSelectedFiliereId] = useState('');
     const [selectedLevelId, setSelectedLevelId] = useState('');
+    const { translations } = useContext(TranslationContext);
 
-    // --- EFFECT 1: Initialize local state when editing an existing exam ---
+    // --- MODIFIED EFFECT ---
+    // This effect now initializes the local state based on the DATA prop
     useEffect(() => {
-        if (isEdit && data && data.module_id) {
+        if (data && data.module_id) {
             const module = allModules.find(m => m.id.toString() === data.module_id.toString());
             if (module?.level) {
                 setSelectedFiliereId(module.level.filiere_id.toString());
                 setSelectedLevelId(module.level.id.toString());
             }
         }
-    }, [isEdit, data, allModules]);
-    
+    }, [data.module_id, allModules, data]); // Watch the data prop, not isEdit
+
     // --- EFFECT 2: Fetch default room config when module changes ---
     useEffect(() => {
         // Only run this if we are CREATING a new exam and a module has been selected.
@@ -107,14 +111,6 @@ export default function ExamenForm({
     };
 
     return (
-        // The JSX for the form remains largely the same, but it's now driven by cleaner state.
-        // ... your full form JSX here ...
-        // Important: Ensure the Select components for Filiere, Level, and Module use the
-        // new handlers and derived memos correctly.
-        // Example:
-        // <Select value={selectedFiliereId} onValueChange={handleFiliereChange} ... >
-        // <Select value={selectedLevelId} onValueChange={handleLevelChange} ... >
-        // <Select value={data.module_id} onValueChange={val => setData('module_id', val)} ... >
         <div className="space-y-6">
             <fieldset className="grid grid-cols-1 gap-x-6 gap-y-4 rounded-md border border-[var(--border)] p-4 sm:grid-cols-6">
                 <legend className="px-1 text-sm leading-6 font-semibold text-[var(--foreground)]">
