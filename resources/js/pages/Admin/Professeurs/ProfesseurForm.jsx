@@ -3,56 +3,32 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { SelectContent, SelectItem, SelectTrigger, SelectValue, Select as ShadcnSelect } from '@/components/ui/select';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { TranslationContext } from '@/context/TranslationProvider';
 import { Combobox, ComboboxButton, ComboboxInput, ComboboxOption, ComboboxOptions } from '@headlessui/react';
 import { Icon } from '@iconify/react';
-import { Link, useForm } from '@inertiajs/react';
+import { Link } from '@inertiajs/react';
 import { useContext, useMemo, useState } from 'react';
 
 // Define string constants
 const SPECIALITE_MEDICAL_KEY = 'medical';
 const SPECIALITE_SURGICAL_KEY = 'surgical';
 
+// This component now receives its state and handlers as props.
+// It no longer manages its own form state.
 export default function ProfesseurForm({
-    isEdit = false, // Keep this to know the mode
-    professeurToEdit,
+    isEdit,
+    data,
+    setData,
+    errors,
     services,
     modules,
     rangs,
     statuts,
-    existingSpecialties = [],
+    existingSpecialties,
 }) {
     const { translations } = useContext(TranslationContext);
     const [specialtyQuery, setSpecialtyQuery] = useState('');
-
-    const { data, setData, post, put, processing, errors, reset } = useForm({
-        // Initialize with data from professorToEdit if in edit mode
-        professeur_nom: professeurToEdit?.nom || '',
-        professeur_prenom: professeurToEdit?.prenom || '',
-        email: professeurToEdit?.user?.email || '', // Access nested user email
-        rang: professeurToEdit?.rang || '',
-        statut: professeurToEdit?.statut || '',
-        is_chef_service: professeurToEdit?.is_chef_service || false,
-        // Format the date correctly
-        date_recrutement: professeurToEdit?.date_recrutement ? professeurToEdit.date_recrutement.split('T')[0] : '',
-        specialite: professeurToEdit?.specialite || '',
-        service_id: professeurToEdit?.service_id?.toString() || '',
-        module_ids: professeurToEdit?.modules?.map(m => m.id) || [], // Map to an array of IDs
-    });
-
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        if (isEdit) {
-            put(route('admin.professeurs.update', professeurToEdit.id), {
-                preserveScroll: true,
-            });
-        } else {
-            post(route('admin.professeurs.store'), {
-                preserveScroll: true,
-                onSuccess: () => reset(),
-            });
-        }
-    };
 
     const allSpecialtyOptions = useMemo(() => {
         const preferred = [
@@ -109,7 +85,7 @@ export default function ProfesseurForm({
     };
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="space-y-6 pr-1">
             <fieldset className="grid grid-cols-1 gap-x-6 gap-y-6 rounded-md border border-[var(--border)] p-4 sm:grid-cols-6">
                 <legend className="px-1 text-sm leading-6 font-semibold text-[var(--foreground)]">
                     {translations?.professeur_form_user_section_legend || 'User Account Details'}
@@ -296,39 +272,24 @@ export default function ProfesseurForm({
                 <legend className="px-1 text-sm leading-6 font-semibold text-[var(--foreground)]">
                     {translations?.professeur_form_modules_section_legend || 'Assigned Modules'}
                 </legend>
-                <div className="mt-2 grid max-h-60 grid-cols-2 gap-4 overflow-y-auto sm:grid-cols-3 md:grid-cols-4">
-                    {(modules || []).map((module) => (
-                        <div key={module.id} className="flex items-center space-x-2">
-                            <Checkbox
-                                id={`module-${module.id}`}
-                                checked={(data.module_ids || []).includes(module.id)}
-                                onCheckedChange={() => handleModuleChange(module.id)}
-                            />
-                            <Label htmlFor={`module-${module.id}`} className="font-normal text-[var(--foreground)]">
-                                {module.nom}
-                            </Label>
-                        </div>
-                    ))}
-                </div>
+                <ScrollArea className="h-60 w-full rounded-md border p-4 scrollbar-hide">
+                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
+                        {(modules || []).map((module) => (
+                            <div key={module.id} className="flex items-center space-x-2">
+                                <Checkbox
+                                    id={`module-${module.id}`}
+                                    checked={(data.module_ids || []).includes(module.id)}
+                                    onCheckedChange={() => handleModuleChange(module.id)}
+                                />
+                                <Label htmlFor={`module-${module.id}`} className="font-normal text-[var(--foreground)]">
+                                    {module.nom}
+                                </Label>
+                            </div>
+                        ))}
+                    </div>
+                </ScrollArea>
                 {errors.module_ids && <p className="mt-2 text-sm text-[var(--destructive)]">{errors.module_ids}</p>}
             </fieldset>
-
-            <div className="mt-8 flex items-center justify-end gap-x-4 border-t border-[var(--border)] pt-6">
-                <Button variant="outline" type="button" asChild>
-                    <Link href={route('admin.professeurs.index')}>{translations?.cancel_button || 'Cancel'}</Link>
-                </Button>
-                <Button
-                    type="submit"
-                    disabled={processing}
-                    className="bg-[var(--primary)] text-[var(--primary-foreground)] hover:bg-[var(--primary)]/90"
-                >
-                    {processing
-                        ? translations?.saving_button || 'Saving...'
-                        : isEdit
-                          ? translations?.update_button || 'Update'
-                          : translations?.save_button || 'Save'}
-                </Button>
-            </div>
-        </form>
+        </div>
     );
 }

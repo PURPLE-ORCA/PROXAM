@@ -51,21 +51,32 @@ Route::get('/', function () {
 })->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
+// Renders the new Control Center page
+Route::get('/control-center', function () {
+    return Inertia::render('ControlCenter');
+})->name('control-center');
+
+// Adjust the main dashboard redirect logic
 Route::get('dashboard', function (Request $request) {
     $user = $request->user();
+
+    // Professors go to their KPI dashboard, which is more useful.
     if ($user->hasRole('professeur')) {
         return redirect()->route('professeur.dashboard');
     }
-    if ($user->hasRole('rh')) {
-        return redirect()->route('rh.dashboard');
-    }
-    // If the user is an admin or any other role not explicitly redirected, render the admin dashboard
-    return app(AdminDashboardController::class)->index($request);
+    
+    // For Admin, RH, ChefService, maybe the Control Center is the best landing page?
+    // It gives them an overview of everything they can do.
+    // Or you can keep redirecting to their respective KPI dashboards and add a link
+    // in the header to the Control Center.
+    
+    // Let's make it the landing page for non-professors for now.
+    return redirect()->route('control-center');
+
 })->name('dashboard');
 
     Route::prefix('admin')->name('admin.')->middleware('can:is_admin')->group(function () {
-        // The admin dashboard is now directly rendered by the main /dashboard route, so this specific route is no longer needed.
-        // Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
+        Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
         Route::resource('services', ServiceController::class)->except(['show']);
         // Route::resource('modules', ModuleController::class)->except(['show']);
         Route::resource('salles', SalleController::class)->except(['show']); 

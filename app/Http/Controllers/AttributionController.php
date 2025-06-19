@@ -6,7 +6,7 @@ use App\Models\AnneeUni;
 use App\Models\Attribution;
 use App\Models\Examen;
 use App\Models\Professeur;
-use App\Models\Seson; // For filtering
+use App\Models\Seson;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -18,9 +18,7 @@ class AttributionController extends Controller
         $selectedAnneeUniId = session('selected_annee_uni_id', $latestAnneeUni?->id);
 
         $attributionsQuery = Attribution::with([
-            'examen.module.level.filiere',
-            'examen.quadrimestre.seson.anneeUni',
-            'professeur.user',
+            'examen.module',
             'professeur.service'
         ]);
 
@@ -30,35 +28,46 @@ class AttributionController extends Controller
             });
         } else {
             $attributionsQuery->whereRaw('1 = 0');
-            // Log::warning('AttributionController@index: No selected_annee_uni_id. Displaying no attributions.');
         }
+        
+        // --- UPGRADED FILTERING LOGIC ---
+        // Global search for Exam/Module
+        $attributionsQuery->when($request->input('search'), function ($query, $search) {
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('examen', fn($subQ) => $subQ->where('nom', 'like', "%{$search}%"))
+                  ->orWhereHas('examen.module', fn($subQ) => $subQ->where('nom', 'like', "%{$search}%"));
+            });
+        });
 
-        // Apply other filters
-        $attributionsQuery
-            ->when($request->input('search_examen'), function ($query, $search) { /* ... */ })
-            ->when($request->input('search_professeur'), function ($query, $search) { /* ... */ });
-            // seson_id filter was here, now academic year is the primary filter
+        // Specific search for Professor
+        $attributionsQuery->when($request->input('prof_search'), function ($query, $search) {
+            $query->whereHas('professeur', function ($q) use ($search) {
+                $q->where('nom', 'like', "%{$search}%")
+                  ->orWhere('prenom', 'like', "%{$search}%");
+            });
+        });
 
+        // Specific search for Service
+        $attributionsQuery->when($request->input('service_search'), function ($query, $search) {
+            $query->whereHas('professeur.service', function ($q) use ($search) {
+                $q->where('nom', 'like', "%{$search}%");
+            });
+        });
+        // --- END UPGRADED FILTERING ---
+
+        // The existing sorting logic is perfect for grouping and should remain.
         $attributions = $attributionsQuery
-            ->orderByDesc(Examen::select('debut')->whereColumn('examens.id', 'attributions.examen_id')->limit(1))
-            ->orderBy(Professeur::select('nom')->whereColumn('professeurs.id', 'attributions.professeur_id')->limit(1))
-            ->paginate(20)
+            ->orderBy(Examen::select('debut')->whereColumn('examens.id', 'attributions.examen_id'), 'desc')
+            ->orderBy('examen_id', 'desc')
+            ->orderBy('is_responsable', 'desc') 
+            ->orderBy(Professeur::select('nom')->whereColumn('professeurs.id', 'attributions.professeur_id'), 'asc')
+            ->paginate(40)
             ->withQueryString();
-
-        // Data for filters - now AnneeUni is primary, Sesons might be a secondary filter
-        $sesonsForFilter = [];
-        if ($selectedAnneeUniId) {
-             $sesonsForFilter = Seson::where('annee_uni_id', $selectedAnneeUniId)
-                                    ->orderBy('code')->get(['id', 'code'])
-                                    ->map(fn($s) => ['id' => $s->id, 'display_name' => $s->code]); // Simpler display for filter
-        }
-
 
         return Inertia::render('Admin/Attributions/Index', [
             'attributions' => $attributions,
-            'filters' => $request->only(['search_examen', 'search_professeur', 'seson_id']), // Keep seson_id if you want to filter by session *within* an annee_uni
-            'sesonsForFilter' => $sesonsForFilter,
+            // Pass all possible filters back to the frontend
+            'filters' => $request->only(['search', 'prof_search', 'service_search']),
         ]);
     }
-
 }

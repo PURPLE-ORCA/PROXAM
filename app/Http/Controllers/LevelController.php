@@ -25,25 +25,15 @@ class LevelController extends Controller
         // For card view, usually all levels of a filiere are shown. Add search if needed.
         $levels = $filiere->levels()->orderBy('nom')->get();
 
+        // --- ADD THIS DATA FOR THE MODAL ---
+        $allFilieres = Filiere::orderBy('nom')->get(['id', 'nom']);
+        // ------------------------------------
+
         return Inertia::render($this->baseInertiaPath() . 'Index', [
-            'filiere' => $filiere, // Pass the parent filiere
-            'levels' => $levels,   // Pass its levels
+            'filiere' => $filiere,
+            'levels' => $levels,
+            'filieresForForm' => $allFilieres, // <-- Pass the new data
             'filters' => $request->only(['search']), // For potential search within levels
-        ]);
-    }
-
-    /**
-     * Show the form for creating a new level.
-     * Can optionally receive a filiere to pre-select.
-     */
-    public function create(Request $request)
-    {
-        $filieres = Filiere::orderBy('nom')->get(['id', 'nom']);
-        $filiereIdFromRequest = $request->input('filiere_id'); // To pre-select if coming from a filiere page
-
-        return Inertia::render($this->baseInertiaPath() . 'Create', [
-            'filieres' => $filieres,
-            'selectedFiliereId' => $filiereIdFromRequest ? (int)$filiereIdFromRequest : null,
         ]);
     }
 
@@ -67,20 +57,6 @@ class LevelController extends Controller
         // Redirect back to the levels index for the parent filiere
         return redirect()->route('admin.levels.index', ['filiere' => $request->filiere_id])
             ->with('success', 'toasts.level_created_successfully');
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Level $level)
-    {
-        $filieres = Filiere::orderBy('nom')->get(['id', 'nom']);
-        $level->load('filiere'); // Ensure filiere is loaded
-
-        return Inertia::render($this->baseInertiaPath() . 'Edit', [
-            'levelToEdit' => $level,
-            'filieres' => $filieres,
-        ]);
     }
 
     /**

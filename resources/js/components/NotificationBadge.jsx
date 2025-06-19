@@ -57,7 +57,7 @@ export default function NotificationBadge() {
         <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
             <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative">
-                    <BellIcon className="h-6 w-6" />
+                    <BellIcon className="h-6 w-6 text-[var(--fmpo)] " />
                     {pendingCount > 0 && (
                         <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 rounded-full">
                             {pendingCount}

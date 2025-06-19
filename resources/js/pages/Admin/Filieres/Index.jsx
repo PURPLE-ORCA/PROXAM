@@ -6,12 +6,18 @@ import AppLayout from '@/layouts/app-layout';
 import { Icon } from '@iconify/react';
 import { Head, Link, router } from '@inertiajs/react';
 import { useContext, useMemo, useState } from 'react';
+import FiliereModal from './FiliereModal'; // <-- Import our new modal
 
 export default function Index({ filieres }) {
     const { translations } = useContext(TranslationContext);
     const [itemToDelete, setItemToDelete] = useState(null);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [hoveredCard, setHoveredCard] = useState(null);
+    
+    // --- NEW STATE FOR THE EDIT/CREATE MODAL ---
+    const [isFiliereModalOpen, setIsFiliereModalOpen] = useState(false);
+    const [itemToEdit, setItemToEdit] = useState(null);
+    // -------------------------------------------
 
     const breadcrumbs = useMemo(
         () => [{ title: translations?.filieres_breadcrumb || 'Study Fields', href: route('admin.filieres.index') }],
@@ -22,6 +28,18 @@ export default function Index({ filieres }) {
         setItemToDelete(filiere);
         setIsDeleteModalOpen(true);
     };
+    
+    // --- NEW HANDLERS FOR OUR MODAL ---
+    const openCreateModal = () => {
+        setItemToEdit(null);
+        setIsFiliereModalOpen(true);
+    };
+    
+    const openEditModal = (filiere) => {
+        setItemToEdit(filiere);
+        setIsFiliereModalOpen(true);
+    };
+    // ------------------------------------
 
     const confirmDelete = () => {
         if (itemToDelete) {
@@ -38,13 +56,13 @@ export default function Index({ filieres }) {
 
             <div className="container mx-auto px-4 py-6 sm:px-6 lg:px-8">
                 <div className="mb-8 flex items-center justify-between">
-                    <h1 className="text-2xl font-semibold text-[var(--foreground)]">{translations?.filieres_heading || 'Study Field'}</h1>
-                    <Button asChild className="shadow-lg transition-all duration-200 hover:shadow-xl">
-                        <Link href={route('admin.filieres.create')}>
-                            <Icon icon="mdi:plus-circle-outline" className="mr-2 h-5 w-5" />
-                            {translations?.add_filiere_button || 'Add Study Field'}
-                        </Link>
+                    <h1 className="text-2xl font-semibold text-[var(--foreground)]">{translations?.filieres_heading || 'Study Fields'}</h1>
+                    {/* --- MODIFIED BUTTON --- */}
+                    <Button onClick={openCreateModal} className="shadow-lg transition-all duration-200 hover:shadow-xl">
+                        <Icon icon="mdi:plus-circle-outline" className="mr-2 h-5 w-5" />
+                        {translations?.add_filiere_button || 'Add Study Field'}
                     </Button>
+                    {/* ----------------------- */}
                 </div>
 
                 {filieres.length > 0 ? (
@@ -80,33 +98,22 @@ export default function Index({ filieres }) {
                                     </div>
                                 </Link>
 
-                                {/* Action Bar */}
                                 <div className="px-6 pb-4">
-                                    <div className="flex items-center justify-between border-t border-[var(--border)]/50 pt-4">
-
+                                    <div className="flex items-center justify-between">
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    className="h-8 w-8 p-0 opacity-60 transition-opacity duration-200 group-hover:opacity-100 hover:bg-[var(--accent)]"
-                                                >
-                                                    <Icon icon="mdi:dots-horizontal" className="h-4 w-4" />
+                                                <Button variant="ghost" className="h-8 w-8 p-0">
+                                                    <span className="sr-only">Open menu</span>
+                                                    <Icon icon="mdi:dots-vertical" className="h-4 w-4" />
                                                 </Button>
                                             </DropdownMenuTrigger>
-                                            <DropdownMenuContent
-                                                align="end"
-                                                className="border-[var(--border)] bg-[var(--popover)] text-[var(--popover-foreground)] shadow-xl"
-                                            >
-                                                <DropdownMenuItem asChild>
-                                                    <Link
-                                                        href={route('admin.filieres.edit', { filiere: filiere.id })}
-                                                        className="cursor-pointer hover:bg-[var(--accent)]"
-                                                    >
-                                                        <Icon icon="mdi:pencil-outline" className="mr-2 h-4 w-4" />
-                                                        {translations?.edit_button_title || 'Edit'}
-                                                    </Link>
+                                            <DropdownMenuContent align="end" className="w-[160px]">
+                                                {/* --- MODIFIED EDIT ITEM --- */}
+                                                <DropdownMenuItem onClick={() => openEditModal(filiere)} className="cursor-pointer">
+                                                    <Icon icon="mdi:pencil-outline" className="mr-2 h-4 w-4" />
+                                                    {translations?.edit_button_title || 'Edit'}
                                                 </DropdownMenuItem>
+                                                {/* -------------------------- */}
                                                 <DropdownMenuItem onClick={() => openDeleteModal(filiere)} className="cursor-pointer">
                                                     <Icon icon="mdi:delete-outline" className="mr-2 h-4 w-4" />
                                                     {translations?.delete_button_title || 'Delete'}
@@ -115,44 +122,34 @@ export default function Index({ filieres }) {
                                         </DropdownMenu>
                                     </div>
                                 </div>
-
-                                {/* Hover Overlay Effect */}
-                                <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-blue-600/5 to-purple-600/5 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                                <div className="pointer-events-none absolute inset-0 rounded-lg border-2 border-transparent transition-all duration-300 group-hover:border-purple-500" />
                             </div>
                         ))}
                     </div>
                 ) : (
                     <div className="py-16 text-center">
-                        <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-[var(--muted)]/20">
-                            <Icon icon="mdi:school-outline" className="h-12 w-12 text-[var(--muted-foreground)]" />
-                        </div>
-                        <h3 className="mb-2 text-xl font-semibold text-[var(--foreground)]">No Study Fields Found</h3>
-                        <p className="mx-auto mb-6 max-w-md text-[var(--muted-foreground)]">
-                            {translations?.no_filieres_found || 'Get started by creating your first study field to organize academic programs.'}
+                        <p className="mb-4 text-gray-600 dark:text-gray-400">
+                            {translations?.no_filieres_message || 'No study fields found. Click the button below to add one.'}
                         </p>
-                        <Button asChild>
-                            <Link href={route('admin.filieres.create')}>
-                                <Icon icon="mdi:plus-circle-outline" className="mr-2 h-5 w-5" />
-                                {translations?.add_filiere_button || 'Add Study Field'}
-                            </Link>
+                        {/* ... Empty state is fine, but modify the button ... */}
+                        <Button onClick={openCreateModal}>
+                            <Icon icon="mdi:plus-circle-outline" className="mr-2 h-5 w-5" />
+                            {translations?.add_filiere_button || 'Add Study Field'}
                         </Button>
                     </div>
                 )}
             </div>
+
+            {/* --- ADD OUR NEW MODAL AND PASS IT PROPS --- */}
+            <FiliereModal isOpen={isFiliereModalOpen} onClose={() => setIsFiliereModalOpen(false)} filiere={itemToEdit} />
+            {/* ------------------------------------------- */}
 
             <ConfirmationModal
                 isOpen={isDeleteModalOpen}
                 onClose={() => setIsDeleteModalOpen(false)}
                 onConfirm={confirmDelete}
                 title={translations?.delete_filiere_modal_title || 'Delete Study Field'}
-                message={
-                    itemToDelete
-                        ? (
-                              translations?.filiere_delete_confirmation ||
-                              'Are you sure you want to delete the study field "{name}"? This may also delete associated levels and modules.'
-                          ).replace('{name}', itemToDelete.nom)
-                        : translations?.generic_delete_confirmation
-                }
+                message={itemToDelete ? `Are you sure you want to delete "${itemToDelete.nom}"?` : ''}
             />
         </AppLayout>
     );
