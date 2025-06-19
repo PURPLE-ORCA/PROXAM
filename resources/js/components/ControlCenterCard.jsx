@@ -16,8 +16,8 @@ export default function ControlCenterCard({ item }) {
         <Link href={route(item.route)} className="block outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-lg">
             <Card className="h-full transition-all duration-200 hover:border-primary hover:shadow-lg hover:-translate-y-1">
                 <CardHeader className="flex flex-row items-center gap-4 p-4">
-                    <div className="flex-shrink-0 p-3 bg-primary/10 rounded-lg">
-                        <Icon icon={item.icon} className="w-6 h-6 text-primary" />
+                    <div className="flex-shrink-0 p-3 ">
+                        <Icon icon={item.icon} className="w-8 h-8 text-primary" />
                     </div>
                     <div className="flex-grow">
                         <CardTitle className="text-base">{title}</CardTitle>
