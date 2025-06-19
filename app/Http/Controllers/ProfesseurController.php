@@ -62,7 +62,16 @@ class ProfesseurController extends Controller
 
         // --- ADD THIS DATA FOR THE MODAL ---
         $services = Service::orderBy('nom')->get(['id', 'nom']);
-        $modules = Module::orderBy('nom')->get(['id', 'nom']);
+        
+        // --- THIS IS THE FIX ---
+        // Instead of getting all module records, get only the distinct names.
+        $modules = Module::select('nom')
+                         ->distinct()
+                         ->orderBy('nom')
+                         ->pluck('nom') // This gives you a simple array: ['Anatomie Générale', 'Biochimie Structurale', ...]
+                         ->all();
+        // --- END OF FIX ---
+
         $rangs = Professeur::getRangs();
         $statuts = Professeur::getStatuts();
         $existingSpecialties = Professeur::select('specialite')
@@ -82,7 +91,7 @@ class ProfesseurController extends Controller
             'statutsForFilter' => $statuts,
             // Pass new data for the modal form
             'servicesForForm' => $services,
-            'modulesForForm' => $modules,
+            'modulesForForm' => $modules, // Pass the new, unique list
             'rangsForForm' => $rangs,
             'statutsForForm' => $statuts,
             'existingSpecialtiesForForm' => $existingSpecialties,
@@ -113,8 +122,8 @@ class ProfesseurController extends Controller
             'date_recrutement' => 'required|date',
             'specialite' => ['required', 'string', 'max:255'],
             'service_id' => 'required|exists:services,id',
-            'module_ids' => 'nullable|array',
-            'module_ids.*' => 'exists:modules,id',
+            'module_names' => 'nullable|array', // Validate the array of names
+            'module_names.*' => 'string|exists:modules,nom', // Ensure each name exists
         ]);
 
         return DB::transaction(function () use ($request, $validatedUserData, $validatedProfesseurData) {
@@ -147,9 +156,13 @@ class ProfesseurController extends Controller
             ]);
 
             // 3. Sync Modules
-            if (!empty($validatedProfesseurData['module_ids'])) {
-                $professeur->modules()->sync($validatedProfesseurData['module_ids']);
+            // --- MODIFIED MODULE SYNC LOGIC ---
+            if (!empty($validatedProfesseurData['module_names'])) {
+                // Find all module IDs that match the submitted names
+                $moduleIds = Module::whereIn('nom', $validatedProfesseurData['module_names'])->pluck('id');
+                $professeur->modules()->sync($moduleIds);
             }
+            // ------------------------------------
 
             return redirect()->route('admin.professeurs.index')
                 ->with('success', 'toasts.professeur_created_successfully');
@@ -171,8 +184,8 @@ class ProfesseurController extends Controller
             'date_recrutement' => 'required|date',
             'specialite' => ['required', 'string', 'max:255'], // Validation is now just a string
             'service_id' => 'required|exists:services,id',
-            'module_ids' => 'nullable|array',
-            'module_ids.*' => 'exists:modules,id',
+            'module_names' => 'nullable|array',
+            'module_names.*' => 'string|exists:modules,nom',
         ]);
 
         return DB::transaction(function () use ($request, $professeur, $validatedUserData, $validatedProfesseurData) {
@@ -196,7 +209,13 @@ class ProfesseurController extends Controller
             ]);
 
             // 3. Sync Modules
-            $professeur->modules()->sync($validatedProfesseurData['module_ids'] ?? []);
+            // --- MODIFIED MODULE SYNC LOGIC ---
+            $moduleIds = [];
+            if (!empty($validatedProfesseurData['module_names'])) {
+                $moduleIds = Module::whereIn('nom', $validatedProfesseurData['module_names'])->pluck('id');
+            }
+            $professeur->modules()->sync($moduleIds);
+            // ------------------------------------
 
             return redirect()->route('admin.professeurs.index')
                 ->with('success', 'toasts.professeur_updated_successfully');
