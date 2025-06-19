@@ -54,8 +54,7 @@ export default function ImportModal({ isOpen, onClose }) {
                         <code className="font-mono text-xs">prenom, nom, email, service, grade, specialite, recrutement, chef_de_service</code>
                     </p>
                     <a
-                        href="/templates/professeur_template.xlsx"
-                        download
+                        href={route('admin.professeurs.template.download')}
                         className="inline-flex items-center text-sm text-blue-600 hover:underline"
                     >
                         <Icon icon="mdi:download" className="mr-1 h-4 w-4" />
