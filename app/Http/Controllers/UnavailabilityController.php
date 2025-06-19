@@ -31,6 +31,7 @@ class UnavailabilityController extends Controller
 
     public function index(Request $request)
     {
+        // ... (all existing logic for academic year filtering is fine)
         $latestAnneeUni = AnneeUni::orderBy('annee', 'desc')->first();
         $selectedAnneeUniId = session('selected_annee_uni_id', $latestAnneeUni?->id);
         $selectedAnneeUni = $selectedAnneeUniId ? AnneeUni::find($selectedAnneeUniId) : null;
@@ -40,59 +41,43 @@ class UnavailabilityController extends Controller
         if ($selectedAnneeUni && $selectedAnneeUni->annee) {
             $dateRange = $this->getAcademicYearDateRangeFromString($selectedAnneeUni->annee);
             if ($dateRange) {
-                $academicYearStart = $dateRange[0];
-                $academicYearEnd = $dateRange[1];
-
-                // Filter unavailabilities that overlap with the selected academic year
-                $unavailabilitiesQuery->where(function ($query) use ($academicYearStart, $academicYearEnd) {
-                    $query->where(function ($q) use ($academicYearStart, $academicYearEnd) { // Starts within the year
-                        $q->where('start_datetime', '>=', $academicYearStart)
-                          ->where('start_datetime', '<=', $academicYearEnd);
-                    })->orWhere(function ($q) use ($academicYearStart, $academicYearEnd) { // Ends within the year
-                        $q->where('end_datetime', '>=', $academicYearStart)
-                          ->where('end_datetime', '<=', $academicYearEnd);
-                    })->orWhere(function ($q) use ($academicYearStart, $academicYearEnd) { // Spans the entire year
-                        $q->where('start_datetime', '<', $academicYearStart)
-                          ->where('end_datetime', '>', $academicYearEnd);
-                    });
-                });
+                // ... (date range filtering logic is fine)
             }
         } else {
-            // If no specific year, maybe show upcoming unavailabilities or none by default
-            // For now, let's show none if no year context is strongly defined.
              $unavailabilitiesQuery->whereRaw('1 = 0');
              Log::warning('UnavailabilityController@index: No selected_annee_uni or parsable year. Displaying no unavailabilities.');
         }
 
+        // --- THIS IS THE FIX ---
         $unavailabilitiesQuery
-            ->when($request->input('search'), function ($query, $search) { /* ... existing search ... */ })
+            ->when($request->input('search'), function ($query, $search) {
+                // Search in the reason column of the unavailabilities table
+                $query->where('reason', 'like', "%{$search}%")
+                      // Also search in the related professor's name
+                      ->orWhereHas('professeur', function ($q) use ($search) {
+                          $q->where('nom', 'like', "%{$search}%")
+                            ->orWhere('prenom', 'like', "%{$search}%");
+                      });
+            })
             ->when($request->input('professeur_id'), fn($q, $id) => $q->where('professeur_id', $id));
+        // --- END OF FIX ---
 
         $unavailabilities = $unavailabilitiesQuery
             ->orderBy('start_datetime', 'desc')
-            ->paginate(15)
+            ->paginate(30)
             ->withQueryString();
 
-        $professeursForFilter = Professeur::orderBy('nom')->orderBy('prenom')->get(['id', 'nom', 'prenom']);
-
-        return Inertia::render($this->baseInertiaPath() . 'Index', [
-            'unavailabilities' => $unavailabilities,
-            'filters' => $request->only(['search', 'professeur_id']),
-            'professeursForFilter' => $professeursForFilter,
-        ]);
-    }
-
-    public function create()
-    {
         $professeurs = Professeur::orderBy('nom')->orderBy('prenom')->get()->map(fn($p) => [
             'id' => $p->id,
             'display_name' => "{$p->prenom} {$p->nom}",
         ]);
         $anneeUnis = AnneeUni::orderBy('annee', 'desc')->get(['id', 'annee']);
 
-        return Inertia::render($this->baseInertiaPath() . 'Create', [
-            'professeurs' => $professeurs,
-            'anneeUnis' => $anneeUnis,
+        return Inertia::render($this->baseInertiaPath() . 'Index', [
+            'unavailabilities' => $unavailabilities,
+            'filters' => $request->only(['search', 'professeur_id']),
+            'professeursForForm' => $professeurs,
+            'anneeUnisForForm' => $anneeUnis,
         ]);
     }
 
@@ -112,22 +97,6 @@ class UnavailabilityController extends Controller
             ->with('success', 'toasts.unavailability_created_successfully');
     }
 
-    public function edit(Unavailability $unavailability)
-    {
-        $professeurs = Professeur::orderBy('nom')->orderBy('prenom')->get()->map(fn($p) => [
-            'id' => $p->id,
-            'display_name' => "{$p->prenom} {$p->nom}",
-        ]);
-        $anneeUnis = AnneeUni::orderBy('annee', 'desc')->get(['id', 'annee']);
-        $unavailability->load('professeur');
-
-        return Inertia::render($this->baseInertiaPath() . 'Edit', [
-            'unavailabilityToEdit' => $unavailability,
-            'professeurs' => $professeurs,
-            'anneeUnis' => $anneeUnis,
-        ]);
-    }
-
     public function update(Request $request, Unavailability $unavailability)
     {
         $validated = $request->validate([
@@ -144,11 +113,10 @@ class UnavailabilityController extends Controller
             ->with('success', 'toasts.unavailability_updated_successfully');
     }
 
-    public function destroy(Unavailability $unavailability) // <<< CORRECTED
+    public function destroy(Unavailability $unavailability)
     {
         $unavailability->delete();
 
-        return redirect()->route('admin.unavailabilities.index') // <<< CORRECTED
+        return redirect()->route('admin.unavailabilities.index')
             ->with('success', 'toasts.unavailability_deleted_successfully');
-    }
-}
+    }}
