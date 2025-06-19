@@ -84,7 +84,7 @@ Route::get('dashboard', function (Request $request) {
         Route::resource('sesons', SesonController::class) ->parameters(['sesons' => 'seson']) ->except(['show']);
         Route::resource('quadrimestres', QuadrimestresController::class)->parameters(['quadrimestres' => 'quadrimestre']) ->except(['show']);
         Route::resource('users', UserController::class)->parameters(['users' => 'user'])->except(['show']);
-        Route::resource('professeurs', ProfesseurController::class)->parameters(['professeurs' => 'professeur'])->except(['show']);
+        Route::resource('professeurs', ProfesseurController::class)->parameters(['professeurs' => 'professeur'])->except(['create', 'edit']);
         Route::post('/professeurs/import', [ProfesseurImportController::class, 'store'])->name('professeurs.import');
         Route::get('/professeurs/template/download', [ProfesseurImportController::class, 'downloadTemplate'])->name('professeurs.template.download');
         Route::resource('examens', ExamenController::class)->parameters(['examens' => 'examen'])->except(['show']);

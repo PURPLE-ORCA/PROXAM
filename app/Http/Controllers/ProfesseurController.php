@@ -89,6 +89,13 @@ class ProfesseurController extends Controller
         ]);
     }
 
+    public function show(Professeur $professeur)
+    {
+        // Eager load all the relationships we need for the edit form
+        $professeur->load(['user', 'service', 'modules']);
+        return response()->json($professeur);
+    }
+
     public function store(Request $request)
     {
         // Note: User creation part

@@ -1,3 +1,4 @@
+import axios from 'axios';
 import ConfirmationModal from '@/components/Common/ConfirmationModal';
 import ImportModal from '@/components/ImportModal';
 import { Badge } from '@/components/ui/badge';
@@ -59,8 +60,18 @@ export default function Index({
     };
 
     const openEditModal = (professeur) => {
-        setProfessorToEdit(professeur);
-        setProfessorModalOpen(true);
+        // Fetch the full professor data, including modules
+        axios.get(route('admin.professeurs.show', { professeur: professeur.id }))
+            .then(response => {
+                // Now we have the full data, including the `modules` array
+                const fullProfessorData = response.data;
+                setProfessorToEdit(fullProfessorData);
+                setProfessorModalOpen(true);
+            })
+            .catch(error => {
+                console.error("Failed to fetch full professor data:", error);
+                // Optionally show an error toast to the user
+            });
     };
 
     const getStatutTranslation = (statutKey) => {
