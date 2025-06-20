@@ -183,32 +183,7 @@
 </head>
 <body>
     <div class="page-content">
-        <div class="header">
-            <div class="left-section">
-                <div class="university-name">Royaume du Maroc</div>
-                <div class="faculty-name">Université Mohammed Premier</div>
-                <div class="faculty-name">Faculté de Médecine et de Pharmacie</div>
-                <div class="city">-Oujda</div>
-            </div>
-            
-            <div class="center-section">
-                <img src="{{ $logoBase64 }}" alt="Logo Faculté" style="width: 80px; height: auto; margin: 0 auto 10px; display: block;">
-                <div style="font-size: 10px; text-align: center;">
-                    <div>جامعة محمد الأول</div>
-                    <div>كلية الطب والصيدلة</div>
-                    <div>وجدة</div>
-                </div>
-            </div>
-            
-            <div class="right-section">
-                <div class="arabic-text">
-                    المملكة المغربية<br>
-                    الأول محمد جامعة<br>
-                    والصيدلة الطب كلية<br>
-                    وجدة
-                </div>
-            </div>
-        </div>
+        <img src="file://{{ base_path('public/images/pdf/schedulepdfheader.jpg') }}" alt="Header Image" style="width: 100%; height: auto;">
         
         <div class="red-line"></div>
         

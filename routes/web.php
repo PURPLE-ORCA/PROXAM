@@ -28,24 +28,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-// use Illuminate\Support\Facades\Mail;
-// use Illuminate\Mail\Mailable;
-
-// Route::get('/test-email', function () {
-//     if (!auth()->check() || !auth()->user()->hasRole('admin')) { // Quick auth check
-//         return 'Unauthorized';
-//     }
-//     try {
-//         Mail::raw('This is a test email from Profs2Exams.', function ($message) {
-//             $message->to('test@example.com') // This email won't actually be sent if using Mailtrap
-//                     ->subject('Test Email');
-//         });
-//         return 'Test email sent (check Mailtrap)!';
-//     } catch (\Exception $e) {
-//         return 'Error sending email: ' . $e->getMessage();
-//     }
-// });
-
 Route::get('/', function () {
     return Inertia::render('welcome');
 })->name('home');
@@ -142,7 +124,6 @@ Route::get('dashboard', function (Request $request) {
         Route::post('/sesons/{seson}/approve-notifications', [App\Http\Controllers\Admin\SesonNotificationController::class, 'approveAndDispatchNotifications'])
             ->name('sesons.approve-notifications');
         
-        // New Download Convocations Route
         Route::get('/sesons/{seson}/download-convocations', [App\Http\Controllers\Admin\SesonNotificationController::class, 'downloadAllConvocations'])
              ->name('sesons.download-convocations');
     });
