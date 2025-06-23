@@ -96,6 +96,9 @@ Route::get('dashboard', function (Request $request) {
         Route::put('/manage-assignments/{attribution}/toggle-responsable', [ExamAssignmentManagementController::class, 'toggleResponsable'])->name('attributions.toggle-responsable');
         Route::delete('/manage-assignments/{attribution}', [ExamAssignmentManagementController::class, 'destroyAttribution'])->name('attributions.destroy_manual');
         Route::resource('filieres', FiliereController::class)->parameters(['filieres' => 'filiere'])->except(['show']);
+
+        Route::get('/attributions/{attribution}/find-replacements', [AttributionController::class, 'findReplacements'])->name('attributions.find_replacements');
+        Route::put('/attributions/{attribution}/reassign', [AttributionController::class, 'reassign'])->name('attributions.reassign');
     
         Route::get('/filieres/{filiere}/levels', [LevelController::class, 'index'])->name('levels.index');
         Route::get('/levels/create', [LevelController::class, 'create'])->name('levels.create'); // Can take ?filiere_id=X

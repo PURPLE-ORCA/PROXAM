@@ -52,4 +52,27 @@ class UnavailabilityConflictService
         // A more robust solution would be to re-run the conflict check for all remaining unavailabilities
         // for that professor.
     }
+
+    /**
+     * Checks if a professor has a conflict with a given start and end datetime.
+     */
+    public function hasConflict(int $professeurId, $startDatetime, $endDatetime): bool
+    {
+        $allAttributions = Attribution::where('professeur_id', $professeurId)->with('examen')->get();
+
+        foreach ($allAttributions as $attribution) {
+            if (!$attribution->examen) {
+                continue;
+            }
+
+            $examStart = $attribution->examen->debut;
+            $examEnd = $attribution->examen->getEndDatetimeAttribute(); // Using your accessor
+
+            if ($examStart->lt($startDatetime) && $examEnd->gt($startDatetime)) {
+                return true; // Conflict found
+            }
+        }
+
+        return false; // No conflict found
+    }
 }

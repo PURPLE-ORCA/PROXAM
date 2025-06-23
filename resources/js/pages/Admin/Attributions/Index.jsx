@@ -1,13 +1,17 @@
 import AppLayout from '@/layouts/app-layout';
 import { Head, router } from '@inertiajs/react';
 import { useMemo, useState, useEffect } from 'react';
+import ResolveConflictModal from '@/components/ResolveConflictModal';
 import { getColumns } from './columns';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { useReactTable, getCoreRowModel, getPaginationRowModel, flexRender } from '@tanstack/react-table';
-import AttributionTableToolbar from '@/components/AttributionTableToolbar'; // <-- Import our new toolbar
+import AttributionTableToolbar from '@/components/AttributionTableToolbar'; 
 
 export default function Index({ attributions: attributionsPagination, filters }) {
+    const [isOpen, setIsOpen] = useState(false);
+    const [selectedAttributionId, setSelectedAttributionId] = useState(null);
+    const [resolveModalOpen, setResolveModalOpen] = useState(null);
     
     const [activeFilters, setActiveFilters] = useState({
         search: filters.search || '',
@@ -85,6 +89,19 @@ export default function Index({ attributions: attributionsPagination, filters })
                                                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                                 </TableCell>
                                             ))}
+                                            <TableCell>
+                                                {row.original.is_in_conflict && (
+                                                    <>
+                                                        <ResolveConflictModal isOpen={resolveModalOpen === row.original.id} setIsOpen={setResolveModalOpen} attributionId={row.original.id} />
+                                                        <Button size="sm" onClick={() => {
+                                                            setIsOpen(true);
+                                                            setSelectedAttributionId(row.original.id);
+                                                        }}>
+                                                            Resolve
+                                                        </Button>
+                                                    </>
+                                                )}
+                                            </TableCell>
                                         </TableRow>
                                     );
                                 })
@@ -101,6 +118,11 @@ export default function Index({ attributions: attributionsPagination, filters })
                     <Button variant="outline" size="sm" onClick={() => router.get(attributionsPagination.prev_page_url)} disabled={!attributionsPagination.prev_page_url}>Previous</Button>
                     <Button variant="outline" size="sm" onClick={() => router.get(attributionsPagination.next_page_url)} disabled={!attributionsPagination.next_page_url}>Next</Button>
                 </div>
+                <ResolveConflictModal
+                    isOpen={isOpen}
+                    setIsOpen={setIsOpen}
+                    attributionId={selectedAttributionId}
+                />
             </div>
         </AppLayout>
     );
