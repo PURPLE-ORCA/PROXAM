@@ -18,6 +18,7 @@ return new class extends Migration
             $table->foreignId('salle_id')->nullable()->constrained('salles')->cascadeOnDelete();
             $table->boolean('is_responsable')->default(false);
             $table->boolean('is_involved_in_exchange')->default(false);
+            $table->boolean('is_in_conflict')->default(false);
             $table->timestamps();
         });
     }

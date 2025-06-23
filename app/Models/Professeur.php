@@ -3,27 +3,54 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Models\User;
+use App\Models\Service;
 
 class Professeur extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
-        'user_id', 'nom', 'prenom', 'rang', 'statut', 
-        'is_chef_service', 'date_recrutement', 'specialite', 'service_id'
+        'nom',
+        'prenom',
+        'email',
+        'telephone',
+        'statut',
+        'service_id',
     ];
 
-    protected $casts = [
-        'is_chef_service' => 'boolean',
-        'date_recrutement' => 'date',
-    ];
+    protected $appends = ['effective_statut'];
 
-    public function user()
+    /**
+     * Get the professor's effective status, considering any active unavailabilities.
+     * This is the "real" status at the current moment.
+     */
+    public function getEffectiveStatutAttribute(): array
     {
-        return $this->belongsTo(User::class);
-    }
+        $now = now();
 
-    public function service()
-    {
-        return $this->belongsTo(Service::class);
+        // Check for an active unavailability record that spans the current time
+        $activeUnavailability = $this->unavailabilities()
+            ->where('start_datetime', '<=', $now)
+            ->where('end_datetime', '>=', $now)
+            ->first();
+
+        if ($activeUnavailability) {
+            // If they are unavailable, that's the most important status.
+            return [
+                'key' => 'UNAVAILABLE',
+                'label' => 'Unavailable',
+                'reason' => $activeUnavailability->reason ?? 'No reason provided' // e.g., "Conference"
+            ];
+        }
+
+        // If no active unavailability, just return their base long-term status.
+        return [
+            'key' => $this->statut, // 'Active', 'On_Leave', etc.
+            'label' => self::getStatuts()[$this->statut] ?? $this->statut,
+            'reason' => 'Base status'
+        ];
     }
 
     public function modules()
@@ -49,6 +76,16 @@ class Professeur extends Model
     public function exchangeAcceptances()
     {
         return $this->hasMany(Echange::class, 'professeur_accepter_id');
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function service()
+    {
+        return $this->belongsTo(Service::class);
     }
     public static function getRangs($rawKeys = false) {
         $rangs = ['PA' => 'Professeur Assistant (PA)', 'PAG' => 'Professeur Agrégé (PAG)', 'PES' => 'Professeur Enseignement Supérieur (PES)'];
