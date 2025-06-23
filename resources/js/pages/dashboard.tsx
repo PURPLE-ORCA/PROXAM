@@ -71,19 +71,16 @@ export default function Dashboard() {
                         title={translations.total_exams_this_academic_year}
                         value={kpiData.totalExamsThisYear}
                         icon={Bell}
-                        description={`(${academicYear?.annee_debut}-${academicYear?.annee_fin})`}
                     />
                     <KpiCard
                         title={translations.total_assignments_this_academic_year}
                         value={kpiData.totalAssignmentsThisYear}
                         icon={Bell}
-                        description={`(${academicYear?.annee_debut}-${academicYear?.annee_fin})`}
                     />
                     <KpiCard
                         title={translations.unstaffed_exams_this_academic_year}
                         value={kpiData.unstaffedExamsThisYear}
                         icon={AlertTriangle}
-                        description={`(${academicYear?.annee_debut}-${academicYear?.annee_fin})`}
                         variant="destructive"
                     />
                 </div>
