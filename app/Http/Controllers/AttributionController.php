@@ -55,6 +55,10 @@ class AttributionController extends Controller
         });
         // --- END UPGRADED FILTERING ---
 
+        $attributionsQuery->when($request->input('in_conflict') === 'true', function ($q) {
+            $q->where('attributions.is_in_conflict', true);
+        });
+
         // The existing sorting logic is perfect for grouping and should remain.
         $attributions = $attributionsQuery
             ->orderBy(Examen::select('debut')->whereColumn('examens.id', 'attributions.examen_id'), 'desc')

@@ -65,27 +65,32 @@ export default function Dashboard() {
                 <QuickActionsWidget translations={translations} />
 
                 {/* KPI Cards Row */}
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
                     <KpiCard title={translations.total_active_professors} value={kpiData.totalActiveProfessors} icon={Bell} />
                     <KpiCard
                         title={translations.total_exams_this_academic_year}
                         value={kpiData.totalExamsThisYear}
                         icon={Bell}
-                        description={`(${academicYear?.annee_debut}-${academicYear?.annee_fin})`}
                     />
                     <KpiCard
                         title={translations.total_assignments_this_academic_year}
                         value={kpiData.totalAssignmentsThisYear}
                         icon={Bell}
-                        description={`(${academicYear?.annee_debut}-${academicYear?.annee_fin})`}
                     />
                     <KpiCard
                         title={translations.unstaffed_exams_this_academic_year}
                         value={kpiData.unstaffedExamsThisYear}
                         icon={AlertTriangle}
-                        description={`(${academicYear?.annee_debut}-${academicYear?.annee_fin})`}
                         variant="destructive"
                     />
+                    <Link href={route('admin.attributions.index', { in_conflict: true })}>
+                        <KpiCard
+                            title="Assignments in Conflict" // Add a translation for this later
+                            value={kpiData.assignmentsInConflict}
+                            icon={AlertTriangle}
+                            variant="destructive"
+                        />
+                    </Link>
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">

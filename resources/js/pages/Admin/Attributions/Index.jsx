@@ -79,7 +79,7 @@ export default function Index({ attributions: attributionsPagination, filters })
                                 table.getRowModel().rows.map((row) => {
                                     const isFirstInGroup = row.index === 0 || row.original.examen_id !== table.getRowModel().rows[row.index - 1].original.examen_id;
                                     return (
-                                        <TableRow key={row.id} className={isFirstInGroup && row.index > 0 ? 'border-t-2 border-border' : ''}>
+                                        <TableRow key={row.id} className={`${isFirstInGroup && row.index > 0 ? 'border-t-2 border-border' : ''} ${row.original.is_in_conflict ? 'bg-destructive/10 hover:bg-destructive/20' : ''}`}>
                                             {row.getVisibleCells().map((cell) => (
                                                 <TableCell key={cell.id}>
                                                     {flexRender(cell.column.columnDef.cell, cell.getContext())}

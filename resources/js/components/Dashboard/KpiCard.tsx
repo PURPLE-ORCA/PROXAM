@@ -10,7 +10,7 @@ interface KpiCardProps {
     variant?: 'default' | 'destructive';
 }
 
-export default function KpiCard({ title, value, icon: Icon, description, variant = 'default' }: KpiCardProps) {
+export default function KpiCard({ title, value, icon: Icon, variant = 'default' }: KpiCardProps) {
     const isDestructive = variant === 'destructive';
     return (
         <Card className={isDestructive ? 'border-red-500 text-red-500' : ''}>
@@ -22,7 +22,6 @@ export default function KpiCard({ title, value, icon: Icon, description, variant
             </CardHeader>
             <CardContent>
                 <div className="text-2xl font-bold">{value}</div>
-                {description && <p className="text-xs text-muted-foreground">{description}</p>}
             </CardContent>
         </Card>
     );
