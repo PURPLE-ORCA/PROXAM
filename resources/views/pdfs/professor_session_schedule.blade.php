@@ -135,6 +135,7 @@
             width: 100%;
             border-collapse: collapse;
             margin: 30px 0;
+            margin-left 10rem; 
         }
         
         .schedule-table th,
@@ -183,24 +184,24 @@
 </head>
 <body>
     <div class="page-content">
-        <img src="file://{{ base_path('public/images/pdf/schedulepdfheader.jpg') }}" alt="Header Image" style="width: 100%; height: auto;">
+        {{-- <img src="{{ storage_path('images/pdf/HEADERpDF.png') }}" alt="Header Image" style="width: 100%; height: auto;"> --}}
         
+        <img src="{{ public_path('images/pdf/HEADERpDF.png') }}" alt="Header Image" style="width: 100%; height: auto;">        
         <div class="red-line"></div>
         
         <div class="dean-title">
             Le Doyen de la Faculté de Médecine et de Pharmacie<br>
-            Université Mohammed Premier Oujda
+            Université Mohammed Premier Oujda 
         </div>
         
         <div class="recipient">
-            A Monsieur/Madame :<br>
             A Monsieur/Madame :<br>
             <span style="font-weight: bold;">Pr. {{ $professor->nom_complet ?? 'N/A' }}</span>
         </div>
         
         <div class="content">
             <div class="object">
-                <span class="highlight">Objet :</span> participation au jury des examens de <span class="highlight">la {{ $seson->nom ?? 'N/A' }} du {{ $quadrimestre->nom ?? 'N/A' }} {{ $anneeUn->nom ?? 'N/A' }}</span>.
+                <span class="highlight">Objet :</span> participation au jury des examens de <span class="highlight">la {{ $seson->code ?? 'N/A' }} du {{ $quadrimestre?->code ?? 'N/A' }} {{ $anneeUn?->annee ?? 'N/A' }}</span>.
             </div>
             
             <div class="greeting">
@@ -208,7 +209,7 @@
             </div>
             
             <div class="main-text">
-                Vous êtes prié(e) de se présenter au lieu, à la date et à l'heure indiquée sur le tableau ci-dessous pour participer aux examens de surveillances des examens de <span class="highlight">la {{ $seson->nom ?? 'N/A' }} du {{ $quadrimestre->nom ?? 'N/A' }} {{ $anneeUn->nom ?? 'N/A' }}</span>.<br>
+                Vous êtes prié(e) de se présenter au lieu, à la date et à l'heure indiquée sur le tableau ci-dessous pour participer aux examens de surveillances des examens de <span class="highlight">la {{ $seson->code ?? 'N/A' }} du {{ $quadrimestre?->code ?? 'N/A' }} {{ $anneeUn?->annee ?? 'N/A' }}</span>.<br>
                 Veuillez, cher(ère) collègue, recevoir nos meilleures salutations.
             </div>
         </div>

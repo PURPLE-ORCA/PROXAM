@@ -21,6 +21,7 @@ class SesonNotificationController extends Controller
         // Gate::authorize('approve-seson-assignments', $seson);
 
         if ($seson->assignments_approved_at) {
+            // Log::info("SesonNotificationController: Assignments for seson '{$seson->nom}' (ID: {$seson->id}) already approved. Skipping dispatch.");
             return redirect()->back()->with('info', 'Assignments for this seson have already been approved.');
         }
 
@@ -28,9 +29,11 @@ class SesonNotificationController extends Controller
             $seson->assignments_approved_at = now();
             $seson->approval_user_id = 1; // Placeholder: Assuming user ID 1 for approval, adjust as per authentication setup
             $seson->save();
+            // Log::info("SesonNotificationController: Seson '{$seson->nom}' (ID: {$seson->id}) marked as approved.");
         });
 
         SendProfessorScheduleNotifications::dispatch($seson);
+        // Log::info("SesonNotificationController: Dispatched SendProfessorScheduleNotifications job for Seson ID: {$seson->id}.");
 
         return redirect()->route('admin.sesons.index')->with('success', "Assignments for seson '{$seson->nom}' approved. Notifications are being processed.");
     }
@@ -68,7 +71,7 @@ class SesonNotificationController extends Controller
                 $zip->addFile($absoluteFilePath, $fileNameInZip);
             }
             $zip->close();
-            Log::info("Generated ZIP file: {$tempZipPath}");
+            // Log::info("Generated ZIP file: {$tempZipPath}");
 
             return response()->download($tempZipPath, $zipFileName)->deleteFileAfterSend(true);
         } else {
