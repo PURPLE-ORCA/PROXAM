@@ -21,7 +21,7 @@ export default function Dashboard({ auth, recentUnavailabilities, monthlyUnavail
                         {/* Welcome Widget */}
                         <Card className="col-span-full">
                             <CardHeader>
-                                <CardTitle>{translations?.welcome_message?.replace('{name}', auth.user.name) || `Welcome, ${auth.user.name}!`} (Human Resources)</CardTitle>
+                                <CardTitle>{translations?.welcome_message?.replace('{name}', auth.user.name) || `Welcome, ${auth.user.name}!`}</CardTitle>
                                 <CardDescription>{translations?.welcome_rh_description || 'Manage professor unavailabilities and view related activities.'}</CardDescription>
                             </CardHeader>
                         </Card>
@@ -32,7 +32,7 @@ export default function Dashboard({ auth, recentUnavailabilities, monthlyUnavail
                                 <CardTitle>{translations?.widget_quick_actions_title || 'Quick Actions'}</CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <Link as="button" href={route('admin.unavailabilities.create')} className="w-full">
+                                <Link as="button" href={route('admin.unavailabilities.index')} className="w-full">
                                     <Button className="w-full">
                                         {translations?.button_add_unavailability || 'Add New Unavailability'}
                                     </Button>

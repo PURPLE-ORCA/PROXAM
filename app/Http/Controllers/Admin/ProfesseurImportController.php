@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\ProfesseursImport;
+use App\Exports\ProfesseurTemplateExport;
 use Maatwebsite\Excel\Validators\ValidationException;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
@@ -40,5 +41,10 @@ class ProfesseurImportController extends Controller
             Log::error('Professor import failed: ' . $e->getMessage(), ['exception' => $e]);
             return redirect()->back()->with('error', 'An unexpected error occurred during import. Please try again or contact support.');
         }
+    }
+
+    public function downloadTemplate()
+    {
+        return Excel::download(new ProfesseurTemplateExport, 'professeur_template.xlsx');
     }
 }

@@ -29,7 +29,7 @@ export default function QuickActionsWidget({ translations: propTranslations }: Q
             fallbackDescription: 'Add a new professor to the system.',
         },
         {
-            route: 'admin.unavailabilities.create',
+            route: 'admin.unavailabilities.index',
             icon: 'mdi:calendar-remove-outline',
             titleKey: 'add_unavailability',
             fallbackTitle: propTranslations.add_unavailability,

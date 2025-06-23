@@ -1,105 +1,99 @@
 <?php
 
-namespace App\Http\Controllers\Admin; // In Admin subfolder
+namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Attribution;
 use App\Models\Examen;
 use App\Models\Professeur;
-use App\Models\Attribution;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 use Inertia\Inertia;
-use Illuminate\Support\Facades\DB; // For transactions
+use Illuminate\Support\Facades\DB;
 
 class ExamAssignmentManagementController extends Controller
 {
-    /**
-     * Display the assignment management page for a specific exam.
-     */
     public function index(Examen $examen)
     {
-        $examen->load(['attributions.professeur.user', 'module', 'quadrimestre.seson.anneeUni']);
+        // Eager load all necessary relationships
+        $examen->load([
+            'salles',
+            'attributions.professeur.user',
+            'attributions.salle',
+            'module',
+        ]);
 
-        $assignedProfesseurIds = $examen->attributions->pluck('professeur_id')->toArray();
+        // Get a list of professors not yet assigned to this exam
+        $assignedProfesseurIds = $examen->attributions->pluck('professeur_id');
+        $availableProfesseurs = Professeur::whereNotIn('id', $assignedProfesseurIds)
+            ->where('statut', 'Active') // Only show active professors
+            ->orderBy('nom')->get()->map(fn($p) => ['id' => $p->id, 'display_name' => "{$p->prenom} {$p->nom} ({$p->service?->nom})"]);
 
-        // Fetch professors who are active, not chefs, and NOT already assigned to this exam
-        $availableProfesseurs = Professeur::where('statut', 'Active')
-            ->where('is_chef_service', false)
-            ->whereNotIn('id', $assignedProfesseurIds)
-            ->orderBy('nom')->orderBy('prenom')
-            ->get(['id', 'nom', 'prenom'])
-            ->map(fn($p) => ['id' => $p->id, 'display_name' => "{$p->prenom} {$p->nom}"]);
+        // Structure the data by room for the new UI
+        $sallesWithAttributions = $examen->salles->map(function ($salle) use ($examen) {
+            return [
+                'id' => $salle->id,
+                'nom' => $salle->nom,
+                'required_professors' => $salle->pivot->professeurs_assignes_salle,
+                'attributions' => $examen->attributions->where('salle_id', $salle->id)->values(),
+            ];
+        });
 
         return Inertia::render('Admin/Examens/ManageAssignments', [
             'examen' => $examen,
-            'currentAttributions' => $examen->attributions,
+            'sallesWithAttributions' => $sallesWithAttributions,
             'availableProfesseurs' => $availableProfesseurs,
         ]);
     }
 
-    /**
-     * Store a new manual attribution for an exam.
-     */
     public function storeAttribution(Request $request, Examen $examen)
     {
         $validated = $request->validate([
-            'professeur_id' => [
-                'required',
-                'exists:professeurs,id',
-                Rule::unique('attributions')->where(function ($query) use ($examen) {
-                    return $query->where('examen_id', $examen->id);
-                }), // Ensure professor is not already assigned to this exam
-            ],
+            'professeur_id' => 'required|exists:professeurs,id',
+            'salle_id' => 'required|exists:salles,id',
             'is_responsable' => 'required|boolean',
         ]);
 
-        // Constraint: Check if adding this attribution exceeds required_professors
-        if ($examen->attributions()->count() >= $examen->required_professors) {
-            return back()->with('error', 'toasts.examen_slots_full_cannot_add');
+        // THE BUG FIX for `toggleResponsable` lives here too.
+        // If we are making this new person a responsable, we must demote any existing
+        // responsable *only within the same salle*.
+        if ($validated['is_responsable']) {
+            Attribution::where('examen_id', $examen->id)
+                       ->where('salle_id', $validated['salle_id'])
+                       ->update(['is_responsable' => false]);
         }
 
-        DB::transaction(function () use ($examen, $validated) {
-            // If setting this one as responsable, ensure no other is responsable
-            if ($validated['is_responsable']) {
-                $examen->attributions()->where('is_responsable', true)->update(['is_responsable' => false]);
-            }
-            Attribution::create([
-                'examen_id' => $examen->id,
-                'professeur_id' => $validated['professeur_id'],
-                'is_responsable' => $validated['is_responsable'],
-            ]);
-        });
+        Attribution::create([
+            'examen_id' => $examen->id,
+            'professeur_id' => $validated['professeur_id'],
+            'salle_id' => $validated['salle_id'],
+            'is_responsable' => $validated['is_responsable'],
+        ]);
 
-        return back()->with('success', 'toasts.attribution_added_successfully');
+        return back()->with('success', 'Professor assigned successfully.');
     }
 
-    /**
-     * Toggle the is_responsable status of an attribution.
-     */
     public function toggleResponsable(Attribution $attribution)
     {
+        // This is where the original bug was.
+        // The fix is to ensure that when we promote one, we only demote others
+        // within the SAME EXAM and SAME SALLE.
         DB::transaction(function () use ($attribution) {
-            $newResponsableStatus = !$attribution->is_responsable;
-
-            // If making this one responsable, demote any existing responsable for this exam
-            if ($newResponsableStatus) {
-                Attribution::where('examen_id', $attribution->examen_id)
-                    ->where('id', '!=', $attribution->id)
-                    ->where('is_responsable', true)
-                    ->update(['is_responsable' => false]);
-            }
-            $attribution->update(['is_responsable' => $newResponsableStatus]);
+            // Demote any other responsable in the same room for this exam.
+            Attribution::where('examen_id', $attribution->examen_id)
+                       ->where('salle_id', $attribution->salle_id)
+                       ->where('id', '!=', $attribution->id)
+                       ->update(['is_responsable' => false]);
+            
+            // Now, toggle the selected one.
+            $attribution->update(['is_responsable' => !$attribution->is_responsable]);
         });
 
-        return back()->with('success', 'toasts.attribution_responsable_toggled');
+        return back()->with('success', "Professor's 'responsable' status updated.");
     }
 
-    /**
-     * Delete a manual attribution.
-     */
     public function destroyAttribution(Attribution $attribution)
     {
         $attribution->delete();
-        return back()->with('success', 'toasts.attribution_deleted_successfully');
+        return back()->with('success', 'Assignment removed successfully.');
     }
 }

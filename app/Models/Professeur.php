@@ -74,4 +74,10 @@ class Professeur extends Model
         ];
         return $specialties;
     }
+
+    // Accessor for full name
+    public function getNomCompletAttribute(): string
+    {
+        return "{$this->prenom} {$this->nom}";
+    }
 }

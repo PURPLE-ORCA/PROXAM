@@ -22,7 +22,7 @@ export default function ProfesseurForm({
     setData,
     errors,
     services,
-    modules,
+    modules, // This is now an array of strings: ['Anatomie Générale', 'Biochimie Structurale', ...]
     rangs,
     statuts,
     existingSpecialties,
@@ -51,15 +51,13 @@ export default function ProfesseurForm({
             ? allSpecialtyOptions
             : allSpecialtyOptions.filter((spec) => spec.name.toLowerCase().includes(specialtyQuery.toLowerCase()));
 
-    const handleModuleChange = (moduleId) => {
-        const currentModules = data.module_ids || [];
-        if (currentModules.includes(moduleId)) {
-            setData(
-                'module_ids',
-                currentModules.filter((id) => id !== moduleId),
-            );
+    const handleModuleChange = (moduleName) => {
+        // We're now working with an array of names in our form state
+        const currentModules = data.module_names || []; // Change the state key
+        if (currentModules.includes(moduleName)) {
+            setData('module_names', currentModules.filter((name) => name !== moduleName));
         } else {
-            setData('module_ids', [...currentModules, moduleId]);
+            setData('module_names', [...currentModules, moduleName]);
         }
     };
 
@@ -274,21 +272,23 @@ export default function ProfesseurForm({
                 </legend>
                 <ScrollArea className="h-60 w-full rounded-md border p-4 scrollbar-hide">
                     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
-                        {(modules || []).map((module) => (
-                            <div key={module.id} className="flex items-center space-x-2">
+                        {/* --- MODIFIED LOGIC --- */}
+                        {(modules || []).map((moduleName) => (
+                            <div key={moduleName} className="flex items-center space-x-2">
                                 <Checkbox
-                                    id={`module-${module.id}`}
-                                    checked={(data.module_ids || []).includes(module.id)}
-                                    onCheckedChange={() => handleModuleChange(module.id)}
+                                    id={`module-${moduleName}`}
+                                    checked={(data.module_names || []).includes(moduleName)}
+                                    onCheckedChange={() => handleModuleChange(moduleName)}
                                 />
-                                <Label htmlFor={`module-${module.id}`} className="font-normal text-[var(--foreground)]">
-                                    {module.nom}
+                                <Label htmlFor={`module-${moduleName}`} className="font-normal text-[var(--foreground)]">
+                                    {moduleName}
                                 </Label>
                             </div>
                         ))}
+                        {/* ---------------------- */}
                     </div>
                 </ScrollArea>
-                {errors.module_ids && <p className="mt-2 text-sm text-[var(--destructive)]">{errors.module_ids}</p>}
+                {errors.module_ids && <p className="mt-2 text-sm text-[var(--destructive)]">{errors.module_ids}</p>} {/* This will need updating on the backend */}
             </fieldset>
         </div>
     );

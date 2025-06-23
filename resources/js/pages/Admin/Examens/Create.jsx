@@ -1,19 +1,16 @@
-import { TranslationContext } from '@/context/TranslationProvider';
 import AppLayout from '@/layouts/app-layout';
-import { Head, useForm } from '@inertiajs/react';
-import { useContext } from 'react';
+import { Head, Link, useForm } from '@inertiajs/react';
 import ExamenForm from './ExamenForm';
+import { Button } from '@/components/ui/button';
 
 export default function Create({ quadrimestres, filieres, allLevels, allModules, salles, types }) {
-    const { translations } = useContext(TranslationContext);
     const { data, setData, post, processing, errors, reset } = useForm({
         nom: '',
         quadrimestre_id: '',
         module_id: '',
         type: '',
         debut: '',
-        required_professors: 1, // Default to at least 1
-        salles_pivot: [], // Array of { salle_id, capacite }
+        salles_pivot: [],
     });
 
     const handleSubmit = (e) => {
@@ -25,31 +22,33 @@ export default function Create({ quadrimestres, filieres, allLevels, allModules,
     };
 
     const breadcrumbs = [
-        { title: translations?.examens_breadcrumb || 'Examinations', href: route('admin.examens.index') },
-        { title: translations?.create_examen_breadcrumb || 'Create' },
+        { title: 'Examinations', href: route('admin.examens.index') },
+        { title: 'Create' },
     ];
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title={translations?.create_examen_page_title || 'Create Examination'} />
+            <Head title="Create Examination" />
             <div className="mx-auto mt-6 max-w-3xl rounded-md border border-[var(--border)] bg-[var(--card)] p-6 shadow-sm">
                 <h1 className="mb-6 text-xl font-semibold text-[var(--card-foreground)]">
-                    {translations?.create_examen_heading || 'New Examination'}
+                    New Examination
                 </h1>
                 <ExamenForm
                     data={data}
                     setData={setData}
                     errors={errors}
-                    processing={processing}
-                    onSubmit={handleSubmit}
+                    isEdit={false}
                     quadrimestres={quadrimestres}
                     allFilieres={filieres}
                     allLevels={allLevels}
                     allModules={allModules}
                     salles={salles}
                     types={types}
-                    isEdit={false}
                 />
+                <div className="mt-8 flex items-center justify-end gap-x-4 border-t pt-6">
+                    <Button variant="outline" type="button" asChild><Link href={route('admin.examens.index')}>Cancel</Link></Button>
+                    <Button type="button" onClick={handleSubmit} disabled={processing}>Save</Button>
+                </div>
             </div>
         </AppLayout>
     );
