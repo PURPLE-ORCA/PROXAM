@@ -6,8 +6,10 @@ import { TranslationContext } from '@/context/TranslationProvider';
 import AppLayout from '@/layouts/app-layout';
 import ControlCenterCard from '@/components/ControlCenterCard';
 
-// --- Import your new components ---
+// --- Import all your controls ---
 import YearSwitcher from '@/components/Layout/Controls/YearSwitcher';
+import LanguageSwitcher from '@/components/Layout/Controls/LanguageSwitcher'; // <-- NEW
+import NotificationBadge from '@/components/NotificationBadge'; // <-- NEW (adjust path if needed)
 import ThemeToggle from '@/components/Layout/Controls/ThemeToggle';
 import UserCard from '@/components/Layout/Controls/UserCard';
 
@@ -38,13 +40,15 @@ export default function ControlCenter() {
             <Head title="Control Center" />
             <div className="container mx-auto p-4 md:p-6 lg:p-8">
                 <h1 className="text-foreground text-3xl font-bold tracking-tight">{translations?.control_center_title || 'Control Center'}</h1>
-                {/* <p className="text-muted-foreground mb-8">{translations?.control_center_subtitle || 'Select a module to manage your application.'}</p> */}
 
-                <div className="bg-card mb-8 flex flex-wrap items-center justify-between gap-4 rounded-lg border p-4">
+                {/* --- THE UPGRADED CONTEXT BAR --- */}
+                <div className="mb-8 flex flex-wrap items-center justify-between gap-4 rounded-lg border bg-card p-4">
                     <div className="flex flex-wrap items-center gap-4">
                         <YearSwitcher academicYear={academicYear} translations={translations} />
                     </div>
-                    <div className="flex flex-wrap items-center gap-4">
+                    <div className="flex flex-wrap items-center gap-2"> {/* Reduced gap for more controls */}
+                        <LanguageSwitcher />
+                        <NotificationBadge />
                         <ThemeToggle />
                         <UserCard user={auth.user} translations={translations} />
                     </div>
