@@ -6,9 +6,13 @@ import { TranslationContext } from '@/context/TranslationProvider';
 import AppLayout from '@/layouts/app-layout';
 import ControlCenterCard from '@/components/ControlCenterCard';
 
+// --- Import your new components ---
+import YearSwitcher from '@/components/Layout/Controls/YearSwitcher';
+import ThemeToggle from '@/components/Layout/Controls/ThemeToggle';
+import UserCard from '@/components/Layout/Controls/UserCard';
+
 export default function ControlCenter() {
-    const { auth } = usePage().props;
-    const { translations } = useContext(TranslationContext);
+    const { auth, academicYear, translations } = usePage().props; // Get all needed props
 
     // This is the magic: it filters the master list of controls
     // based on the current user's roles. Memoized for performance.
@@ -30,26 +34,28 @@ export default function ControlCenter() {
     };
 
     return (
-        <AppLayout>
+        <>
             <Head title="Control Center" />
             <div className="container mx-auto p-4 md:p-6 lg:p-8">
-                <h1 className="text-3xl font-bold tracking-tight text-foreground mb-2">
-                    {translations?.control_center_title || 'Control Center'}
-                </h1>
-                <p className="text-muted-foreground mb-8">
-                    {translations?.control_center_subtitle || 'Select a module to manage your application.'}
-                </p>
+                <h1 className="text-foreground text-3xl font-bold tracking-tight">{translations?.control_center_title || 'Control Center'}</h1>
+                {/* <p className="text-muted-foreground mb-8">{translations?.control_center_subtitle || 'Select a module to manage your application.'}</p> */}
 
-                <Masonry
-                    breakpointCols={breakpointColumnsObj}
-                    className="my-masonry-grid"
-                    columnClassName="my-masonry-grid_column"
-                >
-                    {accessibleItems.map(item => (
+                <div className="bg-card mb-8 flex flex-wrap items-center justify-between gap-4 rounded-lg border p-4">
+                    <div className="flex flex-wrap items-center gap-4">
+                        <YearSwitcher academicYear={academicYear} translations={translations} />
+                    </div>
+                    <div className="flex flex-wrap items-center gap-4">
+                        <ThemeToggle />
+                        <UserCard user={auth.user} translations={translations} />
+                    </div>
+                </div>
+
+                <Masonry breakpointCols={breakpointColumnsObj} className="my-masonry-grid" columnClassName="my-masonry-grid_column">
+                    {accessibleItems.map((item) => (
                         <ControlCenterCard key={item.route} item={item} />
                     ))}
                 </Masonry>
             </div>
-        </AppLayout>
+        </>
     );
 }

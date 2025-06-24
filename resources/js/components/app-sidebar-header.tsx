@@ -1,15 +1,11 @@
 import { Breadcrumbs } from '@/components/breadcrumbs';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { TranslationContext } from '@/context/TranslationProvider';
 import { type BreadcrumbItem as BreadcrumbItemType, type PageProps } from '@/types';
 import { Icon } from '@iconify/react';
@@ -47,13 +43,6 @@ export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: Breadcrum
             .toUpperCase();
     };
 
-    const handleAcademicYearChange = (yearIdString: string) => {
-        const yearId = parseInt(yearIdString, 10);
-        if (yearId && yearId !== academicYear.selected_id) {
-            router.post(route('admin.academic-year.select'), { annee_uni_id: yearId }, { preserveScroll: true });
-        }
-    };
-
     return (
         <header className="border-sidebar-border/50 bg-background flex h-16 shrink-0 items-center justify-between gap-2 border-b px-4 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 md:px-6">
             <div className="flex items-center gap-2">
@@ -70,33 +59,6 @@ export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: Breadcrum
             </div>
 
             <div className="flex flex-1 items-center justify-end gap-1.5 md:gap-2">
-                {academicYear && academicYear.all && academicYear.all.length > 0 && (
-                    <Select value={academicYear.selected_id?.toString() || ''} onValueChange={handleAcademicYearChange}>
-                        <SelectTrigger className="h-9 w-auto max-w-[200px] min-w-[150px] border-0 bg-transparent px-2 py-1.5 text-xs text-[var(--fmpo)] shadow-none hover:text-[var(--foreground)] focus:ring-0 md:text-sm">
-                            <div className="flex items-center gap-1.5">
-                                <Icon icon="mdi:calendar-blank-outline" className="h-4 w-4 text-[var(--fmpo)]" />
-                                <SelectValue placeholder={translations?.select_academic_year_placeholder || 'Select Year'} />
-                            </div>
-                        </SelectTrigger>
-                        <SelectContent className="max-h-72 min-w-[var(--radix-select-trigger-width)] border-[var(--border)] bg-[var(--popover)] text-[var(--popover-foreground)]">
-                            {academicYear.all.map((year) => (
-                                <SelectItem key={year.id} value={year.id.toString()}>
-                                    {year.annee}
-                                    {academicYear.current && year.id === academicYear.current.id && (
-                                        <span className="ml-2 text-xs text-[var(--fmpo)]">({translations?.latest_year_indicator || 'Latest'})</span>
-                                    )}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                )}
-                {(!academicYear || !academicYear.all || academicYear.all.length === 0) && academicYear?.selected_annee && (
-                    <div className="hidden h-9 items-center gap-1.5 px-2 text-sm text-[var(--fmpo)] md:flex">
-                        <Icon icon="mdi:calendar-blank-outline" className="h-4 w-4" />
-                        <span>{academicYear.selected_annee}</span>
-                    </div>
-                )}
-
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full">
@@ -118,43 +80,6 @@ export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: Breadcrum
                 </DropdownMenu>
 
                 <NotificationBadge />
-
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0">
-                            <Avatar className="h-8 w-8 text-[var(--fmpo)]">
-                                <AvatarImage src={user?.avatar} alt={user?.name || ''} />
-                                <AvatarFallback>{user?.name ? getInitials(user.name) : <Icon icon="mdi:account" />}</AvatarFallback>
-                            </Avatar>
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-56 border-[var(--border)] bg-[var(--popover)] text-[var(--popover-foreground)]">
-                        <DropdownMenuLabel>
-                            <div className="font-medium">{user?.name}</div>
-                            <div className="text-xs text-[var(--muted-foreground)]">{user?.email}</div>
-                        </DropdownMenuLabel>
-                        <DropdownMenuSeparator className="bg-[var(--border)]" />
-                        {ziggy && typeof route === 'function' && (
-                            <>
-                                <DropdownMenuItem
-                                    asChild
-                                    className="data-[highlighted]:bg-[var(--accent)] data-[highlighted]:text-[var(--accent-foreground)]"
-                                >
-                                    <Link href={route('profile.edit')}>{translations?.profile_link || 'Profile'}</Link>
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator className="bg-[var(--border)]" />
-                                <DropdownMenuItem
-                                    asChild
-                                    className="data-[highlighted]:bg-[var(--accent)] data-[highlighted]:text-[var(--accent-foreground)]"
-                                >
-                                    <Link href={route('logout')} method="post" as="button" className="w-full text-left">
-                                        {translations?.logout_button || 'Log Out'}
-                                    </Link>
-                                </DropdownMenuItem>
-                            </>
-                        )}
-                    </DropdownMenuContent>
-                </DropdownMenu>
             </div>
         </header>
     );
