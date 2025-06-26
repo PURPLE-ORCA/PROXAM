@@ -12,33 +12,30 @@ use Inertia\Inertia;
 
 class ProfesseurImportController extends Controller
 {
-    public function store(Request $request)
-    {
-        $request->validate([
-            'professeurs_file' => 'required|file|mimes:xlsx,xls,csv',
-        ]);
+public function store(Request $request)
+{
+    $request->validate([
+        'professeurs_file' => 'required|file|mimes:xlsx,xls,csv',
+    ]);
 
-        try {
-            Excel::import(new ProfesseursImport, $request->file('professeurs_file'));
+    $import = new ProfesseursImport; // Instantiate our class
 
-            return redirect()->route('admin.professeurs.index')->with('success', 'Professors imported successfully!');
+    try {
+        Excel::import($import, $request->file('professeurs_file'));
 
-        } catch (ValidationException $e) {
-            $failures = $e->failures();
-            $errorMessages = [];
-
-            foreach ($failures as $failure) {
-                $row = $failure->row();
-                $attribute = $failure->attribute();
-                $errors = implode(', ', $failure->errors());
-                $errorMessages[] = "Row {$row}, Column '{$attribute}': {$errors}";
-            }
-
-            return redirect()->back()->with('error', 'Import failed due to validation errors: ' . implode('; ', $errorMessages));
-
-        } catch (\Exception $e) {
-            Log::error('Professor import failed: ' . $e->getMessage(), ['exception' => $e]);
-            return redirect()->back()->with('error', 'An unexpected error occurred during import. Please try again or contact support.');
+        // Check for our custom validation errors after import
+        $failures = $import->getErrors();
+        if (!empty($failures)) {
+            $errorMessage = 'Import failed with validation errors: ' . implode('; ', $failures);
+            return redirect()->back()->with('error', $errorMessage);
         }
+
+        return redirect()->route('admin.professeurs.index')->with('success', 'Professors imported successfully!');
+
+    } catch (\Exception $e) {
+        // This will now only catch truly unexpected database errors
+        Log::error('Professor import failed: ' . $e->getMessage());
+        return redirect()->back()->with('error', 'An unexpected error occurred. Please check the log file.');
     }
+}
 }

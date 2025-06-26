@@ -12,11 +12,14 @@ class Professeur extends Model
     use HasFactory;
 
     protected $fillable = [
+        'user_id',
         'nom',
         'prenom',
-        'email',
-        'telephone',
+        'rang',
         'statut',
+        'is_chef_service',
+        'date_recrutement',
+        'specialite',
         'service_id',
     ];
 

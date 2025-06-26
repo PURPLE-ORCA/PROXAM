@@ -12,7 +12,7 @@ class DatabaseSeeder extends Seeder
             FiliereSeeder::class,
             LevelSeeder::class,
             ModuleSeeder::class,      
-            ProfesseurSeeder::class,
+            // ProfesseurSeeder::class,
             ProfesseurModuleSeeder::class,
             AnneeUniSeeder::class,
             SesonSeeder::class,

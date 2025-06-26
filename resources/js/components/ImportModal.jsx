@@ -44,24 +44,10 @@ export default function ImportModal({ isOpen, onClose }) {
                 <DialogHeader>
                     <DialogTitle>{translations?.import_professors_modal_title || 'Import Professors'}</DialogTitle>
                     <DialogDescription>
-                        {translations?.import_professors_modal_description || 'Upload an Excel or CSV file to bulk-create professor profiles.'}
+                        Upload the official professor list (Excel or CSV). The system will automatically read the data.
                     </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
-                    <p className="text-sm text-muted-foreground">
-                        {translations?.import_professors_modal_instructions || 'Please ensure your file has the following headers:'}
-                        <br />
-                        <code className="font-mono text-xs">prenom, nom, email, service, grade, specialite, recrutement, chef_de_service</code>
-                    </p>
-                    <a
-                        href="/templates/professeur_template.xlsx"
-                        download
-                        className="inline-flex items-center text-sm text-blue-600 hover:underline"
-                    >
-                        <Icon icon="mdi:download" className="mr-1 h-4 w-4" />
-                        {translations?.download_template_link || 'Download Template File'}
-                    </a>
-
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div className="grid w-full max-w-sm items-center gap-1.5">
                             <Label htmlFor="professeurs_file">
