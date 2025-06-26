@@ -2,7 +2,6 @@ import ConfirmationModal from '@/components/Common/ConfirmationModal';
 import ImportModal from '@/components/ImportModal';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-// --- 1. IMPORT DROPDOWN COMPONENTS ---
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -11,17 +10,15 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-// ------------------------------------
 import { TranslationContext } from '@/context/TranslationProvider';
 import AppLayout from '@/layouts/app-layout';
 import { Icon } from '@iconify/react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
-// --- 1. IMPORT THE FORMAT FUNCTION ---
 import { format } from 'date-fns';
-// ------------------------------------
 import { MaterialReactTable, useMaterialReactTable } from 'material-react-table';
 import ProfessorModal from './ProfessorModal'; // Import our new modal
 import { useContext, useEffect, useMemo, useState } from 'react';
+import axios from 'axios';
 
 const statutColors = {
     Active: 'bg-green-500 hover:bg-green-600',
@@ -59,6 +56,7 @@ export default function Index({
     // --- NEW STATE FOR OUR PROFESSOR MODAL ---
     const [isProfessorModalOpen, setProfessorModalOpen] = useState(false);
     const [professorToEdit, setProfessorToEdit] = useState(null);
+    const [isLoadingEdit, setIsLoadingEdit] = useState(false); // Add a loading state
 
     // --- NEW HANDLERS ---
     const openCreateModal = () => {
@@ -66,9 +64,18 @@ export default function Index({
         setProfessorModalOpen(true);
     };
 
-    const openEditModal = (professeur) => {
-        setProfessorToEdit(professeur);
-        setProfessorModalOpen(true);
+    const openEditModal = async (professeur) => {
+        setIsLoadingEdit(true); // Maybe show a spinner on the edit button
+        try {
+            const response = await axios.get(route('admin.professeurs.show', professeur.id));
+            setProfessorToEdit(response.data); // Set the FULL data from the API
+            setProfessorModalOpen(true);
+        } catch (error) {
+            console.error("Failed to fetch professor details:", error);
+            // Handle error, maybe show a toast
+        } finally {
+            setIsLoadingEdit(false);
+        }
     };
 
     const getStatutTranslation = (statutKey) => {
@@ -298,9 +305,9 @@ export default function Index({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                    <DropdownMenuItem onClick={() => openEditModal(row.original)}>
+                    <DropdownMenuItem onClick={() => openEditModal(row.original)} disabled={isLoadingEdit}>
                         <Icon icon="mdi:pencil-outline" className="mr-2 h-4 w-4" />
-                        Edit
+                        {isLoadingEdit ? 'Loading...' : 'Edit'}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10" onClick={() => openDeleteModal(row.original)}>
