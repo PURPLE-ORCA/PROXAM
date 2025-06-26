@@ -1,19 +1,18 @@
 <?php
 
 namespace App\Http\Controllers\Admin;
-
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Models\Professeur;
 use App\Models\Examen;
-use App\Models\Attribution;
 use App\Models\Notification;
 use App\Models\Service;
 use App\Models\Salle;
 use App\Models\Echange;
 use App\Models\Unavailability;
 use App\Models\AnneeUni;
+use App\Models\Attribution;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -88,6 +87,7 @@ class DashboardController extends Controller
                 ->get()
                 ->filter(fn($examen) => $examen->attributions_count < $examen->total_required_professors)
                 ->count(),
+            'assignmentsInConflict' => Attribution::where('is_in_conflict', true)->count(),
         ];
     }
 

@@ -55,6 +55,10 @@ class AttributionController extends Controller
         });
         // --- END UPGRADED FILTERING ---
 
+        $attributionsQuery->when($request->input('in_conflict') === 'true', function ($q) {
+            $q->where('attributions.is_in_conflict', true);
+        });
+
         // The existing sorting logic is perfect for grouping and should remain.
         $attributions = $attributionsQuery
             ->orderBy(Examen::select('debut')->whereColumn('examens.id', 'attributions.examen_id'), 'desc')
@@ -69,5 +73,61 @@ class AttributionController extends Controller
             // Pass all possible filters back to the frontend
             'filters' => $request->only(['search', 'prof_search', 'service_search']),
         ]);
+    }
+
+    public function findReplacements(Attribution $attribution)
+    {
+        $examen = $attribution->examen;
+        $examStart = $examen->debut;
+        $examEnd = $examen->getEndDatetimeAttribute(); // Get the calculated end time
+
+        $candidates = Professeur::query()
+            // RULE 1: Must be Active and not the professor we're replacing.
+            ->where('statut', 'Active')
+            ->where('id', '!=', $attribution->professeur_id)
+
+            // RULE 2: Must NOT have any unavailabilities that overlap with the exam.
+            ->whereDoesntHave('unavailabilities', function ($query) use ($examStart, $examEnd) {
+                $query->where('start_datetime', '<', $examEnd)
+                      ->where('end_datetime', '>', $examStart);
+            })
+
+            // RULE 3: Must NOT have another exam assignment that overlaps with this one.
+            ->whereDoesntHave('attributions.examen', function ($query) use ($examStart, $examEnd) {
+                $query->where('debut', '<', $examEnd)
+                  // Use a raw expression to check the end time of other exams
+                  ->whereRaw('"debut" + interval \'4 hours\' > ?', [$examStart]);
+            })
+
+            // Order by who has the fewest assignments to spread the load fairly.
+            ->withCount('attributions')
+            ->orderBy('attributions_count', 'asc')
+
+            // Get the top 5.
+            ->take(5)
+            ->get(['id', 'nom', 'prenom']); // Only get the columns we need
+
+        return response()->json($candidates);
+    }
+
+    public function reassign(Request $request, Attribution $attribution)
+    {
+        // Validate the request to make sure it has a new_professeur_id.
+        $validated = $request->validate([
+            'new_professeur_id' => 'required|exists:professeurs,id',
+        ]);
+
+        // Find the Attribution.
+        // (Already done via route model binding)
+
+        // Update two fields:
+        $attribution->professeur_id = $validated['new_professeur_id'];
+        $attribution->is_in_conflict = false;
+
+        // Save it.
+        $attribution->save();
+
+        // Return a success response.
+        return redirect()->route('admin.attributions.index');
     }
 }

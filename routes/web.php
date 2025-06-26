@@ -66,7 +66,9 @@ Route::get('dashboard', function (Request $request) {
         Route::resource('sesons', SesonController::class) ->parameters(['sesons' => 'seson']) ->except(['show']);
         Route::resource('quadrimestres', QuadrimestresController::class)->parameters(['quadrimestres' => 'quadrimestre']) ->except(['show']);
         Route::resource('users', UserController::class)->parameters(['users' => 'user'])->except(['show']);
-        Route::resource('professeurs', ProfesseurController::class)->parameters(['professeurs' => 'professeur'])->except(['create', 'edit']);
+        Route::resource('professeurs', ProfesseurController::class)->parameters(['professeurs' => 'professeur'])->except(['show']);
+        Route::get('/professeurs/{professeur}', [ProfesseurController::class, 'show'])->name('professeurs.show');
+
         Route::post('/professeurs/import', [ProfesseurImportController::class, 'store'])->name('professeurs.import');
         Route::get('/professeurs/template/download', [ProfesseurImportController::class, 'downloadTemplate'])->name('professeurs.template.download');
         Route::resource('examens', ExamenController::class)->parameters(['examens' => 'examen'])->except(['show']);
@@ -79,6 +81,9 @@ Route::get('dashboard', function (Request $request) {
         Route::put('/manage-assignments/{attribution}/toggle-responsable', [ExamAssignmentManagementController::class, 'toggleResponsable'])->name('attributions.toggle-responsable');
         Route::delete('/manage-assignments/{attribution}', [ExamAssignmentManagementController::class, 'destroyAttribution'])->name('attributions.destroy_manual');
         Route::resource('filieres', FiliereController::class)->parameters(['filieres' => 'filiere'])->except(['show']);
+
+        Route::get('/attributions/{attribution}/find-replacements', [AttributionController::class, 'findReplacements'])->name('attributions.find_replacements');
+        Route::put('/attributions/{attribution}/reassign', [AttributionController::class, 'reassign'])->name('attributions.reassign');
     
         Route::get('/filieres/{filiere}/levels', [LevelController::class, 'index'])->name('levels.index');
         Route::get('/levels/create', [LevelController::class, 'create'])->name('levels.create'); // Can take ?filiere_id=X

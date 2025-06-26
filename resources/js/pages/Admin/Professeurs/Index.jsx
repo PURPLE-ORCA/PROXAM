@@ -19,6 +19,7 @@ import { format } from 'date-fns';
 import { MaterialReactTable, useMaterialReactTable } from 'material-react-table';
 import ProfessorModal from './ProfessorModal';
 import { useContext, useEffect, useMemo, useState } from 'react';
+import axios from 'axios';
 
 const statutColors = {
     Active: 'bg-green-500 hover:bg-green-600',
@@ -26,6 +27,7 @@ const statutColors = {
     Sick_Leave: 'bg-orange-500 hover:bg-orange-600',
     Vacation: 'bg-blue-500 hover:bg-blue-600',
     Inactive: 'bg-gray-500 hover:bg-gray-600',
+    UNAVAILABLE: 'bg-yellow-500 hover:bg-yellow-600 text-black', // New color for unavailable
     default: 'bg-gray-400 hover:bg-gray-500',
 };
 
@@ -53,25 +55,26 @@ export default function Index({
 
     const [isProfessorModalOpen, setProfessorModalOpen] = useState(false);
     const [professorToEdit, setProfessorToEdit] = useState(null);
+    const [isLoadingEdit, setIsLoadingEdit] = useState(false); // Add a loading state
 
     const openCreateModal = () => {
         setProfessorToEdit(null); // Clear any previous edit data
         setProfessorModalOpen(true);
     };
 
-    const openEditModal = (professeur) => {
-        // Fetch the full professor data, including modules
-        axios.get(route('admin.professeurs.show', { professeur: professeur.id }))
-            .then(response => {
-                // Now we have the full data, including the `modules` array
-                const fullProfessorData = response.data;
-                setProfessorToEdit(fullProfessorData);
-                setProfessorModalOpen(true);
-            })
-            .catch(error => {
-                console.error("Failed to fetch full professor data:", error);
-                // Optionally show an error toast to the user
-            });
+    const openEditModal = async (professeur) => {
+        setIsLoadingEdit(true); // Maybe show a spinner on the edit button
+        try {
+            const response = await axios.get(route('admin.professeurs.show', professeur.id));
+            setProfessorToEdit(response.data); // Set the FULL data from the API
+            setProfessorModalOpen(true);
+        } catch (error) {
+            console.error("Failed to fetch professor details:", error);
+            // Handle error, maybe show a toast
+        } finally {
+            setIsLoadingEdit(false);
+        }
+
     };
 
     const getStatutTranslation = (statutKey) => {
@@ -132,7 +135,6 @@ export default function Index({
                 size: 200,
                 // Default filter is 'text' input
             },
-            { accessorKey: 'user.email', header: translations?.user_email_column_header || 'Email', size: 250 },
             { accessorKey: 'service.nom', header: translations?.professeur_service_column_header || 'Service', size: 150, filterVariant: 'text' },
             {
                 accessorKey: 'rang',
@@ -143,12 +145,13 @@ export default function Index({
                 filterSelectOptions: Object.entries(rangsForFilter).map(([key, value]) => ({ value: key, text: value })),
             },
             {
-                accessorKey: 'statut',
+                accessorKey: 'effective_statut.label', // Display the effective status label
+                id: 'effectiveStatut', // Give it a unique ID
                 header: translations?.professeur_status_column_header || 'Status',
-                Cell: ({ cell }) => {
-                    const statut = cell.getValue();
-                    const colorClass = statut ? statutColors[statut] || statutColors.default : statutColors.default;
-                    return <Badge className={`${colorClass} text-white`}>{getStatutTranslation(statut)}</Badge>;
+                Cell: ({ row }) => {
+                    const effectiveStatut = row.original.effective_statut;
+                    const colorClass = effectiveStatut?.key ? statutColors[effectiveStatut.key] || statutColors.default : statutColors.default;
+                    return <Badge className={`${colorClass} text-white`}>{effectiveStatut?.label}</Badge>;
                 },
                 size: 120,
                 filterVariant: 'select', // Use a dropdown for this
@@ -299,17 +302,15 @@ export default function Index({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                    <DropdownMenuItem onClick={() => openEditModal(row.original)}>
+                    <DropdownMenuItem onClick={() => openEditModal(row.original)} disabled={isLoadingEdit}>
                         <Icon icon="mdi:pencil-outline" className="mr-2 h-4 w-4" />
-                        Edit
+                        {isLoadingEdit ? 'Loading...' : 'Edit'}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    {auth.user?.id !== row.original.user?.id && (
-                         <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10" onClick={() => openDeleteModal(row.original)}>
-                            <Icon icon="mdi:delete-outline" className="mr-2 h-4 w-4" />
-                            Delete
-                        </DropdownMenuItem>
-                    )}
+                    <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10" onClick={() => openDeleteModal(row.original)}>
+                        <Icon icon="mdi:delete-outline" className="mr-2 h-4 w-4" />
+                        Delete
+                    </DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>
         ),

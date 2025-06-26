@@ -22,8 +22,8 @@ class DatabaseSeeder extends Seeder
             ExamenSeeder::class,               
             ExamensSallesSeeder::class,        
             UnavailabilitySeeder::class,
-            // AttributionSeeder::class,     // Should be OFF for assignment engine testing
-            // EchangeSeeder::class,
+            // AttributionSeeder::class, // OFF for assignment engine testing
+            // EchangeSeeder::class,  // OFF for assignment engine testing
         ]);
     }
 }

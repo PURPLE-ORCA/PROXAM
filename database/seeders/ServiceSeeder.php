@@ -10,10 +10,7 @@ class ServiceSeeder extends Seeder
     public function run()
     {
         $services = [
-            'Anatomie', 'Biochimie', 'Physiologie', 'Pharmacologie', 'Microbiologie',
-            'Pathologie', 'Chirurgie', 'Médecine Interne', 'Pédiatrie', 'Gynécologie',
-            'Radiologie', 'Dermatologie', 'Neurologie', 'Cardiologie', 'Ophtalmologie',
-            'ORL', 'Psychiatrie', 'Médecine Légale', 'Immunologie', 'Parasitologie'
+            'Mère et Enfant', 'Préclinique', 'Chirurgical', 'Médical'
         ];
 
         foreach (array_slice($services, 0, 10) as $service) {

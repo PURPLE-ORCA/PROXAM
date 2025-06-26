@@ -2,13 +2,18 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\UnavailabilityConflictService;
 use App\Models\AnneeUni;
-use App\Models\Unavailability; 
-use App\Models\Professeur;
-use Carbon\Carbon;
+use App\Models\Unavailability;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
+use App\Models\Professeur;
+use App\Models\Seson;
+use App\Models\Quadrimestre;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class UnavailabilityController extends Controller 
 {
@@ -81,7 +86,7 @@ class UnavailabilityController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(Request $request, UnavailabilityConflictService $conflictService)
     {
         $validated = $request->validate([
             'professeur_id' => 'required|exists:professeurs,id',
@@ -91,13 +96,15 @@ class UnavailabilityController extends Controller
             'reason' => 'nullable|string|max:255',
         ]);
 
-        Unavailability::create($validated);
+        $unavailability = Unavailability::create($validated);
+
+        $conflictService->updateConflictsFor($unavailability);
 
         return redirect()->route('admin.unavailabilities.index')
             ->with('success', 'toasts.unavailability_created_successfully');
     }
 
-    public function update(Request $request, Unavailability $unavailability)
+    public function update(Request $request, Unavailability $unavailability, UnavailabilityConflictService $conflictService)
     {
         $validated = $request->validate([
             'professeur_id' => 'required|exists:professeurs,id',
@@ -109,14 +116,18 @@ class UnavailabilityController extends Controller
 
         $unavailability->update($validated);
 
+        $conflictService->updateConflictsFor($unavailability);
+
         return redirect()->route('admin.unavailabilities.index')
             ->with('success', 'toasts.unavailability_updated_successfully');
     }
 
-    public function destroy(Unavailability $unavailability)
+    public function destroy(Unavailability $unavailability, UnavailabilityConflictService $conflictService)
     {
+        $conflictService->resolveConflictsFor($unavailability);
         $unavailability->delete();
 
         return redirect()->route('admin.unavailabilities.index')
             ->with('success', 'toasts.unavailability_deleted_successfully');
-    }}
+    }
+}

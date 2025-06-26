@@ -19,7 +19,8 @@ export default function ProfessorModal({ isOpen, onClose, professeur, services, 
         date_recrutement: '',
         specialite: '',
         service_id: '',
-        module_names: [], // Use module_names instead of module_ids
+        module_names: [],
+
     });
 
     useEffect(() => {
@@ -36,7 +37,8 @@ export default function ProfessorModal({ isOpen, onClose, professeur, services, 
                 date_recrutement: professeur?.date_recrutement ? professeur.date_recrutement.split('T')[0] : '',
                 specialite: professeur?.specialite || '',
                 service_id: professeur?.service_id?.toString() || '',
-                module_names: professeur?.modules?.map(m => m.nom) || [], // Map to an array of names
+                module_names: professeur?.modules?.map(m => m.nom) || [], // Use names now
+
             });
         }
     }, [isOpen, professeur]);
@@ -52,7 +54,7 @@ export default function ProfessorModal({ isOpen, onClose, professeur, services, 
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="min-w-2xl flex flex-col max-h-[90vh]">
+            <DialogContent className="min-w-3xl flex flex-col max-h-[90vh]">
                 <DialogHeader className="flex-shrink-0">
                     <DialogTitle>{isEdit ? 'Edit Professor' : 'New Professor'}</DialogTitle>
                 </DialogHeader>

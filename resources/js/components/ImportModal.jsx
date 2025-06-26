@@ -44,7 +44,7 @@ export default function ImportModal({ isOpen, onClose }) {
                 <DialogHeader>
                     <DialogTitle>{translations?.import_professors_modal_title || 'Import Professors'}</DialogTitle>
                     <DialogDescription>
-                        {translations?.import_professors_modal_description || 'Upload an Excel or CSV file to bulk-create professor profiles.'}
+                        Upload the official professor list (Excel or CSV). The system will automatically read the data.
                     </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">

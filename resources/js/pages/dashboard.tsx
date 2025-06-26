@@ -65,7 +65,7 @@ export default function Dashboard() {
                 <QuickActionsWidget translations={translations} />
 
                 {/* KPI Cards Row */}
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
                     <KpiCard title={translations.total_active_professors} value={kpiData.totalActiveProfessors} icon={Bell} />
                     <KpiCard
                         title={translations.total_exams_this_academic_year}
@@ -83,6 +83,14 @@ export default function Dashboard() {
                         icon={AlertTriangle}
                         variant="destructive"
                     />
+                    <Link href={route('admin.attributions.index', { in_conflict: true })}>
+                        <KpiCard
+                            title="Assignments in Conflict" // Add a translation for this later
+                            value={kpiData.assignmentsInConflict}
+                            icon={AlertTriangle}
+                            variant="destructive"
+                        />
+                    </Link>
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">

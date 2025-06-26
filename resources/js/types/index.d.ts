@@ -136,6 +136,7 @@ export interface KpiData {
     totalExamsThisYear: number;
     totalAssignmentsThisYear: number;
     unstaffedExamsThisYear: number;
+    assignmentsInConflict: number;
 }
 
 export interface ProfessorLoadData {

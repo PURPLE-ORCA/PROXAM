@@ -22,7 +22,7 @@ export default function ProfesseurForm({
     setData,
     errors,
     services,
-    modules, // This is now an array of strings: ['Anatomie Générale', 'Biochimie Structurale', ...]
+    modules, // This will now be an array of strings (module names)
     rangs,
     statuts,
     existingSpecialties,
@@ -52,8 +52,8 @@ export default function ProfesseurForm({
             : allSpecialtyOptions.filter((spec) => spec.name.toLowerCase().includes(specialtyQuery.toLowerCase()));
 
     const handleModuleChange = (moduleName) => {
-        // We're now working with an array of names in our form state
-        const currentModules = data.module_names || []; // Change the state key
+        const currentModules = data.module_names || [];
+
         if (currentModules.includes(moduleName)) {
             setData('module_names', currentModules.filter((name) => name !== moduleName));
         } else {
@@ -272,7 +272,6 @@ export default function ProfesseurForm({
                 </legend>
                 <ScrollArea className="h-60 w-full rounded-md border p-4 scrollbar-hide">
                     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
-                        {/* --- MODIFIED LOGIC --- */}
                         {(modules || []).map((moduleName) => (
                             <div key={moduleName} className="flex items-center space-x-2">
                                 <Checkbox
@@ -288,7 +287,8 @@ export default function ProfesseurForm({
                         {/* ---------------------- */}
                     </div>
                 </ScrollArea>
-                {errors.module_ids && <p className="mt-2 text-sm text-[var(--destructive)]">{errors.module_ids}</p>} {/* This will need updating on the backend */}
+                {errors.module_names && <p className="mt-2 text-sm text-[var(--destructive)]">{errors.module_names}</p>}
+
             </fieldset>
         </div>
     );
