@@ -111,14 +111,14 @@ export default function Index({ users: usersPagination, filters, rolesForFilter,
             <UserModal
                 isOpen={isCreateModalOpen}
                 onClose={() => setIsCreateModalOpen(false)}
-                roles={rolesForForm}
+            availableRoles={rolesForForm} 
             />
             {selectedUser && (
                 <UserModal
                     isOpen={isEditModalOpen}
                     onClose={() => setIsEditModalOpen(false)}
                     user={selectedUser}
-                    roles={rolesForForm}
+                    availableRoles={rolesForForm}
                 />
             )}
             <ConfirmationModal
