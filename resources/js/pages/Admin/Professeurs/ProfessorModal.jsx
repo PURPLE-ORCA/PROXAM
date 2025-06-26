@@ -19,7 +19,8 @@ export default function ProfessorModal({ isOpen, onClose, professeur, services, 
         date_recrutement: '',
         specialite: '',
         service_id: '',
-        module_names: [], // Changed from module_ids to module_names
+        module_names: [],
+
     });
 
     useEffect(() => {
@@ -37,6 +38,7 @@ export default function ProfessorModal({ isOpen, onClose, professeur, services, 
                 specialite: professeur?.specialite || '',
                 service_id: professeur?.service_id?.toString() || '',
                 module_names: professeur?.modules?.map(m => m.nom) || [], // Use names now
+
             });
         }
     }, [isOpen, professeur]);

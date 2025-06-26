@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\ProfesseursImport;
+use App\Exports\ProfesseurTemplateExport;
 use Maatwebsite\Excel\Validators\ValidationException;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
@@ -36,6 +37,11 @@ public function store(Request $request)
         // This will now only catch truly unexpected database errors
         Log::error('Professor import failed: ' . $e->getMessage());
         return redirect()->back()->with('error', 'An unexpected error occurred. Please check the log file.');
+    }
+
+    public function downloadTemplate()
+    {
+        return Excel::download(new ProfesseurTemplateExport, 'professeur_template.xlsx');
     }
 }
 }

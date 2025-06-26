@@ -53,6 +53,7 @@ export default function ProfesseurForm({
 
     const handleModuleChange = (moduleName) => {
         const currentModules = data.module_names || [];
+
         if (currentModules.includes(moduleName)) {
             setData('module_names', currentModules.filter((name) => name !== moduleName));
         } else {
@@ -283,9 +284,11 @@ export default function ProfesseurForm({
                                 </Label>
                             </div>
                         ))}
+                        {/* ---------------------- */}
                     </div>
                 </ScrollArea>
                 {errors.module_names && <p className="mt-2 text-sm text-[var(--destructive)]">{errors.module_names}</p>}
+
             </fieldset>
         </div>
     );

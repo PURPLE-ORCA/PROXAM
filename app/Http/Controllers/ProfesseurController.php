@@ -63,6 +63,7 @@ class ProfesseurController extends Controller
         // --- ADD THIS DATA FOR THE MODAL ---
         $services = Service::orderBy('nom')->get(['id', 'nom']);
         $uniqueModuleNames = Module::select('nom')->distinct()->orderBy('nom')->pluck('nom');
+
         $rangs = Professeur::getRangs();
         $statuts = Professeur::getStatuts();
         $existingSpecialties = Professeur::select('specialite')
@@ -89,6 +90,13 @@ class ProfesseurController extends Controller
         ]);
     }
 
+    public function show(Professeur $professeur)
+    {
+        // Eager load all the relationships we need for the edit form
+        $professeur->load(['user', 'service', 'modules']);
+        return response()->json($professeur);
+    }
+
     public function store(Request $request)
     {
         // Note: User creation part
@@ -108,6 +116,7 @@ class ProfesseurController extends Controller
             'service_id' => 'required|exists:services,id',
             'module_names' => 'nullable|array',
             'module_names.*' => 'string|exists:modules,nom',
+
         ]);
 
         return DB::transaction(function () use ($request, $validatedUserData, $validatedProfesseurData) {
@@ -145,6 +154,7 @@ class ProfesseurController extends Controller
                 $moduleIdsToSync = Module::whereIn('nom', $validatedProfesseurData['module_names'])->pluck('id');
             }
             $professeur->modules()->sync($moduleIdsToSync);
+
 
             return redirect()->route('admin.professeurs.index')
                 ->with('success', 'toasts.professeur_created_successfully');
@@ -196,6 +206,7 @@ class ProfesseurController extends Controller
                 $moduleIdsToSync = Module::whereIn('nom', $validatedProfesseurData['module_names'])->pluck('id');
             }
             $professeur->modules()->sync($moduleIdsToSync);
+
 
             return redirect()->route('admin.professeurs.index')
                 ->with('success', 'toasts.professeur_updated_successfully');

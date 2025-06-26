@@ -114,4 +114,9 @@ class Professeur extends Model
         ];
         return $specialties;
     }
+
+    public function getNomCompletAttribute(): string
+    {
+        return "{$this->prenom} {$this->nom}";
+    }
 }

@@ -1,3 +1,4 @@
+import axios from 'axios';
 import ConfirmationModal from '@/components/Common/ConfirmationModal';
 import ImportModal from '@/components/ImportModal';
 import { Badge } from '@/components/ui/badge';
@@ -16,7 +17,7 @@ import { Icon } from '@iconify/react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { format } from 'date-fns';
 import { MaterialReactTable, useMaterialReactTable } from 'material-react-table';
-import ProfessorModal from './ProfessorModal'; // Import our new modal
+import ProfessorModal from './ProfessorModal';
 import { useContext, useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 
@@ -39,7 +40,6 @@ export default function Index({
     servicesForFilter,
     rangsForFilter,
     statutsForFilter,
-    // New props from the controller for the modal:
     servicesForForm,
     modulesForForm,
     rangsForForm,
@@ -53,12 +53,10 @@ export default function Index({
     const [itemToDelete, setItemToDelete] = useState(null);
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
-    // --- NEW STATE FOR OUR PROFESSOR MODAL ---
     const [isProfessorModalOpen, setProfessorModalOpen] = useState(false);
     const [professorToEdit, setProfessorToEdit] = useState(null);
     const [isLoadingEdit, setIsLoadingEdit] = useState(false); // Add a loading state
 
-    // --- NEW HANDLERS ---
     const openCreateModal = () => {
         setProfessorToEdit(null); // Clear any previous edit data
         setProfessorModalOpen(true);
@@ -76,6 +74,7 @@ export default function Index({
         } finally {
             setIsLoadingEdit(false);
         }
+
     };
 
     const getStatutTranslation = (statutKey) => {
@@ -160,7 +159,6 @@ export default function Index({
             },
             { accessorKey: 'specialite', header: translations?.professeur_specialty_column_header || 'Specialty', size: 150 },
 
-            // --- 2. MODIFY THIS COLUMN DEFINITION ---
             {
                 accessorKey: 'date_recrutement',
                 header: 'Recruitment',
@@ -172,7 +170,6 @@ export default function Index({
                     return format(new Date(date), 'dd/MM/yyyy');
                 },
             },
-            // ----------------------------------------
             {
                 accessorKey: 'is_chef_service',
                 header: translations?.professeur_is_head_column_header || 'Head',

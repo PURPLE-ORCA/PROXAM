@@ -135,6 +135,7 @@
             width: 100%;
             border-collapse: collapse;
             margin: 30px 0;
+            margin-left 10rem; 
         }
         
         .schedule-table th,
@@ -183,49 +184,24 @@
 </head>
 <body>
     <div class="page-content">
-        <div class="header">
-            <div class="left-section">
-                <div class="university-name">Royaume du Maroc</div>
-                <div class="faculty-name">Université Mohammed Premier</div>
-                <div class="faculty-name">Faculté de Médecine et de Pharmacie</div>
-                <div class="city">-Oujda</div>
-            </div>
-            
-            <div class="center-section">
-                <img src="{{ $logoBase64 }}" alt="Logo Faculté" style="width: 80px; height: auto; margin: 0 auto 10px; display: block;">
-                <div style="font-size: 10px; text-align: center;">
-                    <div>جامعة محمد الأول</div>
-                    <div>كلية الطب والصيدلة</div>
-                    <div>وجدة</div>
-                </div>
-            </div>
-            
-            <div class="right-section">
-                <div class="arabic-text">
-                    المملكة المغربية<br>
-                    الأول محمد جامعة<br>
-                    والصيدلة الطب كلية<br>
-                    وجدة
-                </div>
-            </div>
-        </div>
+        {{-- <img src="{{ storage_path('images/pdf/HEADERpDF.png') }}" alt="Header Image" style="width: 100%; height: auto;"> --}}
         
+        <img src="{{ public_path('images/pdf/HEADERpDF.png') }}" alt="Header Image" style="width: 100%; height: auto;">        
         <div class="red-line"></div>
         
         <div class="dean-title">
             Le Doyen de la Faculté de Médecine et de Pharmacie<br>
-            Université Mohammed Premier Oujda
+            Université Mohammed Premier Oujda 
         </div>
         
         <div class="recipient">
-            A Monsieur/Madame :<br>
             A Monsieur/Madame :<br>
             <span style="font-weight: bold;">Pr. {{ $professor->nom_complet ?? 'N/A' }}</span>
         </div>
         
         <div class="content">
             <div class="object">
-                <span class="highlight">Objet :</span> participation au jury des examens de <span class="highlight">la {{ $seson->nom ?? 'N/A' }} du {{ $quadrimestre->nom ?? 'N/A' }} {{ $anneeUn->nom ?? 'N/A' }}</span>.
+                <span class="highlight">Objet :</span> participation au jury des examens de <span class="highlight">la {{ $seson->code ?? 'N/A' }} du {{ $quadrimestre?->code ?? 'N/A' }} {{ $anneeUn?->annee ?? 'N/A' }}</span>.
             </div>
             
             <div class="greeting">
@@ -233,7 +209,7 @@
             </div>
             
             <div class="main-text">
-                Vous êtes prié(e) de se présenter au lieu, à la date et à l'heure indiquée sur le tableau ci-dessous pour participer aux examens de surveillances des examens de <span class="highlight">la {{ $seson->nom ?? 'N/A' }} du {{ $quadrimestre->nom ?? 'N/A' }} {{ $anneeUn->nom ?? 'N/A' }}</span>.<br>
+                Vous êtes prié(e) de se présenter au lieu, à la date et à l'heure indiquée sur le tableau ci-dessous pour participer aux examens de surveillances des examens de <span class="highlight">la {{ $seson->code ?? 'N/A' }} du {{ $quadrimestre?->code ?? 'N/A' }} {{ $anneeUn?->annee ?? 'N/A' }}</span>.<br>
                 Veuillez, cher(ère) collègue, recevoir nos meilleures salutations.
             </div>
         </div>
