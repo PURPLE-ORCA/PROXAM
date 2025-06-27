@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Quadrimestre extends Model
 {
+    use HasFactory;
+
     protected $fillable = ['code', 'seson_id'];
 
     public function seson()

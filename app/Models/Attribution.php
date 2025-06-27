@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Attribution extends Model
 {
+    use HasFactory;
+
     protected $fillable = ['examen_id', 'professeur_id', 'is_responsable', 'salle_id', 'is_involved_in_exchange', 'is_in_conflict'];
 
     protected $casts = [

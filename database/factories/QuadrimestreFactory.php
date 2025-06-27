@@ -2,21 +2,21 @@
 
 namespace Database\Factories;
 
-use App\Models\AnneeUni;
+use App\Models\Quadrimestre;
 use App\Models\Seson;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-class SesonFactory extends Factory
+class QuadrimestreFactory extends Factory
 {
-    protected $model = Seson::class;
+    protected $model = Quadrimestre::class;
 
     public function definition(): array
     {
-        $anneeUni = AnneeUni::factory()->create();
+        $seson = Seson::factory()->create();
 
         return [
             'code' => $this->faker->unique()->word(),
-            'annee_uni_id' => $anneeUni->id,
+            'seson_id' => $seson->id,
         ];
     }
 }
