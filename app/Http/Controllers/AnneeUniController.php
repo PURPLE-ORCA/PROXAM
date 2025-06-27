@@ -37,7 +37,7 @@ class AnneeUniController extends Controller
     {
         $validated = $request->validate([
             'annee' => 'required|string|max:20|unique:annee_unis,annee|regex:/^\d{4}-\d{4}$/',
-            // Example regex for YYYY-YYYY format, adjust if your format is different
+            // Example regex for YYYY-YYYY format
         ]);
 
         AnneeUni::create($validated);

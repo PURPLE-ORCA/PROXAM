@@ -30,7 +30,6 @@ class AttributionController extends Controller
             $attributionsQuery->whereRaw('1 = 0');
         }
         
-        // --- UPGRADED FILTERING LOGIC ---
         // Global search for Exam/Module
         $attributionsQuery->when($request->input('search'), function ($query, $search) {
             $query->where(function ($q) use ($search) {
@@ -47,19 +46,16 @@ class AttributionController extends Controller
             });
         });
 
-        // Specific search for Service
         $attributionsQuery->when($request->input('service_search'), function ($query, $search) {
             $query->whereHas('professeur.service', function ($q) use ($search) {
                 $q->where('nom', 'like', "%{$search}%");
             });
         });
-        // --- END UPGRADED FILTERING ---
 
         $attributionsQuery->when($request->input('in_conflict') === 'true', function ($q) {
             $q->where('attributions.is_in_conflict', true);
         });
 
-        // The existing sorting logic is perfect for grouping and should remain.
         $attributions = $attributionsQuery
             ->orderBy(Examen::select('debut')->whereColumn('examens.id', 'attributions.examen_id'), 'desc')
             ->orderBy('examen_id', 'desc')
@@ -105,7 +101,7 @@ class AttributionController extends Controller
 
             // Get the top 5.
             ->take(5)
-            ->get(['id', 'nom', 'prenom']); // Only get the columns we need
+            ->get(['id', 'nom', 'prenom']); // Only get the columns I need
 
         return response()->json($candidates);
     }
@@ -117,8 +113,7 @@ class AttributionController extends Controller
             'new_professeur_id' => 'required|exists:professeurs,id',
         ]);
 
-        // Find the Attribution.
-        // (Already done via route model binding)
+        // Finding the Attribution (Already done via route model binding)
 
         // Update two fields:
         $attribution->professeur_id = $validated['new_professeur_id'];

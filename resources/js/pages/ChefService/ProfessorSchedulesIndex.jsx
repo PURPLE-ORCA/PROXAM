@@ -30,7 +30,7 @@ export default function ProfessorSchedulesIndex({ professeursInService, attribut
 
             <div className="py-12">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                    <div className="bg-white dark:bg-black overflow-hidden shadow-sm sm:rounded-lg p-6">
+                    <div className=" overflow-hidden shadow-sm sm:rounded-lg p-6">
                         {professeursInService.map(professor => (
                             <Card key={professor.id} className="mb-6">
                                 <CardHeader>
