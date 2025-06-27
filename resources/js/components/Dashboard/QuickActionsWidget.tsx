@@ -34,34 +34,40 @@ export default function QuickActionsWidget({ translations: propTranslations }: Q
             titleKey: 'add_unavailability',
             fallbackTitle: propTranslations.add_unavailability,
             descriptionKey: 'add_unavailability_description',
-            fallbackDescription: 'Mark a professor\'s unavailability.',
+            fallbackDescription: "Mark a professor's unavailability.",
         },
         {
-            route: 'professeur.exchanges.index',
-            icon: 'mdi:swap-horizontal',
-            titleKey: 'view_exchange_requests',
-            fallbackTitle: propTranslations.view_exchange_requests,
-            descriptionKey: 'view_exchange_requests_description',
-            fallbackDescription: 'View and manage exam exchange requests.',
+            route: 'admin.examens.index',
+            icon: 'mdi:file-document-edit-outline',
+            titleKey: 'examens_nav_item',
+            fallbackTitle: 'Examinations',
+            descriptionKey: 'examens_desc',
+            fallbackDescription: 'Create, edit, and manage all examinations.',
         },
     ];
 
     return (
-        <Card>
+        <Card className="bg-transparent">
             <CardHeader>
                 <CardTitle>{propTranslations.quick_actions}</CardTitle>
             </CardHeader>
             <CardContent className="grid grid-cols-2 gap-4 md:grid-cols-4">
                 {quickActions.map((item, index) => (
-                    <Link key={index} href={route(item.route)} className="block outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-lg">
-                        <Card className="h-full transition-all duration-200 hover:border-primary hover:shadow-lg hover:-translate-y-1">
+                    <Link
+                        key={index}
+                        href={route(item.route)}
+                        className="focus-visible:ring-offset-background block rounded-lg outline-none focus-visible:ring-[var(--fmpo)] focus-visible:ring-offset-2"
+                    >
+                        <Card className="hover:border-primary h-full transition-all duration-200 hover:-translate-y-1 hover:shadow-lg">
                             <CardHeader className="flex flex-row items-center gap-4 p-4">
-                                <div className="flex-shrink-0 p-3 bg-primary/10 rounded-lg">
-                                    <Icon icon={item.icon} className="w-6 h-6 text-primary" />
+                                <div className="flex-shrink-0 rounded-lg p-3">
+                                    <Icon icon={item.icon} className="h-6 w-6 text-[var(--fmpo)]" />
                                 </div>
                                 <div className="flex-grow">
                                     <CardTitle className="text-base">{translations?.[item.titleKey] || item.fallbackTitle}</CardTitle>
-                                    <CardDescription className="mt-1 text-sm">{translations?.[item.descriptionKey] || item.fallbackDescription}</CardDescription>
+                                    <CardDescription className="mt-1 text-sm">
+                                        {translations?.[item.descriptionKey] || item.fallbackDescription}
+                                    </CardDescription>
                                 </div>
                             </CardHeader>
                         </Card>

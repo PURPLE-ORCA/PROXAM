@@ -213,11 +213,6 @@ class ProfesseurController extends Controller
         });
     }
 
-    public function show(Professeur $professeur)
-    {
-        return response()->json($professeur->load('modules'));
-    }
-
     public function destroy(Professeur $professeur)
     {
         // Add checks for attributions, etc., if deletion needs to be restricted

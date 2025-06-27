@@ -19,7 +19,6 @@ import { format } from 'date-fns';
 import { MaterialReactTable, useMaterialReactTable } from 'material-react-table';
 import ProfessorModal from './ProfessorModal';
 import { useContext, useEffect, useMemo, useState } from 'react';
-import axios from 'axios';
 
 const statutColors = {
     Active: 'bg-green-500 hover:bg-green-600',
