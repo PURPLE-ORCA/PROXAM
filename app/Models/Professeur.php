@@ -23,6 +23,16 @@ class Professeur extends Model
         'service_id',
     ];
 
+    protected static function booted()
+    {
+        static::deleting(function (Professeur $professeur) {
+            // Delete associated User when a Professeur is deleted
+            if ($professeur->user) {
+                $professeur->user->delete();
+            }
+        });
+    }
+
     protected $appends = ['effective_statut'];
 
     /**

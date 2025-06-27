@@ -48,33 +48,22 @@ export default function ImportModal({ isOpen, onClose }) {
                     </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-muted-foreground text-sm">
                         {translations?.import_professors_modal_instructions || 'Please ensure your file has the following headers:'}
                         <br />
-                        <code className="font-mono text-xs">prenom, nom, email, service, grade, specialite, recrutement, chef_de_service</code>
+                        <code className="font-mono text-xs">nom, prenom, email, Cadre, specialite, Departement, recrutement</code>
                     </p>
-                    <a
-                        href={route('admin.professeurs.template.download')}
-                        className="inline-flex items-center text-sm text-blue-600 hover:underline"
-                    >
-                        <Icon icon="mdi:download" className="mr-1 h-4 w-4" />
-                        {translations?.download_template_link || 'Download Template File'}
-                    </a>
-
+                    
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div className="grid w-full max-w-sm items-center gap-1.5">
-                            <Label htmlFor="professeurs_file">
-                                {translations?.select_file_label || 'Select File'}
-                            </Label>
+                            <Label htmlFor="professeurs_file">{translations?.select_file_label || 'Select File'}</Label>
                             <Input
                                 id="professeurs_file"
                                 type="file"
                                 onChange={(e) => setData('professeurs_file', e.target.files[0])}
-                                className="file:text-[var(--primary)] file:bg-[var(--primary-foreground)] file:hover:bg-[var(--primary-foreground)]/90"
+                                className="file:bg-[var(--primary-foreground)] file:text-[var(--primary)] file:hover:bg-[var(--primary-foreground)]/90"
                             />
-                            {errors.professeurs_file && (
-                                <p className="text-sm text-red-500">{errors.professeurs_file}</p>
-                            )}
+                            {errors.professeurs_file && <p className="text-sm text-red-500">{errors.professeurs_file}</p>}
                             {errors.import_error && ( // General error from controller
                                 <p className="text-sm text-red-500">{errors.import_error}</p>
                             )}

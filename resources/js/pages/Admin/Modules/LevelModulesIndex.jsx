@@ -55,7 +55,7 @@ export default function LevelModulesIndex({ level, modules, filiere, filieresFor
                                 key={moduleItem.id}
                                 className={`group relative overflow-hidden rounded-xl border-2 transition-all duration-300 ease-in-out ${
                                     hoveredCard === moduleItem.id
-                                        ? '-translate-y-2 transform border-blue-300 bg-gradient-to-br from-[var(--card)] to-blue-50/30 shadow-2xl dark:to-blue-900/30'
+                                        ? '-translate-y-2 transform border-[var(--fmpo)] shadow-2xl dark:to-blue-900/30'
                                         : 'border-[var(--border)] bg-[var(--card)] shadow-md hover:shadow-lg'
                                 }`}
                                 onMouseEnter={() => setHoveredCard(moduleItem.id)}
@@ -65,10 +65,10 @@ export default function LevelModulesIndex({ level, modules, filiere, filieresFor
                                     href={route('admin.modules.exam-configs.index', { module: moduleItem.id })}
                                     className="block p-6 pb-4 transition-colors duration-200"
                                 >
-                                    <div className="absolute top-4 right-4 opacity-20 transition-opacity duration-300 group-hover:opacity-40">
-                                        <Icon icon="mdi:book-open-page-variant-outline" className="h-8 w-8 text-blue-500 dark:text-blue-400" />
+                                    <div className="absolute top-4 right-4 transition-opacity duration-300 group-hover:opacity-40">
+                                        <Icon icon="mdi:book-open-page-variant-outline" className="h-8 w-8 text-[var(--fmpo)]" />
                                     </div>
-                                    <h3 className="mb-2 line-clamp-2 text-xl font-bold text-[var(--foreground)] transition-colors duration-200 group-hover:text-blue-600 dark:group-hover:text-blue-400">
+                                    <h3 className="group-hover:text-[var(--fmpo)] mb-2 line-clamp-2 text-xl font-bold text-[var(--foreground)] transition-colors duration-200">
                                         {moduleItem.nom}
                                     </h3>
                                 </Link>

@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('examen_id')->constrained('examens')->cascadeOnDelete();
             $table->foreignId('professeur_id')->constrained('professeurs')->cascadeOnDelete();
-            $table->foreignId('salle_id')->nullable()->constrained('salles')->cascadeOnDelete();
+            $table->foreignId('salle_id')->nullable()->constrained('salles')->nullOnDelete();
             $table->boolean('is_responsable')->default(false);
             $table->boolean('is_involved_in_exchange')->default(false);
             $table->boolean('is_in_conflict')->default(false);

@@ -1,29 +1,36 @@
 import ConfirmationModal from '@/components/Common/ConfirmationModal';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { TranslationContext } from '@/context/TranslationProvider';
 import AppLayout from '@/layouts/app-layout';
 import { Icon } from '@iconify/react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { useMemo, useState } from 'react';
-import LevelModal from './LevelModal'; 
+import { useContext, useMemo, useState } from 'react';
+import LevelModal from './LevelModal';
 
 export default function Index({ filiere, levels, filieresForForm }) {
-    const { auth } = usePage().props; 
+    const { translations } = useContext(TranslationContext);
+    const { auth } = usePage().props;
     const [itemToDelete, setItemToDelete] = useState(null);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-    
-    // --- NEW STATE FOR MODALS ---
+
     const [isLevelModalOpen, setIsLevelModalOpen] = useState(false);
     const [itemToEdit, setItemToEdit] = useState(null);
 
-    const breadcrumbs = useMemo(() => [
-        { title: 'Study Fields', href: route('admin.filieres.index') },
-        { title: filiere.nom }, 
-    ], [filiere]);
-    
-    const openDeleteModal = (level) => { setItemToDelete(level); setIsDeleteModalOpen(true); };
-    const openCreateModal = () => { setItemToEdit(null); setIsLevelModalOpen(true); };
-    const openEditModal = (level) => { setItemToEdit(level); setIsLevelModalOpen(true); };
+    const breadcrumbs = useMemo(() => [{ title: 'Study Fields', href: route('admin.filieres.index') }, { title: filiere.nom }], [filiere]);
+
+    const openDeleteModal = (level) => {
+        setItemToDelete(level);
+        setIsDeleteModalOpen(true);
+    };
+    const openCreateModal = () => {
+        setItemToEdit(null);
+        setIsLevelModalOpen(true);
+    };
+    const openEditModal = (level) => {
+        setItemToEdit(level);
+        setIsLevelModalOpen(true);
+    };
 
     const confirmDelete = () => {
         if (itemToDelete) {
@@ -40,11 +47,11 @@ export default function Index({ filiere, levels, filieresForForm }) {
 
             <div className="container mx-auto px-4 py-6 sm:px-6 lg:px-8">
                 <div className="mb-8 flex items-center justify-between">
-                    <h1 className="text-2xl font-semibold">Levels in {filiere.nom}</h1>
+                    <h1 className="text-2xl font-semibold">{translations?.levels_page_title_for_filiere || 'Niveaux'}</h1>
                     {(auth.abilities?.is_admin || auth.abilities?.is_rh) && (
                         <Button onClick={openCreateModal}>
                             <Icon icon="mdi:plus-circle-outline" className="mr-2 h-5 w-5" />
-                            Add Level
+                            {translations?.add_level_button || 'Ajouter un niveau'}
                         </Button>
                     )}
                 </div>
@@ -52,12 +59,18 @@ export default function Index({ filiere, levels, filieresForForm }) {
                 {levels.length > 0 ? (
                     <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                         {levels.map((level) => (
-                            <div key={level.id} className="group relative overflow-hidden rounded-xl border-2 transition-all duration-300 ease-in-out -translate-y-2 transform border-blue-300 bg-gradient-to-br from-[var(--card)] to-blue-50/30 shadow-2xl dark:to-blue-900/30">
-                                <Link href={route('admin.modules.index', { level: level.id })} className="block p-6 pb-4 transition-colors duration-200">
-                                    <div className="absolute top-4 right-4 opacity-20 transition-opacity duration-300 group-hover:opacity-40">
-                                        <Icon icon="mdi:stairs" className="h-8 w-8 text-blue-500 dark:text-blue-400" />
+                            <div
+                                key={level.id}
+                                className="group relative -translate-y-2 transform overflow-hidden rounded-xl border-2 border-[var(--border)] shadow-2xl transition-all duration-300 ease-in-out hover:shadow-lg"
+                            >
+                                <Link
+                                    href={route('admin.modules.index', { level: level.id })}
+                                    className="block p-6 pb-4 transition-colors duration-200"
+                                >
+                                    <div className="absolute top-4 right-4 transition-opacity duration-300 group-hover:opacity-70">
+                                        <Icon icon="mdi:stairs" className="h-8 w-8 text-[var(--fmpo)]" />
                                     </div>
-                                    <h3 className="mb-2 line-clamp-2 text-xl font-bold text-[var(--foreground)] transition-colors duration-200 group-hover:text-blue-600 dark:group-hover:text-blue-400">
+                                    <h3 className="mb-2 line-clamp-2 text-xl font-bold text-[var(--foreground)] transition-colors duration-200 group-hover:text-blue-600 dark:group-hover:text-[var(--fmpo)]">
                                         {level.nom}
                                     </h3>
                                 </Link>
@@ -67,20 +80,38 @@ export default function Index({ filiere, levels, filieresForForm }) {
                                         {(auth.abilities?.is_admin || auth.abilities?.is_rh) && (
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>
-                                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 opacity-60 transition-opacity duration-200 group-hover:opacity-100 hover:bg-[var(--accent)] focus-visible:ring-0 focus-visible:ring-offset-0"><Icon icon="mdi:dots-horizontal" className="h-4 w-4" /></Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="h-8 w-8 p-0 opacity-60 transition-opacity duration-200 group-hover:opacity-100 hover:bg-[var(--accent)] focus-visible:ring-0 focus-visible:ring-offset-0"
+                                                    >
+                                                        <Icon icon="mdi:dots-horizontal" className="h-4 w-4" />
+                                                    </Button>
                                                 </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end" className="border-[var(--border)] bg-[var(--popover)] text-[var(--popover-foreground)] shadow-xl">
-                                                    <DropdownMenuItem onClick={() => openEditModal(level)} className="cursor-pointer data-[highlighted]:bg-[var(--accent)]">
-                                                        <Icon icon="mdi:pencil-outline" className="mr-2 h-4 w-4" /> Edit
+                                                <DropdownMenuContent
+                                                    align="end"
+                                                    className="border-[var(--border)] bg-[var(--popover)] text-[var(--popover-foreground)] shadow-xl"
+                                                >
+                                                    <DropdownMenuItem
+                                                        onClick={() => openEditModal(level)}
+                                                        className="cursor-pointer data-[highlighted]:bg-[var(--accent)]"
+                                                    >
+                                                        <Icon icon="mdi:pencil-outline" className="mr-2 h-4 w-4" />{' '}
+                                                        {translations?.edit_button_title || 'Edit'}
                                                     </DropdownMenuItem>
-                                                    <DropdownMenuItem onClick={() => openDeleteModal(level)} className="cursor-pointer text-[var(--destructive)] data-[highlighted]:bg-[var(--destructive)] data-[highlighted]:text-[var(--destructive-foreground)]">
-                                                        <Icon icon="mdi:delete-outline" className="mr-2 h-4 w-4" /> Delete
+                                                    <DropdownMenuItem
+                                                        onClick={() => openDeleteModal(level)}
+                                                        className="cursor-pointer text-[var(--destructive)] data-[highlighted]:bg-[var(--destructive)] data-[highlighted]:text-[var(--destructive-foreground)]"
+                                                    >
+                                                        <Icon icon="mdi:delete-outline" className="mr-2 h-4 w-4" />{' '}
+                                                        {translations?.delete_button_title || 'Delete'}
                                                     </DropdownMenuItem>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
                                         )}
                                     </div>
                                 </div>
+                                <div className="pointer-events-none absolute inset-0 rounded-lg border-2 border-transparent transition-all duration-300 group-hover:border-[var(--fmpo)]" />
                             </div>
                         ))}
                     </div>
@@ -89,16 +120,14 @@ export default function Index({ filiere, levels, filieresForForm }) {
                         <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-[var(--muted)]/20 dark:bg-[var(--muted)]/10">
                             <Icon icon="mdi:stairs-down" className="h-12 w-12 text-[var(--muted-foreground)]" />
                         </div>
-                        <h3 className="mb-2 text-xl font-semibold text-[var(--foreground)]">
-                            No Levels Yet
-                        </h3>
+                        <h3 className="mb-2 text-xl font-semibold text-[var(--foreground)]">{translations?.no_levels_found || 'No Levels Yet'}</h3>
                         <p className="mx-auto mb-6 max-w-md text-[var(--muted-foreground)]">
-                            No levels found for {filiere.nom}. Get started by adding one.
+                            {translations?.no_levels_found_for_filiere || 'pas de niveaux trouvés pour cette filière. Commencez par en ajouter un.'}
                         </p>
                         {(auth.abilities?.is_admin || auth.abilities?.is_rh) && (
                             <Button onClick={openCreateModal}>
                                 <Icon icon="mdi:plus-circle-outline" className="mr-2 h-5 w-5" />
-                                Add Level
+                                {translations?.add_level_button || 'Ajouter un niveau'}
                             </Button>
                         )}
                     </div>
