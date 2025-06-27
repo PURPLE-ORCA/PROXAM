@@ -9,7 +9,7 @@ use App\Models\Module;
 use App\Models\Seson;
 use App\Models\Quadrimestre;
 use App\Models\Unavailability;
-use App\Models\Salle; // Ensure Salle is imported
+use App\Models\Salle;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Facades\Cache;
