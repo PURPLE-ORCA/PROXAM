@@ -37,14 +37,14 @@ This workflow fires the moment an `Unavailability` is created or updated. It is 
     -   The service performs a database update to set `is_in_conflict = true` for all newly identified conflicting attributions.
     -   Crucially, it also **clears the flag** (`is_in_conflict = false`) for any assignments that were *previously* in conflict but are no longer affected by the updated unavailability.
 
-This ensures the conflict status is always perfectly in sync with the latest unavailability data.
+**Note on Architectural Decision:** This logic was intentionally placed in a service class called directly from the controller, rather than an Eloquent Observer. Early development revealed that observers could fail silently and were difficult to debug, whereas this direct service call is explicit, reliable, and easier to test.
 
 ## 4. Workflow 2: Manual Conflict Resolution
 
 This is the "One-Click Fix" feature that allows an admin to actively resolve a flagged conflict.
 
 1.  **Alert:** The admin sees a non-zero count in the "Assignments in Conflict" dashboard widget and clicks it.
-2.  **Filtered View:** They are taken to the Assignments page, which is pre-filtered to show only rows where `is_in_conflict = true`.
+2.  **Filtered View:** They are taken to the Assignments page, pre-filtered to show only rows where `is_in_conflict = true`.
 3.  **Action:** The admin clicks the "Resolve" button on a conflicting row.
 4.  **Find Replacements:** A `GET` request is sent to the `attributions.find_replacements` endpoint. The `AttributionController@findReplacements` method runs a complex query to find a short list of qualified and available professors for that specific slot.
 5.  **Re-assign:** The admin selects a new professor from the modal and confirms. A `PUT` request is sent to the `attributions.reassign` endpoint.
@@ -56,7 +56,7 @@ This is the "One-Click Fix" feature that allows an admin to actively resolve a f
 
 This workflow solves the "Lazy Admin" problem, where a conflict is never manually resolved and simply becomes irrelevant due to the passage of time.
 
-1.  **Trigger:** The Laravel Task Scheduler runs automatically every night at 1:00 AM.
+1.  **Trigger:** The Laravel Task Scheduler runs automatically every night at 1:00 AM (configured in `routes/console.php`).
 2.  **Command Execution:** The scheduler executes the `app:resolve-stale-conflicts` Artisan command.
 3.  **Logic:** The `ResolveStaleConflicts` command's `handle()` method performs the following:
     -   It fetches **all** attributions in the entire database where `is_in_conflict = true`.

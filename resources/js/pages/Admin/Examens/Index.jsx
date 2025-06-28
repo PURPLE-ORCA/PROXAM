@@ -67,7 +67,6 @@ export default function Index({ examens: examensPagination, filters }) {
                     onPaginationChange={handlePaginationChange}
                 />
             </div>
-            {/* The ConfirmationModal for delete can be removed from this page if it's moved to ManageAssignments */}
         </AppLayout>
     );
 }

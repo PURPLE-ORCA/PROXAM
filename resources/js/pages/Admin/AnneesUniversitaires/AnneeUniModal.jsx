@@ -41,13 +41,11 @@ export default function AnneeUniModal({ isOpen, onClose, anneeUni }) {
             errors.annee = translations?.annee_uni_required_error || 'Academic Year is required.';
             // Manually set the error for useForm to pick up
             // This is a workaround as setError is not directly available from the destructured errors object
-            // A better approach would be to use a custom validation function or let backend handle it
-            // For now, we'll just set the error in the errors object and return
             return;
         }
 
         const routeName = isEdit ? 'admin.annees-universitaires.update' : 'admin.annees-universitaires.store';
-        const routeParams = isEdit ? { anneeUni: data.id } : {}; // Match route parameter name
+        const routeParams = isEdit ? { anneeUni: data.id } : {}; 
         const submission = isEdit ? put : post;
 
         submission(route(routeName, routeParams), {

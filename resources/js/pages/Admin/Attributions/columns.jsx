@@ -17,13 +17,11 @@ export const getColumns = (attributions) => [
         },
     },
     {
-        // This column will now be rendered correctly by useReactTable
         accessorFn: (row) => `${row.professeur.prenom} ${row.professeur.nom}`,
-        id: 'professeur_name', // It's good practice to provide a unique id for accessorFns
+        id: 'professeur_name',
         header: 'Professor',
     },
     {
-        // This nested key will also be rendered correctly
         accessorKey: 'professeur.service.nom',
         header: 'Service',
     },

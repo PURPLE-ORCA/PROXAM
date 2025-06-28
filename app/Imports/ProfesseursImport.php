@@ -9,7 +9,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
-use Illuminate\Support\Facades\Validator; // <-- IMPORTANT
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithStartRow;
@@ -29,7 +29,7 @@ class ProfesseursImport implements ToCollection, WithStartRow
         $rowIndex = $this->startRow(); // Start row index for error reporting
 
         foreach ($rows as $row) {
-            // THE MOST IMPORTANT CHECK: If the row is empty, skip it entirely.
+            //If the row is empty, skip it entirely.
             if (empty(array_filter($row->toArray()))) {
                 $rowIndex++;
                 continue;
@@ -84,11 +84,10 @@ class ProfesseursImport implements ToCollection, WithStartRow
             // 2. Immediately re-fetch the user from the database by their email.
             // This guarantees we have a clean, persisted model with a valid ID.
             $user = User::where('email', $email)->firstOrFail();
-            // --- END OF FIX ---
             
             // 3. Now create the Professor with the guaranteed user ID.
             Professeur::create([
-                'user_id'          => $user->id, // This CANNOT be null now.
+                'user_id'          => $user->id,
                 'nom'              => $lastName,
                 'prenom'           => $firstName,
                 'rang'             => $rankSystem,
@@ -116,8 +115,8 @@ class ProfesseursImport implements ToCollection, WithStartRow
             'professeur de l enseignement superieur' => 'PES',
         ];
 
-        // This is a more aggressive normalization. It strips accents, apostrophes,
-        // extra spaces, and makes it all lowercase. It is EXTREMELY robust.
+        // This is normalization. It strips accents, apostrophes,
+        // extra spaces, and makes it all lowercase.
         $normalizedRank = strtolower(trim($frenchRank));
         $normalizedRank = str_replace("'", " ", $normalizedRank); // remove apostrophes
         $normalizedRank = iconv('UTF-8', 'ASCII//TRANSLIT', $normalizedRank); // remove accents
@@ -143,8 +142,6 @@ class ProfesseursImport implements ToCollection, WithStartRow
             '7.integer' => 'The recruitment date in Column H must be a valid date format (Excel integer).',
         ];
     }
-
-    // New helper to get errors
     public function getErrors(): array
     {
         return $this->errors;

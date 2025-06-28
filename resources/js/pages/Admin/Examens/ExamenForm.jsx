@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import { TranslationContext } from '@/context/TranslationProvider';
 
 
-// This component now receives its state and handlers as props
 export default function ExamenForm({
     data,
     setData,

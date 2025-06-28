@@ -175,7 +175,7 @@ Route::get('dashboard', function (Request $request) {
         ->name('rh.')
         ->group(function () {
             Route::get('/dashboard', [RHDashboardController::class, 'index'])->name('dashboard');
-        });
+    });
 }); 
 
 require __DIR__.'/settings.php';

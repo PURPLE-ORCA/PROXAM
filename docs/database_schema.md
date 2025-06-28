@@ -1,6 +1,6 @@
 # Documentation: Core Database Schema
 
-This document provides a high-level overview of the core database relationships in the PROXAM application. It is not an exhaustive list of every column but is intended to show how the main entities interact.
+This document provides a high-level overview of the core database relationships in the PROXAM application.
 
 ## Entity-Relationship Diagram (ERD)
 

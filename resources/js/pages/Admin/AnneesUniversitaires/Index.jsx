@@ -7,7 +7,7 @@ import { DataTable } from '@/components/DataTable';
 import { getColumns } from './columns';
 import AnneeUniModal from './AnneeUniModal';
 import { Button } from '@/components/ui/button';
-import SimpleTableToolbar from '@/components/SimpleTableToolbar'; // <-- Import the simple toolbar
+import SimpleTableToolbar from '@/components/SimpleTableToolbar'; 
 
 export default function Index({ anneesUniversitaires: anneesPagination, filters }) {
     const { translations } = useContext(TranslationContext);

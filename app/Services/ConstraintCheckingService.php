@@ -4,18 +4,18 @@ namespace App\Services;
 
 use App\Models\Attribution;
 use App\Models\Professeur;
-use App\Models\Module; // Added for Sole Module Teacher check
+use App\Models\Module;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\DB; // Added for Rank Quotas check
+use Illuminate\Support\Facades\DB; 
 
 class ConstraintCheckingService
 {
     // Define rank quotas per session
     const RANK_QUOTAS_PER_SESSION = [
-        Professeur::RANG_PES => 2, // Example: Max 2 PES per session
-        Professeur::RANG_PAG => 3, // Example: Max 3 PAG per session
-        Professeur::RANG_PA => 5,  // Example: Max 5 PA per session
+        Professeur::RANG_PES => 2,
+        Professeur::RANG_PAG => 3,
+        Professeur::RANG_PA => 5, 
     ];
 
     /**
