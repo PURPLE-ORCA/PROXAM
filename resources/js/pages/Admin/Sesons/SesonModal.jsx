@@ -42,13 +42,13 @@ export default function SesonModal({ isOpen, onClose, seson, anneeUnis }) {
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="sm:max-w-md">
                 <DialogHeader>
-                    <DialogTitle>{isEdit ? 'Edit Session' : 'New Session'}</DialogTitle>
+                    <DialogTitle>{isEdit ? translations?.seson_modal_edit_title : translations?.seson_modal_new_title}</DialogTitle>
                 </DialogHeader>
                 <SesonForm data={data} setData={setData} errors={errors} anneeUnis={anneeUnis} />
                 <DialogFooter>
-                    <Button variant="outline" onClick={onClose}>Cancel</Button>
+                    <Button variant="outline" onClick={onClose}>{translations?.cancel_button}</Button>
                     <Button type="button" onClick={handleSubmit} disabled={processing}>
-                        {processing ? 'Saving...' : 'Save'}
+                        {processing ? translations?.saving_button : translations?.save_button}
                     </Button>
                 </DialogFooter>
             </DialogContent>

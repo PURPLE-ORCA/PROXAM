@@ -29,7 +29,7 @@ export default function Create({ quadrimestres, filieres, allLevels, allModules,
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Create Examination" />
-            <div className="mx-auto mt-6 max-w-3xl rounded-md border border-[var(--border)] bg-[var(--card)] p-6 shadow-sm">
+            <div className="mt-6 bg-[var(--card)] p-6 shadow-sm">
                 <h1 className="mb-6 text-xl font-semibold text-[var(--card-foreground)]">
                     New Examination
                 </h1>

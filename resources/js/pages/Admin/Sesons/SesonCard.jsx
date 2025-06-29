@@ -4,6 +4,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Icon } from '@iconify/react';
 import { Link } from '@inertiajs/react';
+import { TranslationContext } from '@/context/TranslationProvider';
+import { useContext } from 'react';
 
 export default function SesonCard({
     seson,
@@ -15,6 +17,7 @@ export default function SesonCard({
     processingBatchAssignment,
     processingApproval,
 }) {
+    const { translations } = useContext(TranslationContext);
     const canManage = auth.abilities?.is_admin || auth.abilities?.is_rh;
     const isAdmin = auth.abilities?.is_admin;
 
@@ -33,10 +36,10 @@ export default function SesonCard({
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => onEdit(seson)}>Edit</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => onEdit(seson)}>{translations?.seson_card_edit_button || 'Edit'}</DropdownMenuItem>
                             {isAdmin && (
                                 <DropdownMenuItem className="text-destructive" onClick={() => onDelete(seson)}>
-                                    Delete
+                                    {translations?.seson_card_delete_button || 'Delete'}
                                 </DropdownMenuItem>
                             )}
                         </DropdownMenuContent>
@@ -47,21 +50,21 @@ export default function SesonCard({
                 {seson.assignments_approved_at ? (
                     <div className="space-y-2">
                         <Badge variant="outline" className="w-full justify-center">
-                            Approved: {new Date(seson.assignments_approved_at).toLocaleDateString()}
+                            {translations?.seson_card_approved_label || 'Approved:'} {new Date(seson.assignments_approved_at).toLocaleDateString()}
                         </Badge>
                         {seson.notifications_sent_at ? (
                             <Badge variant="default " className="w-full justify-center">
-                                Notified: {new Date(seson.notifications_sent_at).toLocaleDateString()}
+                                {translations?.seson_card_notified_label || 'Notified:'} {new Date(seson.notifications_sent_at).toLocaleDateString()}
                             </Badge>
                         ) : (
                             <Badge variant="outline" className="w-full justify-center">
-                                Notification Pending/Failed
+                                {translations?.seson_card_notification_pending_failed_label || 'Notification Pending/Failed'}
                             </Badge>
                         )}
                     </div>
                 ) : (
                     <Badge variant="secondary" className="w-full justify-center">
-                        Pending Approval
+                        {translations?.seson_card_pending_approval_label || 'Pending Approval'}
                     </Badge>
                 )}
             </CardContent>
@@ -73,7 +76,7 @@ export default function SesonCard({
                         ) : (
                             <Icon icon="mdi:robot-outline" className="mr-2" />
                         )}
-                        Run Assignments
+                        {translations?.seson_card_run_assignments_button || 'Run Assignments'}
                     </Button>
                 )}
                 {isAdmin && !seson.assignments_approved_at && (
@@ -83,14 +86,14 @@ export default function SesonCard({
                         ) : (
                             <Icon icon="mdi:check-decagram-outline" className="mr-2" />
                         )}
-                        Approve & Notify
+                        {translations?.seson_card_approve_notify_button || 'Approve & Notify'}
                     </Button>
                 )}
                 {isAdmin && seson.assignments_approved_at && (
                     <a href={route('admin.sesons.download-convocations', seson.id)} className="w-full">
                         <Button variant="ghost" className="w-full bg-[var(--fmpo)]">
                             <Icon icon="mdi:download-box-outline" className="mr-2" />
-                            Download Convocations
+                            {translations?.seson_card_download_convocations_button || 'Download Convocations'}
                         </Button>
                     </a>
                 )}

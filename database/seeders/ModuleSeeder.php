@@ -34,7 +34,7 @@ class ModuleSeeder extends Seeder
             );
         }
 
-        // Now, assign a variety of these modules to other levels
+        // assign a variety of these modules to other levels
         $allModules = Module::all();
         foreach ($allLevels as $level) {
             if ($level->id === $firstLevelId) continue; // Skip the one we already populated fully

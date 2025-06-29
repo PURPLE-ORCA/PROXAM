@@ -30,7 +30,7 @@ export const getColumns = (attributions) => [
         header: 'Role',
         cell: ({ row }) => (
             row.original.is_responsable ?
-                <Badge className="bg-blue-500 hover:bg-blue-500">Responsable</Badge> :
+                <Badge className="bg-[var(--fmpo)]">Responsable</Badge> :
                 <Badge variant="secondary">Invigilator</Badge>
         ),
     },

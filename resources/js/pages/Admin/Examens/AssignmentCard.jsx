@@ -41,7 +41,7 @@ export default function AssignmentCard({ salleData, examen, availableProfesseurs
                                         variant={attr.is_responsable ? 'default' : 'outline'}
                                         size="sm"
                                         onClick={() => onToggleResponsable(attr.id)}
-                                        className={attr.is_responsable ? 'bg-blue-500' : ''}
+                                        className={attr.is_responsable ? 'bg-[var(--fmpo)]' : ''}
                                     >
                                         {attr.is_responsable ? 'Responsable' : 'Invigilator'}
                                     </Button>

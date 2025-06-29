@@ -47,7 +47,7 @@ export default function Index({ filiere, levels, filieresForForm }) {
 
             <div className="container mx-auto px-4 py-6 sm:px-6 lg:px-8">
                 <div className="mb-8 flex items-center justify-between">
-                    <h1 className="text-2xl font-semibold">{translations?.levels_page_title_for_filiere || 'Niveaux'}</h1>
+                    <h1 className="text-2xl font-semibold">{translations?.levels_page_title_for_filiere || 'Niveaux'} {filiere.nom}</h1>
                     {(auth.abilities?.is_admin || auth.abilities?.is_rh) && (
                         <Button onClick={openCreateModal}>
                             <Icon icon="mdi:plus-circle-outline" className="mr-2 h-5 w-5" />

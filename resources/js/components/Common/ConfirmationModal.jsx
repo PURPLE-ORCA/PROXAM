@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'; // Assuming Shadcn Dialog
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { TranslationContext } from '@/context/TranslationProvider';
 import { useContext } from 'react';
 
@@ -44,7 +44,7 @@ export default function ConfirmationModal({
                         }}
                         className={
                             destructive
-                                ? 'bg-[var(--destructive)] text-[var(--destructive-foreground)] hover:bg-[var(--destructive)]/90'
+                                ? 'bg-[var(--destructive)] text-white hover:bg-[var(--destructive)]/90'
                                 : 'bg-[var(--primary)] text-[var(--primary-foreground)] hover:bg-[var(--primary)]/90'
                         }
                     >
