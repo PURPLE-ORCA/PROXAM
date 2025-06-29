@@ -1,8 +1,8 @@
 # Documentation: The Notification System
 
 **Primary Owners:**
-- `app/Http/Controllers/NotificationController.php` (Assumed location)
-- `resources/js/components/NotificationBadge.jsx` (Or similar path)
+- `app/Http/Controllers/NotificationController.php` 
+- `resources/js/components/NotificationBadge.jsx`
 
 ## 1. Objective
 
