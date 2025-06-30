@@ -9,7 +9,7 @@ class Filiere extends Model
 {
     /** @use HasFactory<\Database\Factories\FiliereFactory> */
     use HasFactory;
-    protected $fillable = ['nom'];
+    protected $fillable = ['nom',];
 
     public function levels()
     {

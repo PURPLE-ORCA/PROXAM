@@ -14,50 +14,39 @@ class ProfesseurSeeder extends Seeder
 {
     public function run()
     {
-        $targetProfessorCount = 100; // Let's aim for at least 100
-
         $services = Service::pluck('id')->toArray();
         if (empty($services)) {
-            $this->command->warn('ProfesseurSeeder: No services found. Please ensure services are seeded before professors. Skipping.');
+            $this->command->warn('ProfesseurSeeder: No services found. Please seed services first. Skipping.');
             return;
         }
 
-        $rangs = Professeur::getRangs(true); // e.g., ['PA', 'PAG', 'PES']
-        $allStatuts = Professeur::getStatuts(true); // e.g., ['Active', 'On_Leave', ...]
-        $specialites = [
-            Professeur::SPECIALITE_MEDICAL,
-            Professeur::SPECIALITE_SURGICAL,
-        ];
+        // Define rank distribution
+        $ranksToCreate = array_merge(
+            array_fill(0, 30, Professeur::RANG_PES),
+            array_fill(0, 50, Professeur::RANG_PAG),
+            array_fill(0, 80, Professeur::RANG_PA)
+        );
+        shuffle($ranksToCreate); // Randomize the order of ranks to be created
 
-        // Your predefined name lists
-        $noms = [
-            'Benali', 'Laroui', 'Cherkaoui', 'El Amrani', 'Bouzidi', 'Hakimi', 'Daoudi', 'Zeroual',
-            'Tazi', 'Mansouri', 'Belhaj', 'Rachidi', 'Saidi', 'Bennani', 'Khalfi', 'Naciri',
-            'Martin', 'Dubois', 'Bernard', 'Petit', 'Durand', 'Leroy', 'Moreau', 'Simon',
-            'Laurent', 'Michel', 'Garcia', 'David', 'Bertrand', 'Roux', 'Vincent', 'Fournier'
-        ];
-        $prenoms = [
-            'Mohamed', 'Ahmed', 'Fatima', 'Amina', 'Karim', 'Youssef', 'Hassan', 'Nadia',
-            'Samir', 'Leila', 'Khalid', 'Zahra', 'Omar', 'Salim', 'Jamila', 'Rachid',
-            'Jean', 'Pierre', 'Marie', 'Philippe', 'Nathalie', 'Alain', 'Sophie', 'Patrick',
-            'Isabelle', 'François', 'Catherine', 'Jacques', 'Valérie', 'Eric', 'Sandrine'
-        ];
+        $allStatuts = Professeur::getStatuts(true);
+        $specialites = [Professeur::SPECIALITE_MEDICAL, Professeur::SPECIALITE_SURGICAL];
+        $noms = ['Benali', 'Laroui', 'Cherkaoui', 'El Amrani', 'Bouzidi', 'Hakimi', 'Daoudi', 'Zeroual', 'Tazi', 'Mansouri', 'Belhaj', 'Rachidi', 'Saidi', 'Bennani', 'Khalfi', 'Naciri', 'Martin', 'Dubois', 'Bernard', 'Petit', 'Durand', 'Leroy', 'Moreau', 'Simon', 'Laurent', 'Michel', 'Garcia', 'David', 'Bertrand', 'Roux', 'Vincent', 'Fournier', 'Wawadi', 'Fassi', 'Jilali'];
+        $prenoms = ['Mohamed', 'Ahmed', 'Fatima', 'Amina', 'Karim', 'Youssef', 'Hassan', 'Nadia', 'Samir', 'Leila', 'Khalid', 'Zahra', 'Omar', 'Salim', 'Jamila', 'Rachid', 'Jean', 'Pierre', 'Marie', 'Philippe', 'Nathalie', 'Alain', 'Sophie', 'Patrick', 'Isabelle', 'François', 'Catherine', 'Jacques', 'Valérie', 'Eric', 'Sandrine', 'El Hardi', 'Kenza'];
 
-        $createdProfEmails = []; // To help generate unique emails
+        $createdEmails = User::pluck('email')->toArray(); // Start with existing emails to avoid collisions
 
-        for ($i = 0; $i < $targetProfessorCount; $i++) {
+        foreach ($ranksToCreate as $rank) {
             $selectedPrenom = $prenoms[array_rand($prenoms)];
             $selectedNom = $noms[array_rand($noms)];
 
-            // Generate unique email
             $emailBase = strtolower(Str::slug($selectedPrenom . '.' . $selectedNom, '.'));
             $email = $emailBase . '@fmpo.test';
             $emailCounter = 0;
-            while (in_array($email, $createdProfEmails) || User::where('email', $email)->exists()) {
+            while (in_array($email, $createdEmails)) {
                 $emailCounter++;
                 $email = $emailBase . $emailCounter . '@fmpo.test';
             }
-            $createdProfEmails[] = $email;
+            $createdEmails[] = $email;
 
             $user = User::create([
                 'name' => $selectedPrenom . ' ' . $selectedNom,
@@ -67,52 +56,37 @@ class ProfesseurSeeder extends Seeder
                 'email_verified_at' => now(),
             ]);
 
-            // Determine status: Make ~80-90% Active
-            $statut = 'Active';
-            if (rand(1, 10) > 8) { // Approx 20% chance for a non-active status
-                $otherStatuts = array_filter($allStatuts, fn($s) => $s !== 'Active');
-                if (!empty($otherStatuts)) {
-                    $statut = $otherStatuts[array_rand($otherStatuts)];
-                }
-            }
+            $statut = (rand(1, 100) <= 85) ? 'Active' : $allStatuts[array_rand(array_filter($allStatuts, fn($s) => $s !== 'Active'))];
 
             Professeur::create([
                 'user_id' => $user->id,
                 'nom' => $selectedNom,
                 'prenom' => $selectedPrenom,
-                'rang' => $rangs[array_rand($rangs)],
+                'rang' => $rank,
                 'statut' => $statut,
-                'is_chef_service' => false, // Set all to false initially
+                'is_chef_service' => false,
                 'date_recrutement' => Carbon::instance(fake()->dateTimeBetween('-20 years', '-6 months')),
                 'specialite' => $specialites[array_rand($specialites)],
                 'service_id' => $services[array_rand($services)],
             ]);
         }
+        $this->command->info("ProfesseurSeeder: Successfully created " . count($ranksToCreate) . " professors.");
 
-        // Assign exactly one Chef de Service per Service, from active professors if possible
+        // Assign Chefs de Service (same logic as before)
         foreach (Service::all() as $service) {
-            // First, ensure no one is currently chef for this service (clean slate for this logic)
             Professeur::where('service_id', $service->id)->update(['is_chef_service' => false]);
-
-            // Attempt to pick an 'Active' professor from this service
-            $profToMakeChef = Professeur::where('service_id', $service->id)
-                                      ->where('statut', 'Active')
-                                      ->inRandomOrder()
-                                      ->first();
-
-            if (!$profToMakeChef) {
-                // Fallback: if no 'Active' prof in this service, pick any prof from this service
-                $profToMakeChef = Professeur::where('service_id', $service->id)
-                                          ->inRandomOrder()
-                                          ->first();
-            }
+            $profToMakeChef = Professeur::where('service_id', $service->id)->where('statut', 'Active')->inRandomOrder()->first()
+                              ?? Professeur::where('service_id', $service->id)->inRandomOrder()->first();
 
             if ($profToMakeChef) {
                 $profToMakeChef->update(['is_chef_service' => true]);
+                if ($profToMakeChef->user) {
+                    $profToMakeChef->user->update(['role' => 'chef_service']);
+                    $this->command->info("  - User '{$profToMakeChef->user->name}' is now Chef de Service for '{$service->nom}'.");
+                }
             } else {
                 $this->command->warn("ProfesseurSeeder: No professors found for service ID {$service->id} to assign as Chef de Service.");
             }
         }
-        $this->command->info("ProfesseurSeeder: Successfully created {$targetProfessorCount} professors and assigned chefs de service.");
     }
 }

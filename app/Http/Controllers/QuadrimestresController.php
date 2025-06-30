@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\AnneeUni;
 use App\Models\Quadrimestre;
-use App\Models\Seson; // To fetch Sessions for the form
+use App\Models\Seson;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -27,7 +27,6 @@ class QuadrimestresController extends Controller
             });
         } else {
             $quadrimestresQuery->whereRaw('1 = 0');
-            // Log::warning('QuadrimestreController@index: No selected_annee_uni_id. Displaying no quadrimestres.');
         }
 
         $quadrimestres = $quadrimestresQuery
@@ -36,7 +35,6 @@ class QuadrimestresController extends Controller
                       ->orWhereHas('seson.anneeUni', fn($q) => $q->where('annee', 'like', "%{$search}%"))
                       ->orWhereHas('seson', fn($q) => $q->where('code', 'like', "%{$search}%"));
             })
-            // Consider how to best order these multi-level relationships
             ->orderBy(Seson::select('annee_uni_id')
                 ->join('annee_unis', 'annee_unis.id', '=', 'sesons.annee_uni_id')
                 ->whereColumn('sesons.id', 'quadrimestres.seson_id')
@@ -50,33 +48,44 @@ class QuadrimestresController extends Controller
             ->paginate(15)
             ->withQueryString();
 
+        $sesons = Seson::with('anneeUni')
+            ->join('annee_unis', 'sesons.annee_uni_id', '=', 'annee_unis.id')
+            ->orderBy('annee_unis.annee', 'desc')
+            ->orderBy('sesons.code', 'asc')
+            ->select('sesons.*')
+            ->get()
+            ->map(function ($seson) {
+                return [
+                    'id' => $seson->id,
+                    'display_name' => $seson->anneeUni->annee . ' - ' . $seson->code,
+                ];
+            });
+
         return Inertia::render($this->baseInertiaPath() . 'Index', [
             'quadrimestres' => $quadrimestres,
             'filters' => $request->only(['search']),
-        ]);
-    }
-
-    public function create()
-    {
-        // Fetch sessions with their academic years for a more informative dropdown
-        $sesons = Seson::with('anneeUni')->orderByAnneeUniThenCode()->get()->map(function ($seson) {
-            return [
-                'id' => $seson->id,
-                'display_name' => $seson->anneeUni->annee . ' - ' . $seson->code,
-            ];
-        });
-        return Inertia::render($this->baseInertiaPath() . 'Create', [
             'sesons' => $sesons,
         ]);
     }
+
+    // The create and edit methods are now obsolete and can be removed,
+    // as the data is provided by the index method.
 
     public function store(Request $request)
     {
         $validated = $request->validate([
             'code' => 'required|string|max:50',
             'seson_id' => 'required|exists:sesons,id',
-            // Add unique constraint for code within the same seson_id if needed
         ]);
+
+        // --- NEW LOGIC ---
+        // Find the academic year of the session being assigned.
+        $seson = Seson::find($validated['seson_id']);
+        if ($seson) {
+            // Update the session to switch the user's view.
+            session(['selected_annee_uni_id' => $seson->annee_uni_id]);
+        }
+        // --- END NEW LOGIC ---
 
         Quadrimestre::create($validated);
 
@@ -84,28 +93,19 @@ class QuadrimestresController extends Controller
             ->with('success', 'toasts.quadrimestre_created_successfully');
     }
 
-    public function edit(Quadrimestre $quadrimestre)
-    {
-        $sesons = Seson::with('anneeUni')->orderByAnneeUniThenCode()->get()->map(function ($seson) {
-            return [
-                'id' => $seson->id,
-                'display_name' => $seson->anneeUni->annee . ' - ' . $seson->code,
-            ];
-        });
-        $quadrimestre->load(['seson', 'seson.anneeUni']);
-        return Inertia::render($this->baseInertiaPath() . 'Edit', [
-            'quadrimestre' => $quadrimestre,
-            'sesons' => $sesons,
-        ]);
-    }
-
     public function update(Request $request, Quadrimestre $quadrimestre)
     {
         $validated = $request->validate([
             'code' => 'required|string|max:50',
             'seson_id' => 'required|exists:sesons,id',
-            // Add unique constraint for code within the same seson_id if needed
         ]);
+
+        // --- NEW LOGIC (also needed for update) ---
+        $seson = Seson::find($validated['seson_id']);
+        if ($seson) {
+            session(['selected_annee_uni_id' => $seson->annee_uni_id]);
+        }
+        // --- END NEW LOGIC ---
 
         $quadrimestre->update($validated);
 
@@ -115,7 +115,6 @@ class QuadrimestresController extends Controller
 
     public function destroy(Quadrimestre $quadrimestre)
     {
-        // Check if the Quadrimestre is linked to any Examens
         if ($quadrimestre->examens()->exists()) {
             return redirect()->route('admin.quadrimestres.index')
                 ->with('error', 'toasts.quadrimestre_in_use_cannot_delete');

@@ -2,22 +2,21 @@
 
 namespace Database\Factories;
 
+use App\Models\AnneeUni;
+use App\Models\Seson;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-/**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\seson>
- */
 class SesonFactory extends Factory
 {
-    /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
-     */
+    protected $model = Seson::class;
+
     public function definition(): array
     {
+        $anneeUni = AnneeUni::factory()->create();
+
         return [
-            //
+            'code' => $this->faker->unique()->word(),
+            'annee_uni_id' => $anneeUni->id,
         ];
     }
 }

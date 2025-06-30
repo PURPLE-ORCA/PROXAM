@@ -26,7 +26,7 @@ class ExamenSeeder extends Seeder
             "Évaluation Clinique", "QCM Théorique", "Analyse de Cas", "Projet Pratique", "Soutenance Orale"
         ];
 
-        for ($i = 0; $i < 60; $i++) { // Create more exams
+        for ($i = 0; $i < 200; $i++) { // Create more exams
             $quadrimestre = $quadrimestres->random();
             $module = $modules->random();
 

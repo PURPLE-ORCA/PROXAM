@@ -10,34 +10,41 @@ use Illuminate\Database\Seeder;
 
 class UnavailabilitySeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run()
     {
         $professeurs = Professeur::pluck('id')->toArray();
-        $anneeUnis = AnneeUni::pluck('id')->toArray(); // Fetch AnneeUni IDs
+        $anneeUnis = AnneeUni::pluck('id')->toArray();
         $reasons = [
-            'Congé maladie', 'Formation', 'Conférence', 
-            'Mission', 'Congé personnel', 'Autre engagement'
+            'Congé maladie', 'Formation', 'Conférence', 'Mission', 
+            'Congé personnel', 'Autre engagement professionnel', 'Congé sabbatique'
         ];
         
-        if (empty($anneeUnis)) {
-            $this->command->info('No AnneeUni records found. Please seed AnneeUni first.');
+        if (empty($professeurs) || empty($anneeUnis)) {
+            $this->command->info('UnavailabilitySeeder: No professors or academic years found. Skipping.');
             return;
         }
 
-        for ($i = 0; $i < 20; $i++) {
-            $start = Carbon::now()->addDays(rand(1, 30))->addHours(rand(9, 15));
-            $end = $start->copy()->addHours(rand(1, 8));
+        $unavailabilitiesToCreate = [];
+        // Create a larger number of unavailabilities
+        for ($i = 0; $i < 300; $i++) {
+            // Vary the date range more widely
+            $start = Carbon::now()->subDays(rand(0, 90))->addDays(rand(0, 180));
+            // Unavailability can be from a few hours to a few days
+            $end = $start->copy()->addHours(rand(2, 72));
             
-            Unavailability::create([
+            $unavailabilitiesToCreate[] = [
                 'professeur_id' => $professeurs[array_rand($professeurs)],
-                'annee_uni_id' => $anneeUnis[array_rand($anneeUnis)], // Assign random AnneeUni ID
+                'annee_uni_id' => $anneeUnis[array_rand($anneeUnis)],
                 'start_datetime' => $start,
                 'end_datetime' => $end,
                 'reason' => $reasons[array_rand($reasons)],
-            ]);
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
         }
+
+        // Batch insert for performance
+        Unavailability::insert($unavailabilitiesToCreate);
+        $this->command->info('UnavailabilitySeeder: ' . count($unavailabilitiesToCreate) . ' unavailabilities seeded successfully.');
     }
 }

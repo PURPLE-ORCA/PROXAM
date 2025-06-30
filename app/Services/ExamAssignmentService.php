@@ -9,22 +9,35 @@ use App\Models\Module;
 use App\Models\Seson;
 use App\Models\Quadrimestre;
 use App\Models\Unavailability;
-use App\Models\Salle; // Ensure Salle is imported
+use App\Models\Salle;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * Service class for handling the automated assignment of professors to exams.
+ *
+ * This service operates in a stateful manner for a single batch run. It initializes its state
+ * with all necessary data for a given session and manages assignment counts in memory
+ * to make efficient and rule-compliant decisions.
+ */
 class ExamAssignmentService
 {
-    // --- Constants for Rules ---
-    public const RANK_QUOTAS_PER_SESSION = [
+    /** @var array Defines the maximum number of assignments a professor can have per session, based on their rank. */
+        public const RANK_QUOTAS_PER_SESSION = [
         Professeur::RANG_PES => 2,
         Professeur::RANG_PAG => 4,
         Professeur::RANG_PA  => 6,
     ];
+    /** @var int Defines the maximum number of assignments a professor can have per day. */
     public const MAX_ASSIGNMENTS_PER_DAY = 1;
+
+    /** @var int The required number of free days between a professor's assignments. A value of 1 means no assignments on consecutive days. */
     public const ASSIGNMENT_GAP_DAYS = 1;
+
+    /** @var int The hour (24-hour format) used to differentiate between morning and afternoon for specialty prioritization. */
     public const AM_PM_CUTOFF_HOUR = 13;
 
     private array $profAssignmentsInCurrentBatch; // [prof_id => count for current batch run]
@@ -102,6 +115,14 @@ class ExamAssignmentService
         if (!empty($overallResult['exams_with_warnings'])) $finalMessage .= " Exams with warnings: " . count($overallResult['exams_with_warnings']) . ".";
         $overallResult['final_summary_message'] = $finalMessage;
         // Log::info("BATCH ASSIGNMENT: {$finalMessage}");
+
+        $summaryData = [
+            'run_at' => now()->toDateTimeString(),
+            'seson_code' => $seson->code,
+            'summary' => $overallResult['final_summary_message'],
+        ];
+        Cache::put('last_assignment_run_summary', $summaryData, now()->addDays(30)); // Cache for 30 days
+
         return $overallResult;
     }
 
@@ -253,8 +274,10 @@ class ExamAssignmentService
 
         return $professeurs->filter(function (Professeur $prof) use ($examen, $examStart, $examEnd, $examDateStr, $sessionContext, $isPESAlreadyAssignedToThisSalle) {
             $profId = $prof->id;
+            // RULE: If a PES-ranked professor is already in the room, no other PES can be assigned.
             if ($isPESAlreadyAssignedToThisSalle && $prof->rang === Professeur::RANG_PES) return false;
 
+            // RULE: Check for direct unavailability conflicts.
             foreach ($prof->unavailabilities as $unavailability) {
                 $unavStart = Carbon::parse($unavailability->start_datetime);
                 $unavEnd = Carbon::parse($unavailability->end_datetime);
@@ -262,6 +285,8 @@ class ExamAssignmentService
             }
 
             $assignmentsOnExamDayCount = 0; $assignedOnPreviousOrNextGapDay = false;
+
+            // RULE: Check for daily limits and gap day violations by inspecting the professor's existing assignments.
             foreach ($prof->attributions as $attribution) {
                 if ($attribution->examen_id === $examen->id && $attribution->salle_id) { // If already assigned to a room for this exam
                     // This professor is already part of this exam's overall assignment,
@@ -273,9 +298,8 @@ class ExamAssignmentService
                          // it shouldn't count towards the daily limit for *this* exam's assignment decision.
                          // The daily limit is about *other* distinct exams on the same day.
                          // This needs to be handled carefully to avoid self-conflict.
-                         // Let's assume daily limit check should exclude current exam ID.
                     }
-                    // Continue to check for other conflicts.
+
                 } else if ($attribution->examen_id !== $examen->id) { // Check against *other* exams
                     $assignedExam = $attribution->examen;
                     if (!$assignedExam) continue;
@@ -326,6 +350,10 @@ class ExamAssignmentService
         return $availableCandidates;
     }
 
+    /**
+     * Selects the best candidate for a "Responsable" role from a filtered pool.
+     * Prioritizes by Rank (PES > PAG > PA), then by earliest recruitment date.
+     */
     private function selectResponsable(EloquentCollection $candidates, Examen $examen, bool $isPESAlreadyAssignedToThisSalle): ?Professeur
     {
         if ($candidates->isEmpty()) return null;
@@ -339,6 +367,10 @@ class ExamAssignmentService
         ])->first();
     }
 
+    /**
+     * Selects the best candidate for an "Invigilator" role from a filtered pool.
+     * Prioritizes module teachers first, then uses a weighted score based on specialty and rank.
+     */
     private function selectInvigilator(EloquentCollection $candidates, Examen $examen, bool $isPESAlreadyAssignedToThisSalle): ?Professeur
     {
         if ($candidates->isEmpty()) return null;

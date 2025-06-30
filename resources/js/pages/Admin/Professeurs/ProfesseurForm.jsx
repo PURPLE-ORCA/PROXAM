@@ -3,29 +3,29 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { SelectContent, SelectItem, SelectTrigger, SelectValue, Select as ShadcnSelect } from '@/components/ui/select';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { TranslationContext } from '@/context/TranslationProvider';
 import { Combobox, ComboboxButton, ComboboxInput, ComboboxOption, ComboboxOptions } from '@headlessui/react';
 import { Icon } from '@iconify/react';
 import { Link } from '@inertiajs/react';
-import { useContext, useEffect, useMemo, useState } from 'react';
+import { useContext, useMemo, useState } from 'react';
 
 // Define string constants
 const SPECIALITE_MEDICAL_KEY = 'medical';
 const SPECIALITE_SURGICAL_KEY = 'surgical';
 
+// This component now receives its state and handlers as props.
+// It no longer manages its own form state.
 export default function ProfesseurForm({
+    isEdit,
     data,
     setData,
     errors,
-    processing,
-    onSubmit,
     services,
-    modules,
+    modules, // This will now be an array of strings (module names)
     rangs,
     statuts,
-    existingSpecialties = [],
-    isEdit = false,
-    professeurToEdit,
+    existingSpecialties,
 }) {
     const { translations } = useContext(TranslationContext);
     const [specialtyQuery, setSpecialtyQuery] = useState('');
@@ -51,41 +51,13 @@ export default function ProfesseurForm({
             ? allSpecialtyOptions
             : allSpecialtyOptions.filter((spec) => spec.name.toLowerCase().includes(specialtyQuery.toLowerCase()));
 
-    // Initialize form data when editing
-    useEffect(() => {
-        if (isEdit && professeurToEdit) {
+    const handleModuleChange = (moduleName) => {
+        const currentModules = data.module_names || [];
 
-            setData({
-                professeur_nom: professeurToEdit.nom || '',
-                professeur_prenom: professeurToEdit.prenom || '',
-                email: professeurToEdit.user?.email || '',
-                rang: professeurToEdit.rang || '',
-                statut: professeurToEdit.statut || '',
-                is_chef_service: Boolean(professeurToEdit.is_chef_service),
-                date_recrutement: professeurToEdit.date_recrutement || '',
-                specialite: professeurToEdit.specialite || '',
-                service_id: professeurToEdit.service_id?.toString() || '',
-                module_ids: professeurToEdit.modules ? professeurToEdit.modules.map((m) => m.id) : [],
-            });
-        }
-    }, [isEdit, professeurToEdit, setData]);
-
-    // Reset specialty query when specialty data changes
-    useEffect(() => {
-        if (data.specialite && specialtyQuery !== '') {
-            setSpecialtyQuery('');
-        }
-    }, [data.specialite]);
-
-    const handleModuleChange = (moduleId) => {
-        const currentModules = data.module_ids || [];
-        if (currentModules.includes(moduleId)) {
-            setData(
-                'module_ids',
-                currentModules.filter((id) => id !== moduleId),
-            );
+        if (currentModules.includes(moduleName)) {
+            setData('module_names', currentModules.filter((name) => name !== moduleName));
         } else {
-            setData('module_ids', [...currentModules, moduleId]);
+            setData('module_names', [...currentModules, moduleName]);
         }
     };
 
@@ -111,7 +83,7 @@ export default function ProfesseurForm({
     };
 
     return (
-        <form onSubmit={onSubmit} className="space-y-6">
+        <div className="space-y-6 pr-1">
             <fieldset className="grid grid-cols-1 gap-x-6 gap-y-6 rounded-md border border-[var(--border)] p-4 sm:grid-cols-6">
                 <legend className="px-1 text-sm leading-6 font-semibold text-[var(--foreground)]">
                     {translations?.professeur_form_user_section_legend || 'User Account Details'}
@@ -298,39 +270,26 @@ export default function ProfesseurForm({
                 <legend className="px-1 text-sm leading-6 font-semibold text-[var(--foreground)]">
                     {translations?.professeur_form_modules_section_legend || 'Assigned Modules'}
                 </legend>
-                <div className="mt-2 grid max-h-60 grid-cols-2 gap-4 overflow-y-auto sm:grid-cols-3 md:grid-cols-4">
-                    {(modules || []).map((module) => (
-                        <div key={module.id} className="flex items-center space-x-2">
-                            <Checkbox
-                                id={`module-${module.id}`}
-                                checked={(data.module_ids || []).includes(module.id)}
-                                onCheckedChange={() => handleModuleChange(module.id)}
-                            />
-                            <Label htmlFor={`module-${module.id}`} className="font-normal text-[var(--foreground)]">
-                                {module.nom}
-                            </Label>
-                        </div>
-                    ))}
-                </div>
-                {errors.module_ids && <p className="mt-2 text-sm text-[var(--destructive)]">{errors.module_ids}</p>}
-            </fieldset>
+                <ScrollArea className="h-60 w-full rounded-md border p-4 scrollbar-hide">
+                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
+                        {(modules || []).map((moduleName) => (
+                            <div key={moduleName} className="flex items-center space-x-2">
+                                <Checkbox
+                                    id={`module-${moduleName}`}
+                                    checked={(data.module_names || []).includes(moduleName)}
+                                    onCheckedChange={() => handleModuleChange(moduleName)}
+                                />
+                                <Label htmlFor={`module-${moduleName}`} className="font-normal text-[var(--foreground)]">
+                                    {moduleName}
+                                </Label>
+                            </div>
+                        ))}
+                        {/* ---------------------- */}
+                    </div>
+                </ScrollArea>
+                {errors.module_names && <p className="mt-2 text-sm text-[var(--destructive)]">{errors.module_names}</p>}
 
-            <div className="mt-8 flex items-center justify-end gap-x-4 border-t border-[var(--border)] pt-6">
-                <Button variant="outline" type="button" asChild>
-                    <Link href={route('admin.professeurs.index')}>{translations?.cancel_button || 'Cancel'}</Link>
-                </Button>
-                <Button
-                    type="submit"
-                    disabled={processing}
-                    className="bg-[var(--primary)] text-[var(--primary-foreground)] hover:bg-[var(--primary)]/90"
-                >
-                    {processing
-                        ? translations?.saving_button || 'Saving...'
-                        : isEdit
-                          ? translations?.update_button || 'Update'
-                          : translations?.save_button || 'Save'}
-                </Button>
-            </div>
-        </form>
+            </fieldset>
+        </div>
     );
 }

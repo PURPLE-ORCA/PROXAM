@@ -3,27 +3,67 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Models\User;
+use App\Models\Service;
 
 class Professeur extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
-        'user_id', 'nom', 'prenom', 'rang', 'statut', 
-        'is_chef_service', 'date_recrutement', 'specialite', 'service_id'
+        'user_id',
+        'nom',
+        'prenom',
+        'rang',
+        'statut',
+        'is_chef_service',
+        'date_recrutement',
+        'specialite',
+        'service_id',
     ];
 
-    protected $casts = [
-        'is_chef_service' => 'boolean',
-        'date_recrutement' => 'date',
-    ];
-
-    public function user()
+    protected static function booted()
     {
-        return $this->belongsTo(User::class);
+        static::deleting(function (Professeur $professeur) {
+            // Delete associated User when a Professeur is deleted
+            if ($professeur->user) {
+                $professeur->user->delete();
+            }
+        });
     }
 
-    public function service()
+    protected $appends = ['effective_statut'];
+
+    /**
+     * Get the professor's effective status, considering any active unavailabilities.
+     * This is the "real" status at the current moment.
+     */
+    public function getEffectiveStatutAttribute(): array
     {
-        return $this->belongsTo(Service::class);
+        $now = now();
+
+        // Check for an active unavailability record that spans the current time
+        $activeUnavailability = $this->unavailabilities()
+            ->where('start_datetime', '<=', $now)
+            ->where('end_datetime', '>=', $now)
+            ->first();
+
+        if ($activeUnavailability) {
+            // If they are unavailable, that's the most important status.
+            return [
+                'key' => 'UNAVAILABLE',
+                'label' => 'Unavailable',
+                'reason' => $activeUnavailability->reason ?? 'No reason provided' // e.g., "Conference"
+            ];
+        }
+
+        // If no active unavailability, just return their base long-term status.
+        return [
+            'key' => $this->statut, // 'Active', 'On_Leave', etc.
+            'label' => self::getStatuts()[$this->statut] ?? $this->statut,
+            'reason' => 'Base status'
+        ];
     }
 
     public function modules()
@@ -50,6 +90,16 @@ class Professeur extends Model
     {
         return $this->hasMany(Echange::class, 'professeur_accepter_id');
     }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function service()
+    {
+        return $this->belongsTo(Service::class);
+    }
     public static function getRangs($rawKeys = false) {
         $rangs = ['PA' => 'Professeur Assistant (PA)', 'PAG' => 'Professeur Agrégé (PAG)', 'PES' => 'Professeur Enseignement Supérieur (PES)'];
         return $rawKeys ? array_keys($rangs) : $rangs;
@@ -73,5 +123,10 @@ class Professeur extends Model
             self::SPECIALITE_SURGICAL => $displayTranslations && $translations ? ($translations['professeur_specialty_surgical'] ?? 'Surgical') : 'Surgical',
         ];
         return $specialties;
+    }
+
+    public function getNomCompletAttribute(): string
+    {
+        return "{$this->prenom} {$this->nom}";
     }
 }

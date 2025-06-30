@@ -23,53 +23,78 @@ class ProfesseurController extends Controller
 
     public function index(Request $request)
     {
-        $professeurs = Professeur::with(['user', 'service'])
-            ->when($request->input('search'), function ($query, $search) {
-                $query->where('nom', 'like', "%{$search}%")
-                      ->orWhere('prenom', 'like', "%{$search}%")
-                      ->orWhereHas('user', fn($q) => $q->where('email', 'like', "%{$search}%"))
-                      ->orWhereHas('service', fn($q) => $q->where('nom', 'like', "%{$search}%"));
-            })
-            ->when($request->input('service_id'), fn($q, $serviceId) => $q->where('service_id', $serviceId))
-            ->when($request->input('rang'), fn($q, $rang) => $q->where('rang', $rang))
-            ->when($request->input('statut'), fn($q, $statut) => $q->where('statut', $statut))
-            ->orderBy('nom')->orderBy('prenom')
-            ->paginate(15)
+        $professeursQuery = Professeur::with(['user', 'service']);
+
+        // --- REFINED FILTERING LOGIC ---
+        // Global search (if you keep it, it searches across multiple fields)
+        $professeursQuery->when($request->input('search'), function ($query, $search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('nom', 'like', "%{$search}%")
+                  ->orWhere('prenom', 'like', "%{$search}%")
+                  ->orWhereHas('user', fn($subQ) => $subQ->where('email', 'like', "%{$search}%"));
+            });
+        });
+
+        // Specific Column Filters
+        $professeursQuery->when($request->input('filters.fullName'), function ($query, $name) {
+            $query->where(function ($q) use ($name) {
+                $q->where('nom', 'like', "%{$name}%")
+                  ->orWhere('prenom', 'like', "%{$name}%");
+            });
+        });
+        $professeursQuery->when($request->input('filters.user.email'), function ($query, $email) {
+            $query->whereHas('user', fn($q) => $q->where('email', 'like', "%{$email}%"));
+        });
+        $professeursQuery->when($request->input('filters.service.nom'), function ($query, $serviceName) {
+            $query->whereHas('service', fn($q) => $q->where('nom', 'like', "%{$serviceName}%"));
+        });
+        $professeursQuery->when($request->input('filters.rang'), function ($query, $rang) {
+            $query->where('rang', $rang);
+        });
+        $professeursQuery->when($request->input('filters.statut'), function ($query, $statut) {
+            $query->where('statut', $statut);
+        });
+        // --- END REFINED FILTERING LOGIC ---
+
+        $professeurs = $professeursQuery->orderBy('nom')->orderBy('prenom')
+            ->paginate($request->input('per_page', 40))
             ->withQueryString();
 
-        $services = Service::orderBy('nom')->get(['id', 'nom']); // For filter dropdown
-
-        return Inertia::render($this->baseInertiaPath() . 'Index', [
-            'professeurs' => $professeurs,
-            'filters' => $request->only(['search', 'service_id', 'rang', 'statut']),
-            'servicesForFilter' => $services,
-            'rangsForFilter' => Professeur::getRangs(), 
-            'statutsForFilter' => Professeur::getStatuts(), 
-        ]);
-    }
-
-    public function create()
-    {
+        // --- ADD THIS DATA FOR THE MODAL ---
         $services = Service::orderBy('nom')->get(['id', 'nom']);
-        $modules = Module::orderBy('nom')->get(['id', 'nom']);
+        $uniqueModuleNames = Module::select('nom')->distinct()->orderBy('nom')->pluck('nom');
+
         $rangs = Professeur::getRangs();
         $statuts = Professeur::getStatuts();
-        // Fetch distinct existing specialties from the database
         $existingSpecialties = Professeur::select('specialite')
                                         ->whereNotNull('specialite')
                                         ->where('specialite', '!=', '')
                                         ->distinct()
                                         ->pluck('specialite')
                                         ->toArray();
+        // --- END ADD ---
 
-        return Inertia::render($this->baseInertiaPath() . 'Create', [
-            'services' => $services,
-            'modules' => $modules,
-            'rangs' => $rangs,
-            'statuts' => $statuts,
-            'existingSpecialties' => $existingSpecialties, // Pass to form
-            // 'specialties' prop (key-value for medical/surgical) is no longer needed if form handles it directly
+        return Inertia::render($this->baseInertiaPath() . 'Index', [
+            'professeurs' => $professeurs,
+            'filters' => $request->all(['search', 'filters']),
+            // Keep existing data for MRT filters
+            'servicesForFilter' => $services,
+            'rangsForFilter' => $rangs,
+            'statutsForFilter' => $statuts,
+            // Pass new data for the modal form
+            'servicesForForm' => $services,
+            'modulesForForm' => $uniqueModuleNames,
+            'rangsForForm' => $rangs,
+            'statutsForForm' => $statuts,
+            'existingSpecialtiesForForm' => $existingSpecialties,
         ]);
+    }
+
+    public function show(Professeur $professeur)
+    {
+        // Eager load all the relationships we need for the edit form
+        $professeur->load(['user', 'service', 'modules']);
+        return response()->json($professeur);
     }
 
     public function store(Request $request)
@@ -89,8 +114,9 @@ class ProfesseurController extends Controller
             'date_recrutement' => 'required|date',
             'specialite' => ['required', 'string', 'max:255'],
             'service_id' => 'required|exists:services,id',
-            'module_ids' => 'nullable|array',
-            'module_ids.*' => 'exists:modules,id',
+            'module_names' => 'nullable|array',
+            'module_names.*' => 'string|exists:modules,nom',
+
         ]);
 
         return DB::transaction(function () use ($request, $validatedUserData, $validatedProfesseurData) {
@@ -123,38 +149,16 @@ class ProfesseurController extends Controller
             ]);
 
             // 3. Sync Modules
-            if (!empty($validatedProfesseurData['module_ids'])) {
-                $professeur->modules()->sync($validatedProfesseurData['module_ids']);
+            $moduleIdsToSync = [];
+            if (!empty($validatedProfesseurData['module_names'])) {
+                $moduleIdsToSync = Module::whereIn('nom', $validatedProfesseurData['module_names'])->pluck('id');
             }
+            $professeur->modules()->sync($moduleIdsToSync);
+
 
             return redirect()->route('admin.professeurs.index')
                 ->with('success', 'toasts.professeur_created_successfully');
         });
-    }
-
-
-    public function edit(Professeur $professeur)
-    {
-        $professeur->load(['user', 'service', 'modules']);
-        $services = Service::orderBy('nom')->get(['id', 'nom']);
-        $modules = Module::orderBy('nom')->get(['id', 'nom']);
-        $rangs = Professeur::getRangs();
-        $statuts = Professeur::getStatuts();
-        $existingSpecialties = Professeur::select('specialite')
-                                        ->whereNotNull('specialite')
-                                        ->where('specialite', '!=', '')
-                                        ->distinct()
-                                        ->pluck('specialite')
-                                        ->toArray();
-
-        return Inertia::render($this->baseInertiaPath() . 'Edit', [
-            'professeurToEdit' => $professeur,
-            'services' => $services,
-            'modules' => $modules,
-            'rangs' => $rangs,
-            'statuts' => $statuts,
-            'existingSpecialties' => $existingSpecialties, // Pass to form
-        ]);
     }
 
     public function update(Request $request, Professeur $professeur)
@@ -172,8 +176,8 @@ class ProfesseurController extends Controller
             'date_recrutement' => 'required|date',
             'specialite' => ['required', 'string', 'max:255'], // Validation is now just a string
             'service_id' => 'required|exists:services,id',
-            'module_ids' => 'nullable|array',
-            'module_ids.*' => 'exists:modules,id',
+            'module_names' => 'nullable|array',
+            'module_names.*' => 'string|exists:modules,nom',
         ]);
 
         return DB::transaction(function () use ($request, $professeur, $validatedUserData, $validatedProfesseurData) {
@@ -197,7 +201,12 @@ class ProfesseurController extends Controller
             ]);
 
             // 3. Sync Modules
-            $professeur->modules()->sync($validatedProfesseurData['module_ids'] ?? []);
+            $moduleIdsToSync = [];
+            if (!empty($validatedProfesseurData['module_names'])) {
+                $moduleIdsToSync = Module::whereIn('nom', $validatedProfesseurData['module_names'])->pluck('id');
+            }
+            $professeur->modules()->sync($moduleIdsToSync);
+
 
             return redirect()->route('admin.professeurs.index')
                 ->with('success', 'toasts.professeur_updated_successfully');

@@ -19,48 +19,45 @@ use App\Http\Controllers\Professor\ScheduleController as ProfessorScheduleContro
 use App\Http\Controllers\Professor\DashboardController as ProfessorDashboardController; // Add this
 use App\Http\Controllers\Professor\UnavailabilityController as ProfessorUnavailabilityController; // Add this
 use App\Http\Controllers\Professor\ExchangeController as ProfessorExchangeController;
+use App\Http\Controllers\RH\DashboardController as RHDashboardController; // New controller
+use App\Http\Controllers\ChefService\ProfessorScheduleController as ChefServiceProfessorScheduleController; // New controller
+use App\Http\Controllers\Admin\ProfesseurImportController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
-
-// use Illuminate\Support\Facades\Mail;
-// use Illuminate\Mail\Mailable;
-
-// Route::get('/test-email', function () {
-//     if (!auth()->check() || !auth()->user()->hasRole('admin')) { // Quick auth check
-//         return 'Unauthorized';
-//     }
-//     try {
-//         Mail::raw('This is a test email from Profs2Exams.', function ($message) {
-//             $message->to('test@example.com') // This email won't actually be sent if using Mailtrap
-//                     ->subject('Test Email');
-//         });
-//         return 'Test email sent (check Mailtrap)!';
-//     } catch (\Exception $e) {
-//         return 'Error sending email: ' . $e->getMessage();
-//     }
-// });
 
 Route::get('/', function () {
     return Inertia::render('welcome');
 })->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
+// Renders the new Control Center page
+Route::get('/control-center', function () {
+    return Inertia::render('ControlCenter');
+})->name('control-center');
+
+// Adjust the main dashboard redirect logic
 Route::get('dashboard', function (Request $request) {
     $user = $request->user();
+
+    // Professors go to their KPI dashboard, which is more useful.
     if ($user->hasRole('professeur')) {
         return redirect()->route('professeur.dashboard');
     }
-    // Add other role checks and redirects if necessary:
-    // elseif ($user->hasRole('rh')) {
-    //     return redirect()->route('rh.dashboard'); // Example
-    // }
-    // Default dashboard for admin or other roles not explicitly redirected
-    return Inertia::render('dashboard'); // This should be your existing Admin/General Dashboard component
+    
+    // For Admin, RH, ChefService, maybe the Control Center is the best landing page?
+    // It gives them an overview of everything they can do.
+    // Or you can keep redirecting to their respective KPI dashboards and add a link
+    // in the header to the Control Center.
+    
+    return redirect()->route('control-center');
+
 })->name('dashboard');
 
     Route::prefix('admin')->name('admin.')->middleware('can:is_admin')->group(function () {
+        Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
         Route::resource('services', ServiceController::class)->except(['show']);
         // Route::resource('modules', ModuleController::class)->except(['show']);
         Route::resource('salles', SalleController::class)->except(['show']); 
@@ -69,8 +66,11 @@ Route::get('dashboard', function (Request $request) {
         Route::resource('quadrimestres', QuadrimestresController::class)->parameters(['quadrimestres' => 'quadrimestre']) ->except(['show']);
         Route::resource('users', UserController::class)->parameters(['users' => 'user'])->except(['show']);
         Route::resource('professeurs', ProfesseurController::class)->parameters(['professeurs' => 'professeur'])->except(['show']);
+        Route::get('/professeurs/{professeur}', [ProfesseurController::class, 'show'])->name('professeurs.show');
+
+        Route::post('/professeurs/import', [ProfesseurImportController::class, 'store'])->name('professeurs.import');
+        Route::get('/professeurs/template/download', [ProfesseurImportController::class, 'downloadTemplate'])->name('professeurs.template.download');
         Route::resource('examens', ExamenController::class)->parameters(['examens' => 'examen'])->except(['show']);
-        Route::resource('unavailabilities', UnavailabilityController::class)->parameters(['unavailabilities' => 'unavailability'])->except(['show']);   
         
         Route::post('/examens/{examen}/assign-professors', [ExamenController::class, 'triggerAssignment'])->name('examens.trigger-assignment');
         Route::get('attributions', [AttributionController::class, 'index'])->name('attributions.index');   
@@ -79,17 +79,19 @@ Route::get('dashboard', function (Request $request) {
         Route::put('/manage-assignments/{attribution}/toggle-responsable', [ExamAssignmentManagementController::class, 'toggleResponsable'])->name('attributions.toggle-responsable');
         Route::delete('/manage-assignments/{attribution}', [ExamAssignmentManagementController::class, 'destroyAttribution'])->name('attributions.destroy_manual');
         Route::resource('filieres', FiliereController::class)->parameters(['filieres' => 'filiere'])->except(['show']);
+
+        Route::get('/attributions/{attribution}/find-replacements', [AttributionController::class, 'findReplacements'])->name('attributions.find_replacements');
+        Route::put('/attributions/{attribution}/reassign', [AttributionController::class, 'reassign'])->name('attributions.reassign');
     
         Route::get('/filieres/{filiere}/levels', [LevelController::class, 'index'])->name('levels.index');
-        Route::get('/levels/create', [LevelController::class, 'create'])->name('levels.create'); // Can take ?filiere_id=X
+        Route::get('/levels/create', [LevelController::class, 'create'])->name('levels.create');
         Route::post('/levels', [LevelController::class, 'store'])->name('levels.store');
         Route::get('/levels/{level}/edit', [LevelController::class, 'edit'])->name('levels.edit');
         Route::put('/levels/{level}', [LevelController::class, 'update'])->name('levels.update');
         Route::delete('/levels/{level}', [LevelController::class, 'destroy'])->name('levels.destroy');
     
-        Route::get('/levels/{level}/modules', [ModuleController::class, 'indexForLevel'])->name('modules.index'); // New method
-
-        Route::get('/levels/{level}/modules/create', [ModuleController::class, 'create'])->name('modules.create'); // Pass level_id
+        Route::get('/levels/{level}/modules', [ModuleController::class, 'indexForLevel'])->name('modules.index'); 
+        Route::get('/levels/{level}/modules/create', [ModuleController::class, 'create'])->name('modules.create');
 
         Route::post('/modules', [ModuleController::class, 'store'])->name('modules.store'); 
         Route::get('/modules/{module}/edit', [ModuleController::class, 'edit'])->name('modules.edit');
@@ -98,31 +100,44 @@ Route::get('dashboard', function (Request $request) {
     
         Route::get('/modules/{module}/default-exam-config', [ModuleController::class, 'getDefaultExamConfig'])->name('modules.default-exam-config');
     
-        Route::get('/modules/{module}/exam-configs', [ModuleExamRoomConfigController::class, 'index']) // <<< ADD
-        ->name('modules.exam-configs.index'); // This is the page module cards will link to
+        Route::get('/modules/{module}/exam-configs', [ModuleExamRoomConfigController::class, 'index']) 
+        ->name('modules.exam-configs.index');
 
-        Route::post('/modules/{module}/exam-configs', [ModuleExamRoomConfigController::class, 'store']) // <<< ADD
+        Route::post('/modules/{module}/exam-configs', [ModuleExamRoomConfigController::class, 'store']) 
             ->name('modules.exam-configs.store');
 
-        Route::put('/module-exam-room-configs/{config}', [ModuleExamRoomConfigController::class, 'update']) // <<< ADD
+        Route::put('/module-exam-room-configs/{config}', [ModuleExamRoomConfigController::class, 'update']) 
             ->name('module-exam-configs.update')
             ->setBindingFields(['config' => 'id']); // Ensures {config} binds by ID
 
-        Route::delete('/module-exam-room-configs/{config}', [ModuleExamRoomConfigController::class, 'destroy']) // <<< ADD
+        Route::delete('/module-exam-room-configs/{config}', [ModuleExamRoomConfigController::class, 'destroy']) 
             ->name('module-exam-configs.destroy')
             ->setBindingFields(['config' => 'id']);
     
         Route::post('/select-academic-year', function(Request $request) {
             $validated = $request->validate(['annee_uni_id' => 'required|exists:annee_unis,id']);
             session(['selected_annee_uni_id' => (int)$validated['annee_uni_id']]);
-            return back(); // Or redirect()->intended()
+            return back(); 
         })->name('academic-year.select');
     
-        Route::post('/sesons/{seson}/batch-assign-exams', [SesonController::class, 'batchAssignExams']) // <<< ADD THIS
+        Route::post('/sesons/{seson}/batch-assign-exams', [SesonController::class, 'batchAssignExams']) 
         ->name('sesons.batch-assign-exams');  
     
         Route::post('/sesons/{seson}/approve-notifications', [App\Http\Controllers\Admin\SesonNotificationController::class, 'approveAndDispatchNotifications'])
             ->name('sesons.approve-notifications');
+        
+        Route::get('/sesons/{seson}/download-convocations', [App\Http\Controllers\Admin\SesonNotificationController::class, 'downloadAllConvocations'])
+             ->name('sesons.download-convocations');
+    });
+
+    // Group for routes accessible by Admin OR RH
+    Route::prefix('admin')->name('admin.')->middleware('can:is_admin_or_rh')->group(function() {
+        Route::resource('unavailabilities', UnavailabilityController::class)->parameters(['unavailabilities' => 'unavailability'])->except(['show']);
+    });
+
+    // Group for routes accessible ONLY by Admin
+    Route::prefix('admin')->name('admin.')->middleware('can:is_admin')->group(function() {
+        Route::resource('users', UserController::class)->except(['show']);
     });
 
     Route::get('/notifications/pending-count', [NotificationController::class, 'getPendingCount'])->name('notifications.pendingCount');
@@ -145,6 +160,21 @@ Route::get('dashboard', function (Request $request) {
             Route::post('/exchanges/{echange}/accept', [ProfessorExchangeController::class, 'acceptSwap'])->name('exchanges.accept');
             Route::post('/exchanges/{echange}/refuse', [ProfessorExchangeController::class, 'refuseSwap'])->name('exchanges.refuse');
             Route::get('/exchanges/updates-summary', [ProfessorExchangeController::class, 'getUpdatesSummary'])->name('exchanges.updatesSummary');
+    });
+
+    // CHEF DE SERVICE ROUTES
+    Route::middleware(['can:is_chef_service'])
+        ->prefix('chef-service')
+        ->name('chef_service.')
+        ->group(function () {
+            Route::get('/professor-schedules', [ChefServiceProfessorScheduleController::class, 'index'])->name('professor_schedules.index');
+        });
+
+    Route::middleware(['can:is_rh'])
+        ->prefix('rh')
+        ->name('rh.')
+        ->group(function () {
+            Route::get('/dashboard', [RHDashboardController::class, 'index'])->name('dashboard');
     });
 }); 
 

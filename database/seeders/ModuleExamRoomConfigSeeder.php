@@ -23,11 +23,10 @@ class ModuleExamRoomConfigSeeder extends Seeder
         $configsToInsert = [];
 
         foreach ($modules as $module) {
-            // Assign 1 to 2 default rooms for each module's exam configuration
-            $numDefaultSalles = rand(1, min(2, $salles->count()));
+            $numDefaultSalles = rand(1, min(4, $salles->count())); // Increase number of default rooms
             $defaultSelectedSalles = $salles->random($numDefaultSalles);
 
-            if ($defaultSelectedSalles instanceof Salle) { // If random(1) returns a single model
+            if ($defaultSelectedSalles instanceof Salle) {
                 $defaultSelectedSalles = collect([$defaultSelectedSalles]);
             }
 
@@ -35,8 +34,8 @@ class ModuleExamRoomConfigSeeder extends Seeder
                 $configsToInsert[] = [
                     'module_id' => $module->id,
                     'salle_id' => $salle->id,
-                    'configured_capacity' => $salle->default_capacite, // Default to salle's capacity
-                    'configured_prof_count' => rand(1, 2), // Default 1 or 2 profs for this room for this module
+                    'configured_capacity' => $salle->default_capacite,
+                    'configured_prof_count' => rand(3, 6), // Increase profs per room to 3-6
                     'created_at' => now(),
                     'updated_at' => now(),
                 ];
@@ -44,11 +43,10 @@ class ModuleExamRoomConfigSeeder extends Seeder
         }
         
         if (!empty($configsToInsert)) {
-            // Use upsert to avoid issues if re-running, based on unique constraint ['module_id', 'salle_id']
             ModuleExamRoomConfig::upsert(
                 $configsToInsert,
-                ['module_id', 'salle_id'], // Unique by columns
-                ['configured_capacity', 'configured_prof_count', 'updated_at'] // Columns to update on duplicate
+                ['module_id', 'salle_id'],
+                ['configured_capacity', 'configured_prof_count', 'updated_at']
             );
         }
         $this->command->info('ModuleExamRoomConfigSeeder: Module exam room configurations seeded successfully.');

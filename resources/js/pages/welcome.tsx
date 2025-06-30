@@ -57,7 +57,7 @@ export default function Welcome() {
                             className="space-y-4"
                         >
                             <motion.h1 variants={FADE_IN_UP_VARIANTS} className="text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white">
-                                Profs2Exams
+                                PROXAM
                             </motion.h1>
                             <motion.p variants={FADE_IN_UP_VARIANTS} className="text-lg lg:text-xl text-gray-600 dark:text-gray-300">
                                 Efficiently Managing Academic Examinations & Professor Assignments.
@@ -69,9 +69,9 @@ export default function Welcome() {
 
                         {/* About Section */}
                         <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6, duration: 0.6 }}>
-                            <h2 className="text-2xl font-semibold mb-3 text-gray-800 dark:text-gray-100">About Profs2Exams</h2>
+                            <h2 className="text-2xl font-semibold mb-3 text-gray-800 dark:text-gray-100">About PROXAM</h2>
                             <p className="text-gray-700 dark:text-gray-400 leading-relaxed">
-                                Profs2Exams is designed to simplify the complex process of assigning professors to academic examinations at the Faculty of Medicine and Pharmacy of Oujda, ensuring fairness, respecting constraints, and improving administrative efficiency.
+                                PROXAM is designed to simplify the complex process of assigning professors to academic examinations at the Faculty of Medicine and Pharmacy of Oujda, ensuring fairness, respecting constraints, and improving administrative efficiency.
                             </p>
                         </motion.section>
 
@@ -98,7 +98,7 @@ export default function Welcome() {
                 </div>
 
                 <footer className="w-full py-6 text-center text-sm text-gray-500 dark:text-gray-400">
-                    © {new Date().getFullYear()} Profs2Exams. All rights reserved.
+                    © {new Date().getFullYear()} PROXAM. All rights reserved.
                 </footer>
             </div>
         </>
