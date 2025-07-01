@@ -3,7 +3,7 @@
 namespace App\Http\Controllers; // Or App\Http\Controllers\Admin
 
 use App\Models\Seson;
-use App\Models\AnneeUni; // To fetch Academic Years for the form
+use App\Models\AnneeUni;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Services\ExamAssignmentService; 
@@ -48,6 +48,10 @@ class SesonController extends Controller
         $validated = $request->validate([
             'code' => 'required|string|max:50',
             'annee_uni_id' => 'required|exists:annee_unis,id',
+            'rank_quotas' => 'required|array',
+            'rank_quotas.PA' => 'required|integer|min:0',
+            'rank_quotas.PAG' => 'required|integer|min:0',
+            'rank_quotas.PES' => 'required|integer|min:0',
         ]);
 
         Seson::create($validated);
@@ -61,6 +65,10 @@ class SesonController extends Controller
         $validated = $request->validate([
             'code' => 'required|string|max:50',
             'annee_uni_id' => 'required|exists:annee_unis,id',
+            'rank_quotas' => 'required|array',
+            'rank_quotas.PA' => 'required|integer|min:0',
+            'rank_quotas.PAG' => 'required|integer|min:0',
+            'rank_quotas.PES' => 'required|integer|min:0',
         ]);
 
         $seson->update($validated);

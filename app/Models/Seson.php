@@ -14,12 +14,14 @@ class Seson extends Model
     protected $fillable = [
         'code',
         'annee_uni_id',
+        'rank_quotas',
         'assignments_approved_at',
         'notifications_sent_at',
         'approval_user_id',
     ];
 
     protected $casts = [
+        'rank_quotas' => 'array', 
         'assignments_approved_at' => 'datetime',
         'notifications_sent_at' => 'datetime',
     ];

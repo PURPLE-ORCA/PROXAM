@@ -13,6 +13,7 @@ export default function SesonModal({ isOpen, onClose, seson, anneeUnis }) {
         id: seson?.id || null,
         code: seson?.code || '',
         annee_uni_id: seson?.annee_uni_id || '',
+        rank_quotas: null, // Initialize as null for new sessions
     });
 
     useEffect(() => {
@@ -22,6 +23,7 @@ export default function SesonModal({ isOpen, onClose, seson, anneeUnis }) {
                 id: seson?.id || null,
                 code: seson?.code || '',
                 annee_uni_id: seson?.annee_uni_id || '',
+                rank_quotas: seson?.rank_quotas || { PA: 6, PAG: 4, PES: 2 }, // Populate with defaults if not set
             });
         }
     }, [isOpen, seson]);
