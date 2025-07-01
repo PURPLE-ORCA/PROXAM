@@ -91,7 +91,7 @@ export default function SesonCard({
                 )}
                 {isAdmin && seson.assignments_approved_at && (
                     <a href={route('admin.sesons.download-convocations', seson.id)} className="w-full">
-                        <Button variant="ghost" className="w-full bg-[var(--fmpo)]">
+                        <Button variant="ghost" className="w-full bg-[var(--fmpo)] text-white">
                             <Icon icon="mdi:download-box-outline" className="mr-2" />
                             {translations?.seson_card_download_convocations_button || 'Download Convocations'}
                         </Button>

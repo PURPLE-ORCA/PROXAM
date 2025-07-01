@@ -25,12 +25,6 @@ use Illuminate\Support\Facades\Log;
  */
 class ExamAssignmentService
 {
-    /** @var array Defines the maximum number of assignments a professor can have per session, based on their rank. */
-        public const RANK_QUOTAS_PER_SESSION = [
-        Professeur::RANG_PES => 2,
-        Professeur::RANG_PAG => 4,
-        Professeur::RANG_PA  => 6,
-    ];
     /** @var int Defines the maximum number of assignments a professor can have per day. */
     public const MAX_ASSIGNMENTS_PER_DAY = 1;
 
@@ -314,11 +308,18 @@ class ExamAssignmentService
             if ($assignmentsOnExamDayCount >= self::MAX_ASSIGNMENTS_PER_DAY) return false;
             if ($assignedOnPreviousOrNextGapDay) return false;
 
+            // --- THIS IS THE NEW LOGIC ---
             if ($sessionContext) {
                 $assignmentsInSessionForThisProf = $this->profAssignmentsInSessionTotal[$profId] ?? 0;
-                $quotaForRank = self::RANK_QUOTAS_PER_SESSION[$prof->rang] ?? 999;
-                if ($assignmentsInSessionForThisProf >= $quotaForRank) return false;
+                
+                // Get the quota from the Seson object's JSON field instead of the constant
+                $quotaForRank = $sessionContext->rank_quotas[$prof->rang] ?? 999; // Default to 999 if not set
+
+                if ($assignmentsInSessionForThisProf >= $quotaForRank) {
+                    return false;
+                }
             }
+            // --- END OF NEW LOGIC ---
             return true;
         });
     }

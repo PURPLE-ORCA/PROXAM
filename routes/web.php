@@ -74,6 +74,7 @@ Route::get('dashboard', function (Request $request) {
         
         Route::post('/examens/{examen}/assign-professors', [ExamenController::class, 'triggerAssignment'])->name('examens.trigger-assignment');
         Route::get('attributions', [AttributionController::class, 'index'])->name('attributions.index');   
+        Route::get('/attributions/export', [AttributionController::class, 'export'])->name('attributions.export');
         Route::get('/examens/{examen}/manage-assignments', [ExamAssignmentManagementController::class, 'index'])->name('examens.assignments.index');
         Route::post('/examens/{examen}/manage-assignments', [ExamAssignmentManagementController::class, 'storeAttribution'])->name('examens.assignments.store');
         Route::put('/manage-assignments/{attribution}/toggle-responsable', [ExamAssignmentManagementController::class, 'toggleResponsable'])->name('attributions.toggle-responsable');

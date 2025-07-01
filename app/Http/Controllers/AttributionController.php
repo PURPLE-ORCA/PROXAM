@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\AttributionsExport;
 use App\Models\AnneeUni;
 use App\Models\Attribution;
 use App\Models\Examen;
@@ -9,6 +10,7 @@ use App\Models\Professeur;
 use App\Models\Seson;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Maatwebsite\Excel\Facades\Excel;
 
 class AttributionController extends Controller
 {
@@ -69,6 +71,60 @@ class AttributionController extends Controller
             // Pass all possible filters back to the frontend
             'filters' => $request->only(['search', 'prof_search', 'service_search']),
         ]);
+    }
+
+    public function export(Request $request)
+    {
+        // --- This is the same query logic from your index() method ---
+        $latestAnneeUni = AnneeUni::orderBy('annee', 'desc')->first();
+        $selectedAnneeUniId = session('selected_annee_uni_id', $latestAnneeUni?->id);
+
+        $attributionsQuery = Attribution::with(['examen.module', 'professeur.service', 'salle']);
+
+        if ($selectedAnneeUniId) {
+            $attributionsQuery->whereHas('examen.quadrimestre.seson', function ($query) use ($selectedAnneeUniId) {
+                $query->where('annee_uni_id', $selectedAnneeUniId);
+            });
+        } else {
+            $attributionsQuery->whereRaw('1 = 0');
+        }
+        
+        // Apply all the same filters
+        $attributionsQuery->when($request->input('search'), function ($query, $search) {
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('examen', fn($subQ) => $subQ->where('nom', 'like', "%{$search}%"))
+                  ->orWhereHas('examen.module', fn($subQ) => $subQ->where('nom', 'like', "%{$search}%"));
+            });
+        });
+
+        $attributionsQuery->when($request->input('prof_search'), function ($query, $search) {
+            $query->whereHas('professeur', function ($q) use ($search) {
+                $q->where('nom', 'like', "%{$search}%")
+                  ->orWhere('prenom', 'like', "%{$search}%");
+            });
+        });
+
+        $attributionsQuery->when($request->input('service_search'), function ($query, $search) {
+            $query->whereHas('professeur.service', function ($q) use ($search) {
+                $q->where('nom', 'like', "%{$search}%");
+            });
+        });
+
+        $attributionsQuery->when($request->input('in_conflict') === 'true', function ($q) {
+            $q->where('attributions.is_in_conflict', true);
+        });
+
+        // The only difference: we use get() instead of paginate()
+        $attributionsToExport = $attributionsQuery
+            ->orderBy(Examen::select('debut')->whereColumn('examens.id', 'attributions.examen_id'), 'desc')
+            ->orderBy('is_responsable', 'desc')
+            ->get();
+        
+        // --- ADD THIS ---
+        $filename = 'exam_assignments_' . now()->format('Y-m-d') . '.xlsx';
+        
+        // Trigger the download with the dynamic filename
+        return Excel::download(new AttributionsExport($attributionsToExport), $filename);
     }
 
     public function findReplacements(Attribution $attribution)

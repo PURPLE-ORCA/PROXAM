@@ -1,12 +1,36 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Icon } from "@iconify/react";
+// We no longer need Inertia's Link for this
+// import { Link } from '@inertiajs/react';
 
 export default function AttributionTableToolbar({ filters, onFilterChange }) {
     
     // Helper to update a specific filter value in the parent's state
     const updateFilter = (key, value) => {
         onFilterChange({ ...filters, [key]: value });
+    };
+
+    // --- THE NEW DOWNLOAD HANDLER ---
+    const handleExport = () => {
+        // Build the query string from the filters object
+        const queryParams = new URLSearchParams(filters).toString();
+        
+        // Construct the full URL. We use `route().tostring()` to get the base URL
+        // without making an Inertia call.
+        const url = `${route('admin.attributions.export').toString()}?${queryParams}`;
+
+        // This is the brute-force download part.
+        // Create a temporary link element.
+        const link = document.createElement('a');
+        link.href = url;
+        // The `download` attribute can suggest a filename, but we'll rely on the server's header.
+        // link.setAttribute('download', 'assignments.xlsx'); 
+        
+        // Append to the body, click it, then remove it.
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     };
 
     const clearFilters = () => {
@@ -43,6 +67,12 @@ export default function AttributionTableToolbar({ filters, onFilterChange }) {
                     </Button>
                 )}
             </div>
+
+            {/* --- REPLACE THE <Link> WITH A <Button> --- */}
+            <Button onClick={handleExport}>
+                <Icon icon="mdi:file-excel-outline" className="mr-2 h-4 w-4" />
+                Export to Excel
+            </Button>
         </div>
     );
 }
