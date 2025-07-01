@@ -26,7 +26,7 @@ export default function Welcome() {
                                 href={route('dashboard')}
                                 className="inline-block rounded-sm border border-[#19140035] px-5 py-1.5 text-sm leading-normal text-[#1b1b18] hover:border-[#1915014a] dark:border-[#3E3E3A] dark:text-[#EDEDEC] dark:hover:border-[#62605b]"
                             >
-                                Dashboard
+                                Tableau de bord
                             </Link>
                         ) : (
                             <>
@@ -34,13 +34,13 @@ export default function Welcome() {
                                     href={route('login')}
                                     className="inline-block rounded-sm border border-transparent px-5 py-1.5 text-sm leading-normal text-[#1b1b18] hover:border-[#19140035] dark:text-[#EDEDEC] dark:hover:border-[#3E3E3A]"
                                 >
-                                    Log in
+                                    Connexion
                                 </Link>
                                 <Link
                                     href={route('register')}
                                     className="inline-block rounded-sm border border-[#19140035] px-5 py-1.5 text-sm leading-normal text-[#1b1b18] hover:border-[#1915014a] dark:border-[#3E3E3A] dark:text-[#EDEDEC] dark:hover:border-[#62605b]"
                                 >
-                                    Register
+                                    Registtre
                                 </Link>
                             </>
                         )}
@@ -79,7 +79,7 @@ export default function Welcome() {
                         <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8, duration: 0.6 }}>
                             <h2 className="text-2xl font-semibold mb-3 text-gray-800 dark:text-gray-100">Developed By</h2>
                             <p className="text-gray-700 dark:text-gray-400">
-                                El Moussaoui Mohammed & Amimri Amira
+                                El Moussaoui Mohammed
                             </p>
                             <p className="text-sm text-gray-500 dark:text-gray-500">Faculty of Medicine and Pharmacy, Oujda</p>
                         </motion.section>

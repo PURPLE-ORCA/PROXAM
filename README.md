@@ -1,4 +1,4 @@
-# PROFS2EXAMS - Examination Management System
+# PROXAM - Examination Management System
 
 ## 1. Project Brief
 

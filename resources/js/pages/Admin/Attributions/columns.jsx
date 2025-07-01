@@ -44,7 +44,7 @@ export const getColumns = (attributions) => [
         },
     },
     {
-        id: 'actions', // A unique ID for the column
+        id: 'actions',
         header: 'Actions',
         // The cell will be rendered manually in the Index.jsx file, so this can be empty
         cell: () => null, 
